@@ -1,6 +1,6 @@
 //MPU6050.h
-#ifndef MPU6050_CLONE_H
-#define MPU6050_CLONE_H
+#ifndef GY87_MPU6050_H
+#define GY87_MPU6050_H
 
 
 
@@ -24,11 +24,11 @@
 // #define MPU6050_GYRO_XOUT_H 0x43
 // #define MPU6050_ACCEL_XOUT_H 0x3B
 
-class MPU6050_clone
+class GY87_MPU6050
 {
     public:
         //Constructor
-        MPU6050_clone(uint8_t = 0x68);
+        GY87_MPU6050(uint8_t = 0x68);
         void begin(uint8_t sda, uint8_t scl);
         enum GyroRange 
         {

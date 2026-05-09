@@ -4,9 +4,9 @@
 ====================================
 */
 
-#include "MPU6050_clone.h"
+#include "GY87_MPU6050.h"
 
-MPU6050_clone mpu;
+GY87_MPU6050 mpu;
 
 void print()
 {
@@ -29,8 +29,8 @@ void setup()
 
     mpu.begin(10, 9);
     mpu.enableBypass();
-    mpu.setAccRange(MPU6050_clone::AFS_SEL_4G);
-    mpu.setGyroRange(MPU6050_clone::FS_SEL_2000);
+    mpu.setAccRange(GY87_MPU6050::AFS_SEL_4G);
+    mpu.setGyroRange(GY87_MPU6050::FS_SEL_2000);
 }
 
 void loop()

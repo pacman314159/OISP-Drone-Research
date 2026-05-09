@@ -1,7 +1,7 @@
-#include "MPU6050_clone.h"
+#include "GY87_MPU6050.h"
 
 // Constructor
-MPU6050_clone::MPU6050_clone(uint8_t address)
+GY87_MPU6050::GY87_MPU6050(uint8_t address)
 {
     _addr = address;
     acc_sens  = 16384.0; // ±2g
@@ -11,7 +11,7 @@ MPU6050_clone::MPU6050_clone(uint8_t address)
 
 
 // Init
-void MPU6050_clone::begin(uint8_t sda, uint8_t scl)
+void GY87_MPU6050::begin(uint8_t sda, uint8_t scl)
 {
     Wire.begin(sda, scl);
 
@@ -22,7 +22,7 @@ void MPU6050_clone::begin(uint8_t sda, uint8_t scl)
 
 
 // Low-level write
-void MPU6050_clone::writeRegister(uint8_t reg, uint8_t data)
+void GY87_MPU6050::writeRegister(uint8_t reg, uint8_t data)
 {
     Wire.beginTransmission(_addr);
     Wire.write(reg);
@@ -31,7 +31,7 @@ void MPU6050_clone::writeRegister(uint8_t reg, uint8_t data)
 }
 
 // Low-level read
-uint8_t MPU6050_clone::readRegister(uint8_t reg)
+uint8_t GY87_MPU6050::readRegister(uint8_t reg)
 {
     Wire.beginTransmission(_addr);
     Wire.write(reg);
@@ -41,7 +41,7 @@ uint8_t MPU6050_clone::readRegister(uint8_t reg)
 }
 
 
-    void MPU6050_clone::enableBypass()
+    void GY87_MPU6050::enableBypass()
     {
         uint8_t reg1 = readRegister(USER_CTRL);
         reg1 &=~ (1<<5);
@@ -53,7 +53,7 @@ uint8_t MPU6050_clone::readRegister(uint8_t reg)
 
     }
 // Set gyro range
-void MPU6050_clone::setGyroRange(GyroRange range)
+void GY87_MPU6050::setGyroRange(GyroRange range)
 {
     uint8_t reg = readRegister(GYRO_CONFIG);
 
@@ -72,7 +72,7 @@ void MPU6050_clone::setGyroRange(GyroRange range)
 }
 
 // Set accel range
-void MPU6050_clone::setAccRange(AccRange range)
+void GY87_MPU6050::setAccRange(AccRange range)
 {
     uint8_t reg = readRegister(ACCEL_CONFIG);
 
@@ -91,7 +91,7 @@ void MPU6050_clone::setAccRange(AccRange range)
 }
 
 // Read all data
-void MPU6050_clone::readGAT()
+void GY87_MPU6050::readGAT()
 {
     Wire.beginTransmission(_addr);
     Wire.write(ACCEL_XOUT_H);
@@ -121,12 +121,12 @@ void MPU6050_clone::readGAT()
 }
 
 // Get
-float MPU6050_clone::getGyroX(){ return gyroX; }
-float MPU6050_clone::getGyroY(){ return gyroY; }
-float MPU6050_clone::getGyroZ(){ return gyroZ; }
+float GY87_MPU6050::getGyroX(){ return gyroX; }
+float GY87_MPU6050::getGyroY(){ return gyroY; }
+float GY87_MPU6050::getGyroZ(){ return gyroZ; }
 
-float MPU6050_clone::getAccX(){ return accX; }
-float MPU6050_clone::getAccY(){ return accY; }
-float MPU6050_clone::getAccZ(){ return accZ; }
+float GY87_MPU6050::getAccX(){ return accX; }
+float GY87_MPU6050::getAccY(){ return accY; }
+float GY87_MPU6050::getAccZ(){ return accZ; }
 
-float MPU6050_clone::getTemp(){ return temp; }
+float GY87_MPU6050::getTemp(){ return temp; }
