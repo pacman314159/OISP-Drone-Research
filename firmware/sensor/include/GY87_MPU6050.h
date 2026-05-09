@@ -23,14 +23,7 @@
 
 // #define MPU6050_GYRO_XOUT_H 0x43
 // #define MPU6050_ACCEL_XOUT_H 0x3B
-
-class GY87_MPU6050
-{
-    public:
-        //Constructor
-        GY87_MPU6050(uint8_t = 0x68);
-        void begin(uint8_t sda, uint8_t scl);
-        enum GyroRange 
+ enum GyroRange 
         {
             FS_SEL_250 = 0,
             FS_SEL_500 = 1,
@@ -44,6 +37,14 @@ class GY87_MPU6050
             AFS_SEL_8G = 2,
             AFS_SEL_16G = 3
         };
+
+class GY87_MPU6050
+{
+    public:
+        //Constructor
+        GY87_MPU6050(uint8_t = 0x68);
+        void begin(uint8_t sda, uint8_t scl);
+       
         void enableBypass();
         void setGyroRange(GyroRange range);
         void setAccRange(AccRange range);

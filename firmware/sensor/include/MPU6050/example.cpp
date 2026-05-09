@@ -29,8 +29,8 @@ void setup()
 
     mpu.begin(10, 9);
     mpu.enableBypass();
-    mpu.setAccRange(GY87_MPU6050::AFS_SEL_4G);
-    mpu.setGyroRange(GY87_MPU6050::FS_SEL_2000);
+    mpu.setAccRange(AFS_SEL_4G);
+    mpu.setGyroRange(FS_SEL_2000);
 }
 
 void loop()
