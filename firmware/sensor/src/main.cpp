@@ -1,10 +1,30 @@
+/*
+====================================
+=         MAIN TEST MPU6050        =
+====================================
+    Acc Data = AccRaw / AccSens
+    GyroData = GyroRaw / GyroSens
+    TempData = TempRaw / TempSens
+    
+    Gyro Range  | LSB Sensitivity 
+    FS_SEL_250  |      131.0
+    FS_SEL_500  |       65.0
+    FS_SEL_1000 |       32.8
+    FS_SEL_2000 |       16.4
+
+    Acc Range   | LSB Sensitivity 
+    AFS_SEL_2G  |      16384.0
+    AFS_SEL_4G  |       8192.0
+    AFS_SEL_8G  |       4096.0
+    AFS_SEL_16G |       2048.0
+
+
+
+*/
 #include "GY87_MPU6050.h"
 
 GY87_MPU6050 mpu;
 
-// float aX, aY, aZ;
-// float gX, gY, gZ;
-// float t;
 
 void setup()
 {
