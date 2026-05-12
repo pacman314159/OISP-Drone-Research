@@ -324,24 +324,12 @@ void HMC5883L_Read_Raw()
 // ////                      MAIN                          ////
 // ////====================================================////
 
-#include "MPU6050_clone.h"
+#include "GY87_MPU6050.h"
 
-MPU6050_clone mpu;
+GY87_MPU6050 mpu;
 
 void print()
 {
-    Serial.print("Gyro: ");
-    Serial.print(mpu.getGyroX()); Serial.print(", ");
-    Serial.print(mpu.getGyroY()); Serial.print(", ");
-    Serial.print(mpu.getGyroZ());
-
-    Serial.print(" | Acc: ");
-    Serial.print(mpu.getAccX()); Serial.print(", ");
-    Serial.print(mpu.getAccY()); Serial.print(", ");
-    Serial.print(mpu.getAccZ());
-
-    Serial.print(" | Temp: ");
-    Serial.print(mpu.getTemp());
 
     Serial.print(" | Mag: ");
     Serial.print(MagX); Serial.print(", ");
@@ -358,10 +346,10 @@ void setup()
     delay(2000);
     Wire.begin(10,9);
     Wire.setClock(400000);
-    mpu.begin(10, 9);
+    mpu.initialize(10, 9);
     mpu.enableBypass();
-    mpu.setAccRange(MPU6050_clone::AFS_SEL_4G);
-    mpu.setGyroRange(MPU6050_clone::FS_SEL_2000);
+    mpu.setAccRange(AFS_SEL_4G);
+    mpu.setGyroRange(FS_SEL_2000);
     HMC5883L_Set_Averaging(AVERAGING_8);
     HMC5883L_Set_Output_Rate(RATE_75);
     HMC5883L_Set_Bias_Mode(BIAS_NORMAL);
@@ -375,7 +363,6 @@ void setup()
 
 void loop()
 {
-    mpu.readGAT();
     HMC5883L_Read_Raw();
     print(); 
 }
