@@ -1,8 +1,5 @@
 #include "GY87_MPU6050.h"
 
-
-
-
 // Constructor
 GY87_MPU6050::GY87_MPU6050(uint8_t address)
 {
@@ -26,9 +23,6 @@ float gZ = 0;
 
 float t = 0;
 //==========   QUES 1   ==========//
-
-
-
 
 
 //==================================
