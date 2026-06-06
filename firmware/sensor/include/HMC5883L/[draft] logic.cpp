@@ -1,7 +1,6 @@
  #include <Arduino.h>
 #include <Wire.h>
 
-
 #define HMC5883L_ADDRESS          0x1E
 
 // ////====================================================////

@@ -1,120 +1,85 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "GY87_MPU6050.h"
+#include "GY87_HMC5883L.h"
+
+const uint16_t NUM_READS = 5000;
 
 GY87_MPU6050 mpu;
+GY87_HMC5883L hmc;
 
-void print()
-{
-    Serial.print("Gyro: ");
-    Serial.print(mpu.getGyroX()); Serial.print(", ");
-    Serial.print(mpu.getGyroY()); Serial.print(", ");
-    Serial.print(mpu.getGyroZ());
+// Stored data
+float accXSamples[NUM_READS] = {0},  accYSamples[NUM_READS] {0},    accZSamples[NUM_READS] = {0};
+float gyroXSamples[NUM_READS] = {0}, gyroYSamples[NUM_READS] = {0}, gyroZSamples[NUM_READS] = {0};
+float magXSamples[NUM_READS] = {0},  magYSamples[NUM_READS] = {0},  magZSamples[NUM_READS] = {0};
+float tempSamples[NUM_READS]  = {0};
 
-    Serial.print(" | Acc: ");
-    Serial.print(mpu.getAccX()); Serial.print(", ");
-    Serial.print(mpu.getAccY()); Serial.print(", ");
-    Serial.print(mpu.getAccZ());
+uint32_t startTime, endTime;
+uint32_t timeInstances[NUM_READS] = {0};
 
-    Serial.print(" | Temp: ");
-    Serial.print(mpu.getTemp());
+void setup(){
+  Serial.begin(115200);
+  while(!Serial);
+  delay(2000);
+  Wire.setClock(400000);
 
-    Serial.println();
-}
+  mpu.initialize(10, 9);
+  mpu.enableBypass();
+  mpu.setAccRange(AFS_SEL_4G);
+  mpu.setGyroRange(FS_SEL_2000);
 
-const uint16_t NUM_READS = 1000;
-// Store data
-float AccX_Buffer[NUM_READS];
-float AccY_Buffer[NUM_READS];
-float AccZ_Buffer[NUM_READS];
-
-float GyroX_Buffer[NUM_READS];
-float GyroY_Buffer[NUM_READS];
-float GyroZ_Buffer[NUM_READS];
-
-float Temp_Buffer[NUM_READS];
-
-uint32_t startTime;
-uint32_t endTime;
+  hmc.setMeasMode(CONTINUOUS_MODE);
+  hmc.setAveraging(AVERAGING_1);
+  hmc.setOutputRate(RATE_75);
+  // hmc.setBiasMode(BIAS_NORMAL);
+  hmc.setGain(FIELD_RANGE_0_88);
 
 
-void setup()
-{
-    Serial.begin(115200);
-    while(!Serial);
-    delay(2000);
-    Wire.setClock(400000);
-    mpu.initialize(10, 9);
-    mpu.enableBypass();
-    mpu.setAccRange(AFS_SEL_4G);
-    mpu.setGyroRange(FS_SEL_2000);
-    delay(100);
+  delay(100);
 
 
-    //------MEASURE DURATION--------//
-    startTime = micros();
-     for(int i = 0; i < NUM_READS; i++)
-    {
-    mpu.getRawAll();
- 
-        AccX_Buffer[i] = mpu.getAccX();
-        AccY_Buffer[i] = mpu.getAccY();
-        AccZ_Buffer[i] = mpu.getAccZ();
-        GyroX_Buffer[i] = mpu.getGyroX();
-        GyroY_Buffer[i] = mpu.getGyroY();
-        GyroZ_Buffer[i] = mpu.getGyroZ();
-        Temp_Buffer[i] = mpu.getTemp();
-    }
-    endTime =micros();
+  //------MEASURE DURATION--------//
+  startTime = micros();
+  for(int i = 0; i < NUM_READS; i++){
+    // mpu.getRawAll();
+    // mpu.getAllData(
+    //   accXSamples[i], accYSamples[i], accZSamples[i],
+    //   tempSamples[i],
+    //   gyroXSamples[i], gyroYSamples[i], gyroZSamples[i]
+    // );
 
-    //-------------PRINT AFTER TIMING------------//
-    Serial.println();
-    Serial.println("========== RESULT ==========");
+    hmc.getRawAll();
+    hmc.getAllData(magXSamples[i], magYSamples[i], magZSamples[i]);
 
-    Serial.print("Total Reads: ");
-    Serial.println(NUM_READS);
+    timeInstances[i] = micros();
+  }
+  endTime = micros();
 
-    Serial.print("Total Duration (us): ");
-    Serial.println(endTime - startTime);
+  //-------------PRINT AFTER TIMING------------//
+  Serial.println();
+  Serial.println("========== RESULT ==========");
+  Serial.printf("Total Reads: %d\n", NUM_READS);
+  Serial.printf("Total Duration (us): %d\n", endTime - startTime);
+  Serial.printf("Average Per Read (us): %.4f\n", (float)(endTime - startTime) / NUM_READS);
+  Serial.printf("\n\n");
 
-    Serial.print("Average Per Read (us): ");
+  // ===== PRINT DATA =====
+  Serial.println("timeInstance, accX, accY, accZ, gyroX, gyroY, gyroZ, temp");
+  // for(int i = 0; i < NUM_READS; i++)
+  //   Serial.printf("%d, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f\n",
+  //                 timeInstances[i],
+  //                 accXSamples[i], accYSamples[i], accZSamples[i],
+  //                 gyroXSamples[i], gyroYSamples[i], gyroZSamples[i],
+  //                 tempSamples[i]);
 
-    Serial.println((float)(endTime - startTime) / NUM_READS);
-
-    Serial.println();
-
-    Serial.println();
-
-    // ===== PRINT DATA =====
-    for(int i = 0; i < NUM_READS; i++)
-    {
-        Serial.print(i);
-
-        Serial.print(" | Acc: ");
-        Serial.print(AccX_Buffer[i], 7);
-        Serial.print(", ");
-        Serial.print(AccY_Buffer[i], 7);
-        Serial.print(", ");
-        Serial.print(AccZ_Buffer[i], 7);
-
-        Serial.print(" | Gyro: ");
-        Serial.print(GyroX_Buffer[i], 7);
-        Serial.print(", ");
-        Serial.print(GyroY_Buffer[i], 7);
-        Serial.print(", ");
-        Serial.print(GyroZ_Buffer[i], 7);
-
-        Serial.print(" | Temp: ");
-        Serial.println(Temp_Buffer[i], 2);
-    }
-
-    Serial.flush();
-
-    delay(5000);
+  // Serial.println("timeInstance, magX, magY, magZ");
+  // for(int i = 0; i < NUM_READS; i++)
+  //   Serial.printf("%d, %.6f, %.6f, %.6f\n",
+  //                 timeInstances[i],
+  //                 magXSamples[i], magYSamples[i], magZSamples[i]);
 
 }
 
 
-void loop()
-{
-}
+void loop(){}
+
