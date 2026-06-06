@@ -6,7 +6,7 @@ P0 = 101325.0  # Standard sea level pressure in Pascals
 
 # 1. Load data from the file
 try:
-    time_ms, pressure_pa = np.loadtxt('pressure_data_time_oss3.txt', delimiter=',', unpack=True)
+    time_ms, pressure_pa = np.loadtxt('pressure_data_time_oss0.txt', delimiter=',', unpack=True)
 except FileNotFoundError:
     print("Error: 'pressure_data_time.txt' not found. Ensure it is in the same folder as this script.")
     exit()
