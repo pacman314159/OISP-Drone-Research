@@ -21,9 +21,8 @@ void setup(){
   Serial.begin(115200);
   while(!Serial);
   delay(2000);
-  Wire.setClock(400000);
 
-  mpu.initialize(10, 9);
+  mpu.init(10, 9);
   mpu.enableBypass();
   mpu.setAccRange(AFS_SEL_4G);
   mpu.setGyroRange(FS_SEL_2000);

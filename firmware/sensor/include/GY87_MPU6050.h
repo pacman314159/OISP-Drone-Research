@@ -65,7 +65,7 @@ private:
 public:
   GY87_MPU6050();
 
-  void initialize(uint8_t sda, uint8_t scl);
+  void init(uint8_t sda, uint8_t scl);
   void enableSleep(bool enable);
   void enableBypass();
   void setClockSource(ClockSource source);

@@ -36,14 +36,14 @@ uint8_t GY87_MPU6050::readRegister(uint8_t reg)
 //==================================
 
 //------   SETUP FUNCTION   ------//
-void GY87_MPU6050::initialize(uint8_t sda, uint8_t scl)
+void GY87_MPU6050::init(uint8_t sda, uint8_t scl)
 {
   Wire.begin(sda, scl);
+  Wire.setClock(400000);
   enableSleep(false);
   setClockSource(CLOCK_PLL_XGYRO);
   setGyroRange(FS_SEL_250);
   setAccRange(AFS_SEL_2G);
-
 }
 
 void GY87_MPU6050::enableSleep(bool enable){
