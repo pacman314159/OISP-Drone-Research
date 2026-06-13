@@ -177,7 +177,6 @@ void GY87_HMC5883L::getRawAll(){
   xRaw = (Wire.read() << 8) | Wire.read();
   zRaw = (Wire.read() << 8) | Wire.read();
   yRaw = (Wire.read() << 8) | Wire.read();
-  Serial.println(xRaw, BIN);
 }
 
 int16_t GY87_HMC5883L::getRawX(){

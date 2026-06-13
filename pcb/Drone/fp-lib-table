@@ -1,4 +1,0 @@
-(fp_lib_table
-	(version 7)
-	(lib (name "JST_1.25mm_RA_SMD") (type "KiCad") (uri "${KICAD_GLOBAL_CUSTOM_DIR}/custom_footprints/JST_1.25mm_RA_SMD.pretty") (options "") (descr ""))
-)

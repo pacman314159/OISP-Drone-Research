@@ -629,7 +629,7 @@
       "group_symbols": true,
       "include_excluded_from_bom": true,
       "name": "",
-      "sort_asc": true,
+      "sort_asc": false,
       "sort_field": "Supplier"
     },
     "bus_aliases": {},
@@ -681,7 +681,7 @@
         "uuid": "5ef9835f-9784-4760-b509-6732c7d681d2"
       }
     ],
-    "used_designators": "SW1-2,U9",
+    "used_designators": "#PWR41,#PWR55-56",
     "variants": []
   },
   "sheets": [

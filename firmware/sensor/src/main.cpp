@@ -4,6 +4,7 @@
 #include "GY87_HMC5883L.h"
 
 const uint16_t NUM_READS = 5000;
+const uint16_t SAMPLING_INTERVAL_US = 230;
 
 GY87_MPU6050 mpu;
 GY87_HMC5883L hmc;
@@ -27,10 +28,10 @@ void setup(){
   mpu.setAccRange(AFS_SEL_4G);
   mpu.setGyroRange(FS_SEL_2000);
 
-  hmc.setMeasMode(CONTINUOUS_MODE);
+  hmc.setMeasMode(SINGLE_MODE);
   hmc.setAveraging(AVERAGING_1);
   hmc.setOutputRate(RATE_75);
-  // hmc.setBiasMode(BIAS_NORMAL);
+  hmc.setBiasMode(BIAS_NORMAL);
   hmc.setGain(FIELD_RANGE_0_88);
 
 
@@ -47,10 +48,12 @@ void setup(){
     //   gyroXSamples[i], gyroYSamples[i], gyroZSamples[i]
     // );
 
+    hmc.setMeasMode(SINGLE_MODE);
     hmc.getRawAll();
     hmc.getAllData(magXSamples[i], magYSamples[i], magZSamples[i]);
 
     timeInstances[i] = micros();
+    delayMicroseconds(SAMPLING_INTERVAL_US);
   }
   endTime = micros();
 
@@ -63,7 +66,8 @@ void setup(){
   Serial.printf("\n\n");
 
   // ===== PRINT DATA =====
-  Serial.println("timeInstance, accX, accY, accZ, gyroX, gyroY, gyroZ, temp");
+
+  // Serial.println("timeInstance, accX, accY, accZ, gyroX, gyroY, gyroZ, temp");
   // for(int i = 0; i < NUM_READS; i++)
   //   Serial.printf("%d, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f\n",
   //                 timeInstances[i],
@@ -71,14 +75,17 @@ void setup(){
   //                 gyroXSamples[i], gyroYSamples[i], gyroZSamples[i],
   //                 tempSamples[i]);
 
-  // Serial.println("timeInstance, magX, magY, magZ");
-  // for(int i = 0; i < NUM_READS; i++)
-  //   Serial.printf("%d, %.6f, %.6f, %.6f\n",
-  //                 timeInstances[i],
-  //                 magXSamples[i], magYSamples[i], magZSamples[i]);
+  Serial.println("timeInstance, magX, magY, magZ");
+  for(int i = 0; i < NUM_READS; i++)
+    Serial.printf("%d, %.9f, %.9f, %.9f\n",
+                  timeInstances[i],
+                  magXSamples[i], magYSamples[i], magZSamples[i]);
 
 }
 
 
-void loop(){}
+void loop(){
+  // hmc.getRawAll();
+  // Serial.printf("%.4f, %.4f, %.4f\n", hmc.getX(), hmc.getY(), hmc.getZ());
+}
 

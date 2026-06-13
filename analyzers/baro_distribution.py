@@ -5,10 +5,11 @@ import matplotlib.pyplot as plt
 P0 = 101325.0  # Standard sea level pressure in Pascals
 
 # 1. Load data from the file
+FILE_NAME = 'pressure_data_time_oss3.txt'
 try:
-    time_ms, pressure_pa = np.loadtxt('pressure_data_time_oss0.txt', delimiter=',', unpack=True)
+    time_ms, pressure_pa = np.loadtxt(FILE_NAME, delimiter=',', unpack=True)
 except FileNotFoundError:
-    print("Error: 'pressure_data_time.txt' not found. Ensure it is in the same folder as this script.")
+    print("Error: '{}' not found. Ensure it is in the same folder as this script.".format(FILE_NAME))
     exit()
 
 # 2. Convert Pressure to Altitude (meters)
@@ -33,7 +34,7 @@ std_alt = np.std(altitude)
 plt.figure(figsize=(14, 5))
 
 # Dynamically set a lower bin count if dealing with smaller logging files
-num_bins = 15 if len(pressure_pa) < 100 else 50
+num_bins = 50
 
 # --- Left Plot: Pressure Histogram ---
 plt.subplot(1, 2, 1)
