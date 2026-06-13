@@ -6,6 +6,8 @@ const int numSamples = 5000;
 int32_t samples[numSamples];
 uint32_t timeInst[numSamples] = {0};
 
+int testing = 0; //heloooooooooooo
+
 GY87_BMP180 bmp;
 
 float barometerAltitude(int32_t pressure) {
