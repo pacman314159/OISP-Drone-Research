@@ -6,8 +6,6 @@ const int numSamples = 5000;
 int32_t samples[numSamples];
 uint32_t timeInst[numSamples] = {0};
 
-int testing = 0; //heloooooooooooo
-
 GY87_BMP180 bmp;
 
 float barometerAltitude(int32_t pressure) {
@@ -16,7 +14,7 @@ float barometerAltitude(int32_t pressure) {
 
 void setup() {
   Serial.begin(115200);
-  delay(10);
+  delay(10); 
 
   bmp.init(10, 9);
   bmp.readCalibData();
@@ -31,7 +29,7 @@ void setup() {
   Serial.printf("Done\n");
 
   for(int i = 0; i < numSamples; i+= 1)
-    Serial.printf("%d, %d\n", timeInst[i], samples[i]);
+    Serial.printf("%d, %d\n", timeInst[i], samples[i]);d
 
 }
 
