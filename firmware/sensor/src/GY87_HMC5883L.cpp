@@ -1,7 +1,40 @@
 #include "GY87_HMC5883L.h"
 
+GY87_HMC5883L* GY87_HMC5883L::instance = nullptr;
+
+void GY87_HMC5883L::writeRegister(uint8_t reg, uint8_t data){
+  Wire.beginTransmission(HMC5883L_ADDRESS);
+  Wire.write(reg);
+  Wire.write(data);
+  Wire.endTransmission();
+}
+
+uint8_t GY87_HMC5883L::readRegister(uint8_t reg){
+  Wire.beginTransmission(HMC5883L_ADDRESS);
+  Wire.write(reg);
+  Wire.endTransmission(false);
+  Wire.requestFrom((uint8_t)HMC5883L_ADDRESS, (size_t)1, true);
+  return Wire.read();
+}
+
+void IRAM_ATTR GY87_HMC5883L::drdyISR(){
+  if (instance != nullptr) {
+    instance->setDataReady(); // Calls the class method
+  }
+}
+
 GY87_HMC5883L::GY87_HMC5883L(){
   sensitivity = DEFAULT_GAIN_LSB_PER_GAUSS;
+}
+
+void GY87_HMC5883L::init(uint8_t sda, uint8_t scl){
+  Wire.begin(sda, scl);
+  Wire.setClock(400000);
+  dataReady = false;
+  intUsed = false;
+  instance = this;
+  latestDataTimeMs = 0;
+  latestDataTimeUs = 0;
 }
 
 void GY87_HMC5883L::setAveraging(AvgMode avg){
@@ -167,7 +200,29 @@ void GY87_HMC5883L::setMeasMode(MeasMode meas){
   writeRegister(HMC5883L_MODE, reg);
 }
 
+void GY87_HMC5883L::attachDRDYInterrupt(uint8_t pin){
+  intUsed = true;
+  pinMode(pin, INPUT);
+  ::attachInterrupt(digitalPinToInterrupt(pin), drdyISR, FALLING);
+}
+
+bool GY87_HMC5883L::isDataReady(){
+  return dataReady;
+}
+
+void IRAM_ATTR GY87_HMC5883L::setDataReady(){
+  dataReady = true;
+}
+
+void GY87_HMC5883L::clearDataReady() {
+  dataReady = false;
+}
+
 void GY87_HMC5883L::getRawAll(){
+  if(intUsed && !dataReady) return;
+
+  clearDataReady();
+
   const uint8_t readLength = 6;
   Wire.beginTransmission(HMC5883L_ADDRESS);
   Wire.write(HMC5883L_DATA_X_MSB);
@@ -177,6 +232,9 @@ void GY87_HMC5883L::getRawAll(){
   xRaw = (Wire.read() << 8) | Wire.read();
   zRaw = (Wire.read() << 8) | Wire.read();
   yRaw = (Wire.read() << 8) | Wire.read();
+
+  latestDataTimeMs = millis();
+  latestDataTimeUs = micros();
 }
 
 int16_t GY87_HMC5883L::getRawX(){
@@ -213,17 +271,11 @@ float GY87_HMC5883L::getZ(){
   return z;
 }
 
-void GY87_HMC5883L::writeRegister(uint8_t reg, uint8_t data){
-  Wire.beginTransmission(HMC5883L_ADDRESS);
-  Wire.write(reg);
-  Wire.write(data);
-  Wire.endTransmission();
+uint32_t GY87_HMC5883L::getLatestDataTimeMs(){
+  return latestDataTimeMs;
 }
 
-uint8_t GY87_HMC5883L::readRegister(uint8_t reg){
-  Wire.beginTransmission(HMC5883L_ADDRESS);
-  Wire.write(reg);
-  Wire.endTransmission(false);
-  Wire.requestFrom((uint8_t)HMC5883L_ADDRESS, (size_t)1, true);
-  return Wire.read();
+uint32_t GY87_HMC5883L::getLatestDataTimeUs(){
+  return latestDataTimeUs;
 }
+

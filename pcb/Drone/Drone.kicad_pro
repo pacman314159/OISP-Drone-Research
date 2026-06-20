@@ -629,8 +629,8 @@
       "group_symbols": true,
       "include_excluded_from_bom": true,
       "name": "",
-      "sort_asc": false,
-      "sort_field": "Supplier"
+      "sort_asc": true,
+      "sort_field": "Footprint"
     },
     "bus_aliases": {},
     "connection_grid_size": 50.0,
@@ -681,7 +681,7 @@
         "uuid": "5ef9835f-9784-4760-b509-6732c7d681d2"
       }
     ],
-    "used_designators": "C22,U7-8",
+    "used_designators": "C22,U7-8,U10-11",
     "variants": []
   },
   "sheets": [

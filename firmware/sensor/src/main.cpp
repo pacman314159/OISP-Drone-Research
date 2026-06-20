@@ -3,6 +3,10 @@
 #include "GY87_MPU6050.h"
 #include "GY87_HMC5883L.h"
 
+#define SDA_PIN 10
+#define SCL_PIN 9
+#define DRDY_PIN 7
+
 const uint16_t NUM_READS = 5000;
 const uint16_t SAMPLING_INTERVAL_US = 230;
 
@@ -23,20 +27,20 @@ void setup(){
   while(!Serial);
   delay(2000);
 
-  mpu.init(10, 9);
+  mpu.init(SDA_PIN, SCL_PIN);
   mpu.enableBypass();
   mpu.setAccRange(AFS_SEL_4G);
-  mpu.setGyroRange(FS_SEL_2000);
+  mpu.setGyroRange(FS_SEL_500);
 
+  hmc.init(SDA_PIN, SCL_PIN);
   hmc.setMeasMode(SINGLE_MODE);
   hmc.setAveraging(AVERAGING_1);
   hmc.setOutputRate(RATE_75);
   hmc.setBiasMode(BIAS_NORMAL);
   hmc.setGain(FIELD_RANGE_0_88);
-
+  hmc.attachDRDYInterrupt(DRDY_PIN);
 
   delay(100);
-
 
   //------MEASURE DURATION--------//
   startTime = micros();
@@ -48,11 +52,12 @@ void setup(){
     //   gyroXSamples[i], gyroYSamples[i], gyroZSamples[i]
     // );
 
-    hmc.setMeasMode(SINGLE_MODE);
+    while(!hmc.isDataReady()) yield();
     hmc.getRawAll();
+    hmc.setMeasMode(SINGLE_MODE);
     hmc.getAllData(magXSamples[i], magYSamples[i], magZSamples[i]);
 
-    timeInstances[i] = micros();
+    timeInstances[i] = hmc.getLatestDataTimeUs();
     delayMicroseconds(SAMPLING_INTERVAL_US);
   }
   endTime = micros();

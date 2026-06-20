@@ -1,7 +1,7 @@
 #ifndef GY87_HMC5883L_H
 #define GY87_HMC5883L_H
 
- #include <Arduino.h>
+#include <Arduino.h>
 #include <Wire.h>
 
 #define HMC5883L_ADDRESS          0x1E
@@ -58,63 +58,78 @@
 
 enum AvgMode
 {
-    AVERAGING_1,
-    AVERAGING_2,
-    AVERAGING_4,
-    AVERAGING_8
+  AVERAGING_1,
+  AVERAGING_2,
+  AVERAGING_4,
+  AVERAGING_8
 };
 
 enum OutputRate
 {
-    RATE_0_75,
-    RATE_1_5,
-    RATE_3,
-    RATE_7_5,
-    RATE_15,
-    RATE_30,
-    RATE_75
+  RATE_0_75,
+  RATE_1_5,
+  RATE_3,
+  RATE_7_5,
+  RATE_15,
+  RATE_30,
+  RATE_75
 };
 
 enum BiasMode
 {
-    BIAS_NORMAL,
-    BIAS_POSITIVE,
-    BIAS_NEGATIVE
+  BIAS_NORMAL,
+  BIAS_POSITIVE,
+  BIAS_NEGATIVE
 };
 
 enum GainMode
 {
-    FIELD_RANGE_0_88,
-    FIELD_RANGE_1_3,
-    FIELD_RANGE_1_9,
-    FIELD_RANGE_2_5,
-    FIELD_RANGE_4_0,
-    FIELD_RANGE_4_7,
-    FIELD_RANGE_5_6,
-    FIELD_RANGE_8_1
+  FIELD_RANGE_0_88,
+  FIELD_RANGE_1_3,
+  FIELD_RANGE_1_9,
+  FIELD_RANGE_2_5,
+  FIELD_RANGE_4_0,
+  FIELD_RANGE_4_7,
+  FIELD_RANGE_5_6,
+  FIELD_RANGE_8_1
 };
 
 enum MeasMode
 {
-    CONTINUOUS_MODE,
-    SINGLE_MODE,
-    IDLE_MODE
+  CONTINUOUS_MODE,
+  SINGLE_MODE,
+  IDLE_MODE
 };
 
 class GY87_HMC5883L{
 private:
+  static GY87_HMC5883L* instance;
   float sensitivity;
   int16_t xRaw, yRaw, zRaw;
   float x, y, z;
+  volatile bool dataReady;
+  bool intUsed;
+  uint32_t latestDataTimeMs, latestDataTimeUs;
+
+private:
+  void writeRegister(uint8_t reg, uint8_t data);
+  uint8_t readRegister(uint8_t reg);
+  static void IRAM_ATTR drdyISR();
 
 public:
   GY87_HMC5883L();
 
+  void init(uint8_t sda, uint8_t scl);
   void setAveraging(AvgMode avg);
   void setOutputRate(OutputRate rate);
   void setBiasMode(BiasMode bias);
   void setGain(GainMode gain);
   void setMeasMode(MeasMode meas);
+
+  void attachDRDYInterrupt(uint8_t pin);
+  bool isDataReady();
+  void IRAM_ATTR setDataReady();
+  void clearDataReady();
 
   void getRawAll();
   int16_t getRawX();
@@ -126,9 +141,9 @@ public:
   float getY();
   float getZ();
 
-private:
-  void writeRegister(uint8_t reg, uint8_t data);
-  uint8_t readRegister(uint8_t reg);
+  uint32_t getLatestDataTimeMs();
+  uint32_t getLatestDataTimeUs();
 };
+
 
 #endif
