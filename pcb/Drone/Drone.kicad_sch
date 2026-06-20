@@ -12,6 +12,200 @@
 		(comment 2 "Designer: Luu Gia Huy")
 	)
 	(lib_symbols
+		(symbol "AP2112K-3.3_1"
+			(pin_names
+				(offset 0.254)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "U"
+				(at -5.08 5.715 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "AP2112K-3.3"
+				(at 0 5.715 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:SOT-23-5"
+				(at 0 8.255 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" "https://www.diodes.com/assets/Datasheets/AP2112.pdf"
+				(at 0 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "600mA low dropout linear regulator, with enable pin, 3.8V-6V input voltage range, 3.3V fixed positive output, SOT-23-5"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "linear regulator ldo fixed positive"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "SOT?23?5*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "AP2112K-3.3_1_0_1"
+				(rectangle
+					(start -5.08 4.445)
+					(end 5.08 -5.08)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+			)
+			(symbol "AP2112K-3.3_1_1_1"
+				(pin power_in line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name "VIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 -7.62 90)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 0 0)
+					(length 2.54)
+					(name "EN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin no_connect line
+					(at 5.08 0 180)
+					(length 2.54)
+					(hide yes)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 7.62 2.54 180)
+					(length 2.54)
+					(name "VOUT"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Battery_Management:DW01A"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -5529,236 +5723,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Regulator_Linear:AP2112K-3.3"
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "U3"
-				(at -0.635 27.94 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "GY-87"
-				(at -0.635 25.4 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" "GY-87:GY-87"
-				(at -0.508 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "AP2112K-3.3_0_0"
-				(pin input line
-					(at 8.89 19.05 180)
-					(length 2.54)
-					(name "VCC_IN"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 8.89 16.51 180)
-					(length 2.54)
-					(name "3.3V"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 8.89 13.97 180)
-					(length 2.54)
-					(name "GND"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 8.89 11.43 180)
-					(length 2.54)
-					(name "SCL"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 8.89 8.89 180)
-					(length 2.54)
-					(name "SDA"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 8.89 6.35 180)
-					(length 2.54)
-					(name "FSYNC"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "6"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 8.89 3.81 180)
-					(length 2.54)
-					(name "INTA"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "7"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin input line
-					(at 8.89 1.27 180)
-					(length 2.54)
-					(name "DRDY"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "8"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(symbol "AP2112K-3.3_1_1"
-				(rectangle
-					(start -7.62 21.59)
-					(end 6.35 -1.27)
-					(stroke
-						(width 0)
-						(type solid)
-					)
-					(fill
-						(type background)
-					)
-				)
-				(text "GY-87\n"
-					(at -3.302 10.922 0)
-					(effects
-						(font
-							(size 1.27 1.27)
-							(thickness 0.254)
-							(bold yes)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "Regulator_Linear:ME6211C33M5"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -8042,6 +8006,18 @@
 		)
 		(uuid "26a3c4fb-ff42-4485-a17b-db245f2c2e29")
 	)
+	(text "10DOF IMU"
+		(exclude_from_sim no)
+		(at 221.996 163.068 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+				(thickness 1.2)
+				(bold yes)
+			)
+		)
+		(uuid "42360633-8059-4a6d-a856-7bcd87be6aa2")
+	)
 	(text "Lipo 1S\n3.7-4.2V"
 		(exclude_from_sim no)
 		(at 196.342 47.244 0)
@@ -8239,7 +8215,7 @@
 		(uuid "55719cd7-26a7-40de-b036-0c8cba9cd814")
 	)
 	(junction
-		(at 251.46 212.09)
+		(at 238.76 176.53)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "5870dc46-13b0-49c5-b047-57e1ca3a070d")
@@ -8335,7 +8311,7 @@
 		(uuid "c13b0bfb-de6a-4168-9185-d077f1bb7cc5")
 	)
 	(junction
-		(at 251.46 217.17)
+		(at 238.76 181.61)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "c950c46c-33b8-4635-a593-dae076c4e4ba")
@@ -8692,7 +8668,7 @@
 	)
 	(wire
 		(pts
-			(xy 240.03 222.25) (xy 251.46 222.25)
+			(xy 227.33 186.69) (xy 238.76 186.69)
 		)
 		(stroke
 			(width 0)
@@ -8702,7 +8678,7 @@
 	)
 	(wire
 		(pts
-			(xy 240.03 219.71) (xy 251.46 219.71)
+			(xy 227.33 184.15) (xy 238.76 184.15)
 		)
 		(stroke
 			(width 0)
@@ -8952,7 +8928,7 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 219.71) (xy 251.46 220.98)
+			(xy 238.76 184.15) (xy 238.76 185.42)
 		)
 		(stroke
 			(width 0)
@@ -9102,7 +9078,7 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 220.98) (xy 256.54 220.98)
+			(xy 238.76 185.42) (xy 243.84 185.42)
 		)
 		(stroke
 			(width 0)
@@ -9262,7 +9238,7 @@
 	)
 	(wire
 		(pts
-			(xy 243.84 212.09) (xy 251.46 212.09)
+			(xy 231.14 176.53) (xy 238.76 176.53)
 		)
 		(stroke
 			(width 0)
@@ -9472,7 +9448,7 @@
 	)
 	(wire
 		(pts
-			(xy 240.03 217.17) (xy 251.46 217.17)
+			(xy 227.33 181.61) (xy 238.76 181.61)
 		)
 		(stroke
 			(width 0)
@@ -9552,7 +9528,7 @@
 	)
 	(wire
 		(pts
-			(xy 240.03 229.87) (xy 256.54 229.87)
+			(xy 227.33 194.31) (xy 243.84 194.31)
 		)
 		(stroke
 			(width 0)
@@ -9602,7 +9578,7 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 217.17) (xy 252.73 217.17)
+			(xy 238.76 181.61) (xy 240.03 181.61)
 		)
 		(stroke
 			(width 0)
@@ -9652,7 +9628,7 @@
 	)
 	(wire
 		(pts
-			(xy 240.03 214.63) (xy 243.84 214.63)
+			(xy 227.33 179.07) (xy 231.14 179.07)
 		)
 		(stroke
 			(width 0)
@@ -10282,7 +10258,7 @@
 	)
 	(wire
 		(pts
-			(xy 252.73 212.09) (xy 251.46 212.09)
+			(xy 240.03 176.53) (xy 238.76 176.53)
 		)
 		(stroke
 			(width 0)
@@ -10512,7 +10488,7 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 222.25) (xy 251.46 223.52)
+			(xy 238.76 186.69) (xy 238.76 187.96)
 		)
 		(stroke
 			(width 0)
@@ -10622,7 +10598,7 @@
 	)
 	(wire
 		(pts
-			(xy 243.84 212.09) (xy 243.84 214.63)
+			(xy 231.14 176.53) (xy 231.14 179.07)
 		)
 		(stroke
 			(width 0)
@@ -10732,7 +10708,7 @@
 	)
 	(wire
 		(pts
-			(xy 251.46 223.52) (xy 256.54 223.52)
+			(xy 238.76 187.96) (xy 243.84 187.96)
 		)
 		(stroke
 			(width 0)
@@ -11121,7 +11097,7 @@
 		(uuid "0d53063c-c019-4580-95df-f32edfa1a10c")
 	)
 	(label "SDA0"
-		(at 256.54 223.52 0)
+		(at 243.84 187.96 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -11701,7 +11677,7 @@
 		(uuid "dfd89dd7-641b-40ae-8634-7a872b51cd39")
 	)
 	(label "DRDY"
-		(at 256.54 229.87 0)
+		(at 243.84 194.31 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -11771,7 +11747,7 @@
 		(uuid "fb7fd858-3c14-46c2-b3e3-9117880720d6")
 	)
 	(label "SCL0"
-		(at 256.54 220.98 0)
+		(at 243.84 185.42 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -13526,6 +13502,96 @@
 		)
 	)
 	(symbol
+		(lib_name "AP2112K-3.3_1")
+		(lib_id "Regulator_Linear:AP2112K-3.3")
+		(at 255.27 110.49 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "34debea8-4698-443b-92e9-27f8e043de17")
+		(property "Reference" "U7"
+			(at 255.27 101.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "AP2112K-3.3"
+			(at 255.27 104.14 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23-5"
+			(at 255.27 102.235 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/AP2112.pdf"
+			(at 255.27 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "600mA low dropout linear regulator, with enable pin, 3.8V-6V input voltage range, 3.3V fixed positive output, SOT-23-5"
+			(at 255.27 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "76c7c851-f087-4fa6-b251-2a629e769bf8")
+		)
+		(pin "2"
+			(uuid "4588d72c-086b-426d-933d-59f51ccb3ac3")
+		)
+		(pin "3"
+			(uuid "fd9c500d-50b3-418a-941b-a28ceb19aa67")
+		)
+		(pin "5"
+			(uuid "32e01820-cdc8-4044-a99e-d53ef8caa2b5")
+		)
+		(pin "4"
+			(uuid "46a5f981-a88c-486f-af5c-8db72c74e17b")
+		)
+		(instances
+			(project "Drone"
+				(path "/5ef9835f-9784-4760-b509-6732c7d681d2"
+					(reference "U7")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:VBUS")
 		(at 90.17 64.77 0)
 		(unit 1)
@@ -14552,7 +14618,7 @@
 	)
 	(symbol
 		(lib_id "Device:C_Small")
-		(at 251.46 214.63 0)
+		(at 238.76 179.07 0)
 		(mirror y)
 		(unit 1)
 		(body_style 1)
@@ -14563,7 +14629,7 @@
 		(dnp no)
 		(uuid "4e8a88c4-fb24-4dc2-b41b-4fa5db1c0e7a")
 		(property "Reference" "C22"
-			(at 248.92 213.3662 0)
+			(at 236.22 177.8062 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -14574,7 +14640,7 @@
 			)
 		)
 		(property "Value" "0.1u"
-			(at 248.92 215.9062 0)
+			(at 236.22 180.3462 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -14585,7 +14651,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 251.46 214.63 0)
+			(at 238.76 179.07 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -14596,7 +14662,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 251.46 214.63 0)
+			(at 238.76 179.07 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -14607,7 +14673,7 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor, small symbol"
-			(at 251.46 214.63 0)
+			(at 238.76 179.07 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -14618,7 +14684,7 @@
 			)
 		)
 		(property "Supplier" ""
-			(at 251.46 214.63 0)
+			(at 238.76 179.07 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15728,7 +15794,7 @@
 	)
 	(symbol
 		(lib_id "GY-87:GY-87")
-		(at 231.14 231.14 0)
+		(at 218.44 195.58 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -15738,7 +15804,7 @@
 		(dnp no)
 		(uuid "768bb791-efaa-42de-ad78-43928194f6bb")
 		(property "Reference" "U3"
-			(at 230.632 205.486 0)
+			(at 217.932 169.926 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -15748,7 +15814,7 @@
 			)
 		)
 		(property "Value" "GY-87"
-			(at 230.632 208.026 0)
+			(at 217.932 172.466 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -15758,7 +15824,7 @@
 			)
 		)
 		(property "Footprint" "GY-87:GY-87"
-			(at 230.632 231.14 0)
+			(at 217.932 195.58 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15769,7 +15835,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 231.14 231.14 0)
+			(at 218.44 195.58 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -15780,7 +15846,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 231.14 231.14 0)
+			(at 218.44 195.58 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -16010,7 +16076,7 @@
 	)
 	(symbol
 		(lib_id "power:+3V3")
-		(at 252.73 212.09 270)
+		(at 240.03 176.53 270)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -16021,7 +16087,7 @@
 		(fields_autoplaced yes)
 		(uuid "7c4611ba-d79a-4991-851e-078d769aa48a")
 		(property "Reference" "#PWR013"
-			(at 248.92 212.09 0)
+			(at 236.22 176.53 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -16032,7 +16098,7 @@
 			)
 		)
 		(property "Value" "+3V3_SENS"
-			(at 256.54 212.0899 90)
+			(at 243.84 176.5299 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -16043,7 +16109,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 252.73 212.09 0)
+			(at 240.03 176.53 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -16054,7 +16120,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 252.73 212.09 0)
+			(at 240.03 176.53 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -16065,7 +16131,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3V3\""
-			(at 252.73 212.09 0)
+			(at 240.03 176.53 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17719,7 +17785,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 252.73 217.17 90)
+		(at 240.03 181.61 90)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -17730,7 +17796,7 @@
 		(fields_autoplaced yes)
 		(uuid "9ff07885-3574-48de-aaa5-3af8e094b39e")
 		(property "Reference" "#PWR058"
-			(at 259.08 217.17 0)
+			(at 246.38 181.61 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17741,7 +17807,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 256.54 217.1699 90)
+			(at 243.84 181.6099 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -17752,7 +17818,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 252.73 217.17 0)
+			(at 240.03 181.61 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17763,7 +17829,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 252.73 217.17 0)
+			(at 240.03 181.61 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17774,7 +17840,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 252.73 217.17 0)
+			(at 240.03 181.61 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19995,104 +20061,6 @@
 			(project "Drone"
 				(path "/5ef9835f-9784-4760-b509-6732c7d681d2"
 					(reference "#PWR044")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Regulator_Linear:AP2112K-3.3")
-		(at 255.27 110.49 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "ca7b6f3e-a0b8-4be2-b639-557c0e096e5f")
-		(property "Reference" "U3"
-			(at 254.635 82.55 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GY-87"
-			(at 254.635 85.09 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "GY-87:GY-87"
-			(at 254.762 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 255.27 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 255.27 110.49 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "3"
-			(uuid "b55fa4c4-3006-470e-9735-b6b04ae48d3b")
-		)
-		(pin "5"
-			(uuid "e9c8935e-35ae-4104-9704-f4b9b2d78ee5")
-		)
-		(pin "4"
-			(uuid "8ef33600-88a3-4edb-a7a8-7403db4a55e3")
-		)
-		(pin "1"
-			(uuid "697d29e2-3e6d-47df-a8d9-d03d9e05732f")
-		)
-		(pin "2"
-			(uuid "76562ed2-8d87-451d-907e-0382d8bf6803")
-		)
-		(pin "7"
-			(uuid "e6fd0e0a-7c3a-4702-b722-4789cb644234")
-		)
-		(pin "8"
-			(uuid "4631168a-5d02-4134-bf18-9e0b6330de14")
-		)
-		(pin "6"
-			(uuid "cdfeef2c-678c-4c52-8cd3-452ba7fab4b4")
-		)
-		(instances
-			(project "Drone"
-				(path "/5ef9835f-9784-4760-b509-6732c7d681d2"
-					(reference "U3")
 					(unit 1)
 				)
 			)
