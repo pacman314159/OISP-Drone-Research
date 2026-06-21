@@ -18,7 +18,7 @@ float gyroXSamples[NUM_READS] = {0}, gyroYSamples[NUM_READS] = {0}, gyroZSamples
 float magXSamples[NUM_READS] = {0},  magYSamples[NUM_READS] = {0},  magZSamples[NUM_READS] = {0};
 float tempSamples[NUM_READS]  = {0};
 
-uint32_t startTime, endTime;
+uint32_t startTimeUs, endTime;
 uint32_t timeInstances[NUM_READS] = {0};
 
 void setup(){
@@ -40,7 +40,7 @@ void setup(){
   delay(100);
 
   //------MEASURE DURATION (Nhien's version)--------//
-  startTime = micros();
+  startTimeUs = micros();
   for(int i = 0; i < NUM_READS; i++){
     // mpu.getRawAll();
     // mpu.getAllData(
@@ -59,66 +59,8 @@ void setup(){
   }
   endTime = micros();
 
-  // //------MEASURE DURATION FOR ACCELEROMETER AND GYROSCOPE (Cat's version)--------//
-  // startTime = micros();
-  // for(int i = 0; i < NUM_READS; i++){
-  //   mpu.getRawAll();
-  //   mpu.getAllData(
-  //     accXSamples[i], accYSamples[i], accZSamples[i],
-  //     tempSamples[i],
-  //     gyroXSamples[i], gyroYSamples[i], gyroZSamples[i]
-  //   );
-
-  //   // hmc.setMeasMode(SINGLE_MODE);
-  //   // hmc.getRawAll();
-  //   // hmc.getAllData(magXSamples[i], magYSamples[i], magZSamples[i]);
-
-  //   timeInstances[i] = micros();
-  //   delayMicroseconds(SAMPLING_INTERVAL_US);
-  // }
-  // endTime = micros();
-
-  //------MEASURE DURATION FOR GYROSCOPE ONLY--------//
-  // startTime = micros();
-  // for(int i = 0; i < NUM_READS; i++){
-  //   mpu.getRawAll();
-  //   mpu.getAllData(
-  //     accXSamples[i], accYSamples[i], accZSamples[i],
-  //     tempSamples[i],
-  //     gyroXSamples[i], gyroYSamples[i], gyroZSamples[i]
-  //   );
-
-  //   // hmc.setMeasMode(SINGLE_MODE);
-  //   // hmc.getRawAll();
-  //   // hmc.getAllData(magXSamples[i], magYSamples[i], magZSamples[i]);
-
-  //   timeInstances[i] = micros();
-  //   delayMicroseconds(SAMPLING_INTERVAL_US);
-  // }
-  // endTime = micros();
-
-  //
-  // Serial.println("timeInstance, gyroX, gyroY, gyroZ, accX, accY, accZ, temp");
-  //
-  // float aX, aY, aZ, t, gX, gY, gZ;
-  //
-  // for(uint32_t i = 0; i < NUM_READS; i++){
-  //   mpu.getRawAll();
-  //   mpu.getAllData(aX, aY, aZ, t, gX, gY, gZ);
-  //
-  //   // Print immediately — no array storage needed
-  //   Serial.printf("%lu, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f, %.6f\n",
-  //                 micros(), gX, gY, gZ, aX, aY, aZ, t);
-  //
-  //   delayMicroseconds(SAMPLING_INTERVAL_US);
-  // }
-
-//   Serial.println("timeInstance, magX, magY, magZ");
-//   for(int i = 0; i < NUM_READS; i++)
-//     Serial.printf("%d, %.9f, %.9f, %.9f\n",
-//                   timeInstances[i],
-//                   magXSamples[i], magYSamples[i], magZSamples[i]);
 }
 
-void loop(){}
+void loop(){
+}
 
