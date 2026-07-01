@@ -1,0 +1,103 @@
+# **FCDatMon (Flight Controller Data Monitoring System)**
+
+**FCDatMon** is a high-performance, real-time telemetry visualization engine designed for the OISP Drone Research project. Built to handle high-frequency data streams (e.g., 600Hz IMU updates) from an ESP32-S3 flight controller, it provides a comprehensive configuration interface coupled with hardware-accelerated 2D and 3D rendering. 
+
+Unlike heavy IDE-based visualizers, FCDatMon prioritizes raw execution speed and deterministic thread management to ensure zero-lag data plotting during critical flight kinematics testing.
+
+## **🚀 Key Features**
+
+* **Hardware-Accelerated GUI:** Powered by DearPyGui (C++ Dear ImGui backend) for an ultra-fast, code-driven interface without the bloat of XML/UI designers. 
+* **Dynamic 2D Plotting:** Real-time plotting with support for modular grid layouts (from 1x1 up to 3x3). Features hardware-accelerated panning, zooming, and bounding-box selections natively. 
+* **Multi-Protocol Support:** Architected to seamlessly swap between: 
+  * **BLE (Bluetooth Low Energy):** Direct asynchronous connection to the ESP32-S3. 
+  * **LoRa / USB:** Serial communication through a LoRa ground module or direct USB payload. 
+* **Robust Session Management:** Caches custom plot configurations (50-color palette picker, dynamic axis labels, custom limits) and saves exact telemetry dashboard layouts to `.json` files in your chosen directory for rapid re-deployment.
+* **Raw Telemetry Logging:** Seamlessly capture incoming data from the transmitter and dump it directly into timestamped log files in any directory you choose (defaulting to `/captured_data/`).
+* **Fixed Resolution Centering:** FCDatMon automatically fetches system metrics to perfectly center its 1820x1020 viewport on launch for a distraction-free experience.
+
+## **🧠 System Architecture**
+
+FCDatMon utilizes a strict **Producer-Consumer Architecture** to ensure that heavy data ingestion never blocks the visual rendering loop.
+
+* **Producers (comms/):** Background threads handle I/O (BLE polling or Serial reading) and binary struct unpacking. 
+* **Core Buffers (core/):** Thread-safe circular buffers (Ring Buffers) utilizing numpy arrays safely hold the telemetry streams, preventing RAM overflows during high-frequency data dumps. 
+* **Consumers (gui/):** The main thread runs at a strict 60 FPS, slicing the latest data from the circular buffers and pushing it to the GPU for rendering.
+
+### **Directory Structure**
+
+```
+FCDatMon/  
+│  
+├── main.py                   # Application entry point and GUI context initialization  
+│  
+├── saved_setups/             # User saved layout states (.json)  
+├── captured_data/            # Captured raw telemetry data logs
+│  
+├── core/                     # Data management & Mathematics  
+│   ├── data_buffer.py        # Thread-safe circular buffers for high Hz telemetry  
+│   ├── state_manager.py      # Session cache and layout JSON serialization  
+│   └── math_engine.py        # Quat-to-Euler conversions, DSP, filtering  
+│  
+├── comms/                    # Hardware Interface (Producers)  
+│   ├── base_receiver.py      # Strategy pattern interface for receivers  
+│   ├── ble_receiver.py       # ESP32-S3 BLE Asyncio implementation  
+│   ├── lora_serial.py        # PySerial implementation  
+│   └── packet_parser.py      # Binary struct to dictionary unpacker  
+│  
+└── gui/                      # Visual Rendering (Consumers)  
+    ├── control_panel.py      # Control panel and configuration manager
+    ├── plot_2d_manager.py    # ImPlot 2D dynamic grid manager  
+    └── viewport_3d.py        # 3D spatial vector rendering
+```
+
+## **⚙️ Installation & Setup**
+
+### **Prerequisites**
+
+FCDatMon is built entirely in Python but relies on specific C++ wrapped libraries for performance. Ensure you have Python 3.10+ installed.
+
+### **Dependencies**
+
+Install the required packages using pip: 
+```bash
+pip install dearpygui numpy bleak pyserial
+```
+
+* `dearpygui`: GPU-accelerated immediate mode GUI. 
+* `numpy`: Used for high-speed circular buffers and mathematical operations. 
+* `bleak`: Cross-platform Bluetooth Low Energy client. 
+* `pyserial`: For reading LoRa/USB COM port data.
+
+## **🏁 Usage**
+
+To launch the monitoring system, run the main entry point from your terminal: 
+```bash
+python main.py
+```
+
+1. **Configure Hardware:** In the Control Panel, select your protocol (BLE, LoRa, USB) and specify the target MAC address or COM port. 
+2. **Set Layout:** Choose your desired grid size (e.g., 2x3). The UI will dynamically generate plot configurations. 
+3. **Connect:** Click `[ CONNECT ]` to spawn the background thread and begin data ingestion. 
+4. **Save/Load Layouts:** Enter a setup name and click `[ SAVE ]` to preserve your layout and axis configurations for future flights.
+5. **Capture Data:** Check the "Save Captured Data to Disk" box and select your desired folder to automatically log incoming telemetry into timestamped files.
+
+## **📦 Building an Executable**
+
+FCDatMon can be easily compiled into a single, standalone executable `.exe` file so it can be deployed to other machines without installing Python.
+
+1. **Install PyInstaller:**
+   ```bash
+   pip install pyinstaller
+   ```
+2. **Compile:**
+   Run the following command in the root project directory:
+   ```bash
+   pyinstaller --noconsole --onefile --distpath . --name FCDatMon main.py
+   ```
+3. **Locate:**
+   By using the `--distpath .` flag, the final standalone `FCDatMon.exe` will be generated directly in the root of your `/FCDatMon` folder, alongside your `main.py` file.
+
+## **🚧 Current Status**
+
+* **Phase 1 (Complete):** Core GUI framework built using DearPyGui. Session management (saving/loading layouts dynamically) and telemetry dumping systems are fully functional. UI is highly polished with robust numeric input validation, an interactive 50-color distinct palette picker, custom window anchoring, and dynamic layout handling.
+* **Phase 2 (WIP):** Implementation of the background telemetry producers (BLE/Serial) in `comms/` and ring buffers in `core/`.
