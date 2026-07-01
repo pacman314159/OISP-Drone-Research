@@ -34,6 +34,7 @@ venv.bak/
 .idea/
 .vscode/
 *.swp
+.agents/
 
 # FCDatMon Specific Data
 /saved_setups/

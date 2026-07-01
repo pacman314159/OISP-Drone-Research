@@ -3,6 +3,7 @@ import random
 import datetime
 import dearpygui.dearpygui as dpg
 import serial.tools.list_ports
+from core.serial_reader import SerialReader
 from core.state_manager import save_layout, load_layout, get_available_layouts, delete_layout
 from gui.plot_2d_manager import update_plots
 
@@ -15,16 +16,20 @@ DEFAULT_LAYOUT = "1x2"
 COLOR_TITLE = (0, 255, 0)
 COLOR_SECTION_HEADING = (255, 255, 100) # Bright yellow for all sections
 COLOR_SESSION_HEADING = (255, 255, 100) 
-COLOR_AXIS_LBL = (150, 255, 150)
+COLOR_H1 = (220, 200, 100)
+COLOR_AXIS_LBL = (130, 200, 130)
 COLOR_LOG = (255, 255, 100)
 
 THEME_RED_BTN = "theme_red_btn"
 THEME_GREEN_BTN = "theme_green_btn"
 
+CURRENT_READER = None
+
 WINDOW_WIDTH = 420
 WINDOW_HEIGHT = 700
 
 PLOT_CACHE = {}
+PLOT_CHASE_ACTIVE = {}
 
 PLOT_PALETTE = [
     # Top 20 (Most Used)
@@ -58,6 +63,9 @@ def _setup_themes():
 import re
 
 def _hex_to_rgba(hex_str):
+    """
+    Safely parses a hexadecimal color string into an RGBA integer tuple used by DearPyGui.
+    """
     hex_str = str(hex_str).strip().lstrip('#')
     if len(hex_str) != 6:
         return (255, 255, 255, 255)
@@ -66,11 +74,67 @@ def _hex_to_rgba(hex_str):
     except ValueError:
         return (255, 255, 255, 255)
 
-def _log_to_console(message):
+def _log_to_console(msg):
+    """
+    Appends a formatted string to the application's internal system log window.
+    """
+    print(msg)
     current_text = dpg.get_value("console_output")
-    dpg.set_value("console_output", f"{current_text}\n{message}")
+    dpg.set_value("console_output", f"{current_text}\n{msg}")
+
+def _global_chase_callback(sender, app_data, user_data):
+    """
+    Toggles the chase state for ALL plots. If any plot is not chasing, it forces all to chase.
+    Otherwise, it pauses chasing for all.
+    """
+    any_off = any(not PLOT_CHASE_ACTIVE.get(i, True) for i in PLOT_CACHE.keys())
+    new_state = True if any_off else False
+    for i in PLOT_CACHE.keys():
+        PLOT_CHASE_ACTIVE[i] = new_state
+        if dpg.does_item_exist(f"btn_local_chase_{i}"):
+            dpg.bind_item_theme(f"btn_local_chase_{i}", THEME_GREEN_BTN if new_state else 0)
+    if dpg.does_item_exist("btn_global_chase"):
+        dpg.bind_item_theme("btn_global_chase", THEME_GREEN_BTN if new_state else 0)
+
+def _global_fit_y_callback(sender, app_data, user_data):
+    """
+    Triggers DearPyGui's auto-fit function on all Y-axes across every rendered subplot,
+    snapping the view to the current data boundaries.
+    """
+    for i in PLOT_CACHE.keys():
+        if dpg.does_item_exist(f"plot_{i}_y"):
+            dpg.fit_axis_data(f"plot_{i}_y")
+
+def _local_chase_callback(sender, app_data, user_data):
+    """
+    Toggles the chase state for a specific individual plot. Updates the global chase button state 
+    if this action causes all plots to be synced.
+    """
+    plot_id = user_data
+    current_state = PLOT_CHASE_ACTIVE.get(plot_id, True)
+    new_state = not current_state
+    PLOT_CHASE_ACTIVE[plot_id] = new_state
+    
+    if dpg.does_item_exist(f"btn_local_chase_{plot_id}"):
+        dpg.bind_item_theme(f"btn_local_chase_{plot_id}", THEME_GREEN_BTN if new_state else 0)
+        
+    all_on = all(PLOT_CHASE_ACTIVE.get(i, True) for i in PLOT_CACHE.keys())
+    if dpg.does_item_exist("btn_global_chase"):
+        dpg.bind_item_theme("btn_global_chase", THEME_GREEN_BTN if all_on else 0)
+        
+def _local_fit_y_callback(sender, app_data, user_data):
+    """
+    Triggers DearPyGui's auto-fit function for a specific plot's Y-axis.
+    """
+    plot_id = user_data
+    if dpg.does_item_exist(f"plot_{plot_id}_y"):
+        dpg.fit_axis_data(f"plot_{plot_id}_y")
 
 def get_com_ports():
+    """
+    Scans the system for available serial COM ports.
+    Returns a list of port names or a fallback list if scanning fails.
+    """
     try:
         ports = [p.device for p in serial.tools.list_ports.comports()]
         if not ports:
@@ -80,14 +144,21 @@ def get_com_ports():
         return ["COM1", "COM2", "COM3"]
 
 def _rescan_ports_callback(sender, app_data, user_data):
+    """
+    Callback triggered when the COM port dropdown is clicked. Re-scans for new devices.
+    """
     if dpg.does_item_exist("combo_target_port"):
         ports = get_com_ports()
         dpg.configure_item("combo_target_port", items=ports)
 
 def _protocol_changed_callback(sender, app_data):
+    """
+    Updates the connection UI fields based on whether USB (Serial) or a wireless protocol is selected.
+    """
     protocol = dpg.get_value("combo_protocol")
     if protocol == "USB (Serial)":
         dpg.show_item("combo_target_port")
+        dpg.show_item("combo_baudrate")
         dpg.hide_item("input_target")
         ports = get_com_ports()
         dpg.configure_item("combo_target_port", items=ports)
@@ -96,46 +167,101 @@ def _protocol_changed_callback(sender, app_data):
     else:
         dpg.show_item("input_target")
         dpg.hide_item("combo_target_port")
+        dpg.hide_item("combo_baudrate")
 
 def _connect_callback(sender, app_data, user_data):
+    """
+    Initiates a connection to the data source using the SerialReader engine.
+    Updates the UI themes to reflect the connected state.
+    """
+    global CURRENT_READER
     protocol = dpg.get_value("combo_protocol")
     if protocol == "USB (Serial)":
         target = dpg.get_value("combo_target_port")
+        baudrate = int(dpg.get_value("combo_baudrate"))
     else:
         target = dpg.get_value("input_target")
-    _log_to_console(f"[*] Initiating {protocol} to '{target}'...")
+        baudrate = 115200
+        
+    _log_to_console(f"[*] Initiating {protocol} to '{target}' (Baud: {baudrate})...")
+    
+    if CURRENT_READER:
+        CURRENT_READER.stop()
+        
+    CURRENT_READER = SerialReader(target, baudrate)
+    success, msg = CURRENT_READER.start()
+    if success:
+        _log_to_console(f"[+] {msg}")
+        dpg.bind_item_theme("btn_connect", 0)
+        dpg.bind_item_theme("btn_terminate", THEME_RED_BTN)
+    else:
+        _log_to_console(f"[!] Failed to connect: {msg}")
+        CURRENT_READER = None
 
 def _disconnect_callback(sender, app_data, user_data):
-    _log_to_console("[*] Connection terminated.")
+    """
+    Terminates the active connection and stops the SerialReader background thread safely.
+    """
+    global CURRENT_READER
+    if CURRENT_READER:
+        CURRENT_READER.stop()
+        CURRENT_READER = None
+        _log_to_console("[*] Connection terminated.")
+        dpg.bind_item_theme("btn_connect", THEME_GREEN_BTN)
+        dpg.bind_item_theme("btn_terminate", 0)
+    else:
+        _log_to_console("[*] No active connection to terminate.")
+
+def _clear_callback(sender, app_data, user_data):
+    """
+    Flushes all historical data from the TelemetryDataManager and resets the plot buffers.
+    """
+    from core.data_manager import DATA_MANAGER
+    DATA_MANAGER.clear()
+    
+    for i in list(PLOT_CACHE.keys()):
+        cfg = PLOT_CACHE[i]
+        series_list = cfg.get("series", [])
+        for j in range(len(series_list)):
+            series_tag = f"plot_{i}_series_{j+1}"
+            if dpg.does_item_exist(series_tag):
+                dpg.set_value(series_tag, [[], []])
+    _log_to_console("[*] Plot data cleared.")
 
 def _get_hex_color():
+    """
+    Returns a random hex color from the predefined PLOT_PALETTE to assign to new series.
+    """
     return random.choice(PLOT_PALETTE)
 
 def _save_ui_to_cache():
-    for i in list(PLOT_CACHE.keys()):
+    """
+    Reads all dynamic input fields (titles, series names, colors, etc.) from the DearPyGui
+    item registry and stores them into the global PLOT_CACHE dictionary.
+    """
+    for i in PLOT_CACHE.keys():
         if dpg.does_item_exist(f"p{i}_title"):
             series_list = []
-            j = 0
-            while True:
-                name_tag = f"p{i}_s{j}_name"
-                if not dpg.does_item_exist(name_tag):
-                    break
-                s_name = dpg.get_value(name_tag)
-                s_unit = dpg.get_value(f"p{i}_s{j}_unit")
-                s_color = dpg.get_value(f"p{i}_s{j}_color")
-                series_list.append({"name": s_name, "unit": s_unit, "color": s_color})
+            j = 1
+            while dpg.does_item_exist(f"p{i}_s{j}_unit"):
+                series_list.append({
+                    "name": dpg.get_value(f"p{i}_s{j}_name"),
+                    "unit": dpg.get_value(f"p{i}_s{j}_unit"),
+                    "width": dpg.get_value(f"p{i}_s{j}_width"),
+                    "color": dpg.get_value(f"p{i}_s{j}_color")
+                })
                 j += 1
                 
             PLOT_CACHE[i] = {
                 "title": dpg.get_value(f"p{i}_title"),
-                "v_auto_scale": dpg.get_value(f"p{i}_v_auto_scale"),
-                "v_min": dpg.get_value(f"p{i}_v_min"),
-                "v_max": dpg.get_value(f"p{i}_v_max"),
-                "h_unit": dpg.get_value(f"p{i}_h_unit"),
                 "series": series_list
             }
 
 def _apply_layout_callback(sender=None, app_data=None, user_data=None):
+    """
+    Calculates the number of required plots based on the selected Grid Layout (e.g., 2x3 = 6).
+    Trims excess plots or initializes new ones, rebuilds the settings UI, and updates the grid.
+    """
     _save_ui_to_cache()
     
     layout = dpg.get_value("combo_layout")
@@ -151,24 +277,35 @@ def _apply_layout_callback(sender=None, app_data=None, user_data=None):
         if i not in PLOT_CACHE:
             PLOT_CACHE[i] = {
                 "title": f"Plot {i}",
-                "v_auto_scale": False,
-                "v_min": -180.0, "v_max": 180.0,
-                "h_unit": "seconds",
                 "series": [
-                    { "name": "Y-Axis", "unit": "u", "color": _get_hex_color() }
+                    { "name": "Y-Axis", "unit": "ul", "width": 2.0, "color": _get_hex_color() }
                 ]
             }
+            PLOT_CHASE_ACTIVE[i] = True
             
     _rebuild_plot_ui()
     update_plots(layout, PLOT_CACHE)
     _log_to_console(f"[*] Grid set to {layout} ({count} plots)")
 
+def _layout_changed_callback(sender, app_data, user_data):
+    """
+    Callback wrapper for when the Grid Layout dropdown value is changed by the user.
+    """
+    _apply_layout_callback()
+
 def _plot_config_changed(sender=None, app_data=None, user_data=None):
+    """
+    Callback for any text/float modification in the plot settings menu.
+    Immediately saves changes to cache and triggers a plot rebuild.
+    """
     _save_ui_to_cache()
     layout = dpg.get_value("combo_layout")
     update_plots(layout, PLOT_CACHE)
 
 def _hex_input_changed(sender, app_data, user_data):
+    """
+    Validates manual hex color text input and updates the corresponding UI color box.
+    """
     i, j = user_data
     hex_val = str(app_data).strip()
     if not hex_val.startswith("#"):
@@ -179,6 +316,9 @@ def _hex_input_changed(sender, app_data, user_data):
         _plot_config_changed()
 
 def _palette_color_clicked(sender, app_data, user_data):
+    """
+    Callback when a color is clicked inside the pop-up palette. Updates the hex input box.
+    """
     i, j, color_hex = user_data
     if dpg.does_item_exist(f"p{i}_s{j}_color"):
         dpg.set_value(f"p{i}_s{j}_color", color_hex)
@@ -187,6 +327,9 @@ def _palette_color_clicked(sender, app_data, user_data):
     _plot_config_changed()
 
 def _add_series_callback(sender, app_data, user_data):
+    """
+    Appends a new series configuration object to a specific plot and rebuilds the UI and grid.
+    """
     i = user_data
     _save_ui_to_cache()
     if "series" not in PLOT_CACHE[i]:
@@ -195,30 +338,30 @@ def _add_series_callback(sender, app_data, user_data):
     new_idx = len(PLOT_CACHE[i]["series"]) + 1
     PLOT_CACHE[i]["series"].append({
         "name": f"Series {new_idx}", 
-        "unit": "u", 
+        "unit": "ul", 
+        "width": 2.0,
         "color": _get_hex_color()
     })
     _rebuild_plot_ui()
     _plot_config_changed()
 
 def _delete_series_callback(sender, app_data, user_data):
+    """
+    Removes a specific series configuration from a plot and reconstructs the layout.
+    """
     i, j = user_data
     _save_ui_to_cache()
     if "series" in PLOT_CACHE[i] and 0 <= j < len(PLOT_CACHE[i]["series"]):
         PLOT_CACHE[i]["series"].pop(j)
     _rebuild_plot_ui()
-    _plot_config_changed()
-
-def _auto_scale_changed_callback(sender, app_data, user_data):
-    i = user_data
-    is_auto = dpg.get_value(sender)
-    if dpg.does_item_exist(f"p{i}_v_min"):
-        dpg.configure_item(f"p{i}_v_min", enabled=not is_auto, readonly=is_auto)
-    if dpg.does_item_exist(f"p{i}_v_max"):
-        dpg.configure_item(f"p{i}_v_max", enabled=not is_auto, readonly=is_auto)
-    _plot_config_changed()
+    layout_str = dpg.get_value("combo_layout")
+    update_plots(layout_str, PLOT_CACHE)
 
 def _rebuild_plot_ui():
+    """
+    Dynamically recreates the Plot Settings tree UI based on the current PLOT_CACHE state,
+    including inputs for series titles, units, line widths, and colors.
+    """
     expanded_states = {}
     for i in PLOT_CACHE.keys():
         tag = f"p{i}_tree"
@@ -237,21 +380,24 @@ def _rebuild_plot_ui():
             for j, s in enumerate(series_list):
                 with dpg.group(horizontal=True):
                     dpg.add_text(f"#{j+1}")
-                    dpg.add_input_text(width=50, default_value=s.get("name", ""), tag=f"p{i}_s{j}_name", callback=_plot_config_changed)
+                    dpg.add_input_text(width=45, default_value=s.get("name", ""), tag=f"p{i}_s{j+1}_name", callback=_plot_config_changed)
                     dpg.add_text("Unit:")
-                    dpg.add_input_text(width=30, default_value=s.get("unit", ""), tag=f"p{i}_s{j}_unit", callback=_plot_config_changed)
+                    dpg.add_input_text(width=25, default_value=s.get("unit", ""), tag=f"p{i}_s{j+1}_unit", callback=_plot_config_changed)
                     
+                with dpg.group(horizontal=True):
+                    dpg.add_text("Width:")
+                    dpg.add_input_text(width=35, default_value=str(s.get("width", 2.0)), tag=f"p{i}_s{j+1}_width", callback=_plot_config_changed)
                     dpg.add_text("Color:")
-                    dpg.add_input_text(width=65, default_value=s.get("color", "#00FF00"), tag=f"p{i}_s{j}_color", callback=_hex_input_changed, user_data=(i, j))
-                    dpg.add_color_button(default_value=_hex_to_rgba(s.get("color", "#00FF00")), tag=f"p{i}_s{j}_color_box", no_alpha=True, no_tooltip=True)
+                    dpg.add_input_text(width=60, default_value=s.get("color", "#00FF00"), tag=f"p{i}_s{j+1}_color", callback=_hex_input_changed, user_data=(i, j+1))
+                    dpg.add_color_button(default_value=_hex_to_rgba(s.get("color", "#00FF00")), tag=f"p{i}_s{j+1}_color_box", no_alpha=True, no_tooltip=True)
                     
-                    with dpg.popup(f"p{i}_s{j}_color_box", mousebutton=dpg.mvMouseButton_Left):
+                    with dpg.popup(f"p{i}_s{j+1}_color_box", mousebutton=dpg.mvMouseButton_Left):
                         dpg.add_text("Palette (50 Colors)")
                         for row in range(10):
                             with dpg.group(horizontal=True):
                                 for col in range(5):
                                     c_hex = PLOT_PALETTE[row*5 + col]
-                                    dpg.add_color_button(default_value=_hex_to_rgba(c_hex), callback=_palette_color_clicked, user_data=(i, j, c_hex), no_alpha=True)
+                                    dpg.add_color_button(default_value=_hex_to_rgba(c_hex), callback=_palette_color_clicked, user_data=(i, j+1, c_hex), no_alpha=True)
                     
                     dpg.add_button(label="[X]", callback=_delete_series_callback, user_data=(i, j))
                     dpg.bind_item_theme(dpg.last_item(), THEME_RED_BTN)
@@ -261,26 +407,20 @@ def _rebuild_plot_ui():
                 dpg.add_button(label="[+ Add Series]", callback=_add_series_callback, user_data=i)
             
             dpg.add_spacer(height=5)
-            dpg.add_text("Vertical Axis (Shared):", color=COLOR_AXIS_LBL)
-            
-            v_auto_scale = cfg.get("v_auto_scale", False)
-            with dpg.group(horizontal=True):
-                dpg.add_checkbox(label="Auto-scale", default_value=v_auto_scale, tag=f"p{i}_v_auto_scale", callback=_auto_scale_changed_callback, user_data=i)
-                
-            with dpg.group(horizontal=True):
-                dpg.add_text("Min:")
-                dpg.add_input_float(width=150, default_value=cfg["v_min"], tag=f"p{i}_v_min", callback=_plot_config_changed, enabled=not v_auto_scale, readonly=v_auto_scale)
-            with dpg.group(horizontal=True):
-                dpg.add_text("Max:")
-                dpg.add_input_float(width=150, default_value=cfg["v_max"], tag=f"p{i}_v_max", callback=_plot_config_changed, enabled=not v_auto_scale, readonly=v_auto_scale)
-                
-            dpg.add_text("Horizontal Axis (Time):", color=COLOR_AXIS_LBL)
-            with dpg.group(horizontal=True):
-                dpg.add_text("Unit:")
-                dpg.add_combo(["seconds", "milliseconds", "microseconds"], width=140, default_value=cfg.get("h_unit", "seconds"), tag=f"p{i}_h_unit", callback=_plot_config_changed)
             dpg.add_spacer(height=5)
+            with dpg.group(horizontal=True):
+                dpg.add_button(label="[Chase]", width=80, tag=f"btn_local_chase_{i}", callback=_local_chase_callback, user_data=i)
+                if PLOT_CHASE_ACTIVE.get(i, True):
+                    dpg.bind_item_theme(dpg.last_item(), THEME_GREEN_BTN)
+                
+                dpg.add_button(label="[Fit Y]", width=80, tag=f"btn_local_fit_y_{i}", callback=_local_fit_y_callback, user_data=i)
+            dpg.add_spacer(height=10)
 
 def _save_setup_callback(sender, app_data, user_data):
+    """
+    Validates user inputs and writes the entire current application state (protocol, layout, plot series) 
+    to a JSON configuration file.
+    """
     setup_name = dpg.get_value("input_setup_name").strip()
     if not setup_name:
         _log_to_console("[!] Error: Setup name cannot be empty.")
@@ -299,27 +439,14 @@ def _save_setup_callback(sender, app_data, user_data):
                 _log_to_console(f"[!] Error (Plot {i}, Series {j+1}): Invalid hex color '{s.get('color')}'. Format must be #RRGGBB.")
                 return
             s["color"] = hex_val.upper()
-        
-        # Validate Min/Max (replace comma with dot if string, then convert to float)
-        try:
-            v_min_str = str(cfg["v_min"]).replace(',', '.')
-            v_max_str = str(cfg["v_max"]).replace(',', '.')
-            v_min = float(v_min_str)
-            v_max = float(v_max_str)
-            if v_min >= v_max:
-                _log_to_console(f"[!] Error (Plot {i}): Vertical Min must be strictly less than Max.")
-                return
-            cfg["v_min"] = v_min
-            cfg["v_max"] = v_max
-        except ValueError:
-            _log_to_console(f"[!] Error (Plot {i}): Min and Max must be proper numerical values.")
-            return
 
     protocol = dpg.get_value("combo_protocol")
     target = dpg.get_value("combo_target_port") if protocol == "USB (Serial)" else dpg.get_value("input_target")
+    baudrate = dpg.get_value("combo_baudrate") if protocol == "USB (Serial)" else "115200"
     setup_data = {
         "protocol": protocol,
         "target": target,
+        "baudrate": baudrate,
         "layout": dpg.get_value("combo_layout"),
         "plots": PLOT_CACHE
     }
@@ -336,6 +463,10 @@ def _save_setup_callback(sender, app_data, user_data):
         _log_to_console(f"[!] Error saving config: {str(e)}")
 
 def _load_setup_callback(sender, app_data, user_data):
+    """
+    Reads a saved JSON configuration file and restores the application state, connection parameters,
+    and plot layouts.
+    """
     setup_name = dpg.get_value("input_setup_name")
     try:
         setup_data = load_layout(setup_name)
@@ -348,6 +479,7 @@ def _load_setup_callback(sender, app_data, user_data):
         _protocol_changed_callback(None, None)
         if loaded_proto == "USB (Serial)":
             dpg.set_value("combo_target_port", setup_data.get("target", ""))
+            dpg.set_value("combo_baudrate", setup_data.get("baudrate", "115200"))
         else:
             dpg.set_value("input_target", setup_data.get("target", ""))
             
@@ -355,14 +487,23 @@ def _load_setup_callback(sender, app_data, user_data):
         
         global PLOT_CACHE
         PLOT_CACHE.clear()
-        PLOT_CACHE.update(setup_data.get("plots", {}))
+        
+        loaded_plots = setup_data.get("plots", {})
+        for k, v in loaded_plots.items():
+            PLOT_CACHE[int(k)] = v
+            PLOT_CHASE_ACTIVE[int(k)] = True
         
         _rebuild_plot_ui()
+        update_plots(dpg.get_value("combo_layout"), PLOT_CACHE)
         _log_to_console(f"[*] Loaded config from '{setup_name}.json'")
     except Exception as e:
         _log_to_console(f"[!] Error loading config: {str(e)}")
 
 def _build_section_connection():
+    """
+    Constructs the '1. HARDWARE CONNECTION' section of the control panel, containing
+    protocol selection, port scanning, baudrate selection, and connect/disconnect buttons.
+    """
     dpg.add_text(">> 1. HARDWARE CONNECTION", color=COLOR_SECTION_HEADING)
     dpg.add_combo(["BLE (ESP32-S3)", "LoRa (Serial)", "USB (Serial)"], default_value=DEFAULT_PROTOCOL, label="Protocol", tag="combo_protocol", callback=_protocol_changed_callback)
     
@@ -373,29 +514,53 @@ def _build_section_connection():
         dpg.add_item_clicked_handler(callback=_rescan_ports_callback)
     dpg.bind_item_handler_registry("combo_target_port", "combo_click_handler")
     
+    dpg.add_combo(["9600", "19200", "38400", "57600", "115200", "230400", "460800", "921600"], default_value="115200", label="Baud Rate", tag="combo_baudrate", show=(DEFAULT_PROTOCOL=="USB (Serial)"))
     dpg.add_input_text(default_value=DEFAULT_TARGET, label="Target / Port", tag="input_target", show=(DEFAULT_PROTOCOL!="USB (Serial)"))
     
     with dpg.group(horizontal=True):
-        dpg.add_button(label="[CONNECT]", width=140, callback=_connect_callback)
+        dpg.add_button(label="[CONNECT]", width=140, callback=_connect_callback, tag="btn_connect")
         dpg.bind_item_theme(dpg.last_item(), THEME_GREEN_BTN)
         
-        dpg.add_button(label="[TERMINATE]", width=140, callback=_disconnect_callback)
-        dpg.bind_item_theme(dpg.last_item(), THEME_RED_BTN)
+        dpg.add_button(label="[TERMINATE]", width=110, callback=_disconnect_callback, tag="btn_terminate")
+        
+        dpg.add_button(label="[CLEAR]", width=70, callback=_clear_callback)
     dpg.add_spacer(height=20)
 
 def _build_section_layout():
-    dpg.add_text(">> 2. DATA VISUALIZATION", color=COLOR_SECTION_HEADING)
-    dpg.add_combo(["1x1", "1x2", "1x3", "2x2", "2x3", "3x3"], default_value=DEFAULT_LAYOUT, label="Grid Layout", tag="combo_layout", callback=_apply_layout_callback)
+    """
+    Constructs the '2. DATA VISUALIZATION' section of the control panel, containing
+    global view controls, grid layout dropdown, and individual plot configurations.
+    """
+    dpg.add_text(">> 2. DATA VISUALIZATION", color=COLOR_H1)
+    
+    with dpg.group(horizontal=True):
+        dpg.add_button(label="[CHASE STREAM]", width=140, tag="btn_global_chase", callback=_global_chase_callback)
+        # Check global state to apply theme on boot
+        all_on = all(PLOT_CHASE_ACTIVE.get(i, True) for i in PLOT_CACHE.keys())
+        if all_on:
+            dpg.bind_item_theme("btn_global_chase", THEME_GREEN_BTN)
+            
+        dpg.add_button(label="[FIT VERTICAL]", width=140, tag="btn_global_fit_y", callback=_global_fit_y_callback)
+    
+    dpg.add_spacer(height=5)
+    dpg.add_combo(["1x1", "1x2", "2x1", "2x2", "2x3", "3x2", "3x3"], default_value="1x2", label="Grid Layout", tag="combo_layout", callback=_layout_changed_callback)
     dpg.add_spacer(height=5)
     dpg.add_group(tag="plot_settings_container")
     dpg.add_spacer(height=20)
 
 def _listbox_double_clicked(sender, app_data, user_data):
+    """
+    Callback triggered when a saved setup is double-clicked in the session listbox.
+    Populates the setup name input field.
+    """
     selected = dpg.get_value("list_available_setups")
     if selected:
         dpg.set_value("input_setup_name", selected)
 
 def _delete_setup_callback(sender, app_data, user_data):
+    """
+    Deletes the currently selected setup configuration JSON file from disk.
+    """
     selected = dpg.get_value("list_available_setups")
     if selected:
         deleted = delete_layout(selected)
@@ -409,6 +574,9 @@ def _delete_setup_callback(sender, app_data, user_data):
             _log_to_console(f"[!] Could not find '{selected}.json' to delete.")
 
 def _folder_picker_callback(sender, app_data):
+    """
+    Callback when the user selects a custom folder to save/load setup configurations.
+    """
     from core.state_manager import set_config_dir, get_available_layouts
     folder_path = app_data['file_path_name']
     set_config_dir(folder_path)
@@ -418,6 +586,10 @@ def _folder_picker_callback(sender, app_data):
     _log_to_console(f"[*] Save folder changed to: {folder_path}")
 
 def _build_section_session():
+    """
+    Constructs the '3. SESSION STATE' section of the control panel, providing
+    controls for saving, loading, and deleting layout configurations.
+    """
     dpg.add_text(">> 3. SESSION STATE", color=COLOR_SECTION_HEADING)
     
     with dpg.file_dialog(directory_selector=True, show=False, callback=_folder_picker_callback, tag="folder_picker_dialog", width=500, height=400):
@@ -448,16 +620,39 @@ def _build_section_session():
     dpg.add_spacer(height=20)
 
 def _data_folder_picker_callback(sender, app_data):
+    """
+    Callback when the user selects a custom folder to save raw telemetry CSV data.
+    """
     folder_path = app_data['file_path_name']
     dpg.set_value("text_data_folder", f"Folder: {folder_path}")
     _log_to_console(f"[*] Data capture folder changed to: {folder_path}")
 
+def _buffer_size_changed(sender, app_data, user_data):
+    """
+    Validates and updates the global telemetry buffer capacity. Resizes the deques dynamically.
+    """
+    val = int(app_data)
+    if val < 100: val = 100
+    if val > 50000: val = 50000
+    dpg.set_value(sender, val)
+    from core.data_manager import DATA_MANAGER
+    DATA_MANAGER.resize_buffer(val)
+
 def _build_section_additional_settings():
+    """
+    Constructs the '4. ADDITIONAL SETTINGS' section, containing buffer sizing and
+    CSV data logging preferences.
+    """
     dpg.add_text(">> 4. ADDITIONAL SETTINGS", color=COLOR_SECTION_HEADING)
     
     with dpg.file_dialog(directory_selector=True, show=False, callback=_data_folder_picker_callback, tag="data_folder_picker_dialog", width=500, height=400):
         pass
 
+    with dpg.group(horizontal=True):
+        dpg.add_text("Buffer Size (Samples):")
+        dpg.add_input_int(default_value=10000, tag="input_buffer_size", callback=_buffer_size_changed, width=120)
+        
+    dpg.add_spacer(height=5)
     dpg.add_checkbox(label="Save Captured Data to Disk", default_value=False, tag="checkbox_save_data")
 
     with dpg.group(horizontal=True):
@@ -471,10 +666,17 @@ def _build_section_additional_settings():
 
 
 def _build_console():
+    """
+    Constructs the system log console text area at the bottom of the control panel.
+    """
     dpg.add_text(">> SYSTEM LOG", color=COLOR_LOG)
     dpg.add_input_text(multiline=True, default_value="[OK] FCDatMon Initialized.", width=-1, height=100, readonly=True, tag="console_output")
 
 def create_control_panel():
+    """
+    Master function that initializes the entire Control Panel window, its themes,
+    and all functional sections.
+    """
     _setup_themes()
     with dpg.window(label="Control Panel", tag="ControlPanel_Window", width=WINDOW_WIDTH, height=970, pos=[0,0], no_close=True, no_move=True, no_collapse=True, min_size=[WINDOW_WIDTH, 200], max_size=[WINDOW_WIDTH, 970]):
         with dpg.group(horizontal=True):

@@ -4,6 +4,9 @@ import json
 CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "saved_setups")
 
 def set_config_dir(new_path: str):
+    """
+    Updates the global configuration directory where setup files are saved and loaded.
+    """
     global CONFIG_DIR
     CONFIG_DIR = new_path
 

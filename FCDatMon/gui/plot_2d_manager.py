@@ -5,6 +5,10 @@ SUBPLOT_TAG = "PlotManager_Subplots"
 PLOT_THEME_TAG = "theme_light_plots"
 
 def _hex_to_rgba(hex_str):
+    """
+    Safely parses a hexadecimal color string (e.g. '#FF0000') into an RGBA integer tuple (255, 0, 0, 255)
+    used internally by DearPyGui for rendering.
+    """
     hex_str = str(hex_str).strip().lstrip('#')
     if len(hex_str) != 6:
         return (0, 0, 0, 255)
@@ -14,6 +18,10 @@ def _hex_to_rgba(hex_str):
         return (0, 0, 0, 255)
 
 def _setup_plot_theme():
+    """
+    Registers the global plot color themes for backgrounds, grids, axis texts, and titles.
+    Configures a clean, bright aesthetic for the logic analyzer UI.
+    """
     with dpg.theme(tag=PLOT_THEME_TAG):
         with dpg.theme_component(dpg.mvWindowAppItem):
             dpg.add_theme_color(dpg.mvThemeCol_Text, (30, 30, 30, 255), category=dpg.mvThemeCat_Core)
@@ -29,6 +37,10 @@ def _setup_plot_theme():
             dpg.add_theme_color(dpg.mvPlotCol_LegendText, (255, 255, 255, 255), category=dpg.mvThemeCat_Plots)
 
 def create_plot_window():
+    """
+    Initializes the primary window container on the right side of the screen where
+    all telemetry subplots will be rendered.
+    """
     _setup_plot_theme()
     # Width will be updated dynamically, assume 1820 - 420 = 1400 initially
     with dpg.window(tag=PLOT_WINDOW_TAG, pos=[420, 0], width=1400, height=1020, 
@@ -59,17 +71,14 @@ def update_plots(layout_str, plot_cache):
         for i in range(1, count + 1):
             cfg = plot_cache.get(i, {})
             title = cfg.get("title", f"Plot {i}")
-            v_min = cfg.get("v_min", -180.0)
-            v_max = cfg.get("v_max", 180.0)
-            h_unit = cfg.get("h_unit", "seconds")
+            title = cfg.get("title", f"Plot {i}")
             
             with dpg.plot(label=title, no_title=False, tag=f"plot_{i}"):
                 # Add Legend
                 dpg.add_plot_legend()
                 
                 # Setup X Axis
-                x_axis_label = f"Time ({h_unit})"
-                dpg.add_plot_axis(dpg.mvXAxis, label=x_axis_label, tag=f"plot_{i}_x")
+                dpg.add_plot_axis(dpg.mvXAxis, label="Time", tag=f"plot_{i}_x")
                 
                 # Setup Y Axis
                 series_list = cfg.get("series", [])
@@ -78,18 +87,21 @@ def update_plots(layout_str, plot_cache):
                 y_axis_label = f"Values{y_unit_str}"
                 
                 dpg.add_plot_axis(dpg.mvYAxis, label=y_axis_label, tag=f"plot_{i}_y")
-                
-                v_auto_scale = cfg.get("v_auto_scale", False)
-                if not v_auto_scale:
-                    dpg.set_axis_limits(f"plot_{i}_y", v_min, v_max)
+                dpg.set_axis_limits_auto(f"plot_{i}_y")
                 
                 for j, s in enumerate(series_list):
                     s_name = s.get("name", f"Series {j+1}")
                     line_color_hex = s.get("color", "#000000")
+                    try:
+                        s_weight = float(s.get("width", 2.0))
+                    except (ValueError, TypeError):
+                        s_weight = 2.0
                     
-                    dpg.add_line_series([0], [0], label=s_name, parent=f"plot_{i}_y", tag=f"plot_{i}_series_{j+1}")
+                    series_tag = f"plot_{i}_series_{j+1}"
+                    dpg.add_line_series([], [], label=s_name, tag=series_tag, parent=f"plot_{i}_y")
                     
                     with dpg.theme() as series_theme:
                         with dpg.theme_component(dpg.mvLineSeries):
                             dpg.add_theme_color(dpg.mvPlotCol_Line, _hex_to_rgba(line_color_hex), category=dpg.mvThemeCat_Plots)
-                    dpg.bind_item_theme(f"plot_{i}_series_{j+1}", series_theme)
+                            dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, s_weight, category=dpg.mvThemeCat_Plots)
+                    dpg.bind_item_theme(series_tag, series_theme)

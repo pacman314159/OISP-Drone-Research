@@ -7,20 +7,20 @@ Unlike heavy IDE-based visualizers, FCDatMon prioritizes raw execution speed and
 ## **🚀 Key Features**
 
 * **Hardware-Accelerated GUI:** Powered by DearPyGui (C++ Dear ImGui backend) for an ultra-fast, code-driven interface without the bloat of XML/UI designers. 
-* **Dynamic 2D Plotting:** Real-time plotting with support for modular grid layouts (from 1x1 up to 3x3). Features hardware-accelerated panning, zooming, and bounding-box selections natively. 
-* **Multi-Protocol Support:** Architected to seamlessly swap between: 
-  * **BLE (Bluetooth Low Energy):** Direct asynchronous connection to the ESP32-S3. 
-  * **LoRa / USB:** Serial communication through a LoRa ground module or direct USB payload. 
+* **Dynamic 2D Plotting:** Real-time plotting with support for modular grid layouts (from 1x1 up to 3x3). Features hardware-accelerated panning, zooming, and bounding-box selections natively.
+* **Smart Navigation Engine:** Automatically scrolls to chase live data streams while allowing seamless manual panning and zooming (Shift + Scroll) without interrupting background ingestion.
+* **Multi-Protocol Support:** Architected to seamlessly swap between various hardware communication interfaces. (Currently, only the USB Serial module is implemented; BLE and LoRa are actively being developed to complete this vision):
+  * **BLE (Bluetooth Low Energy):** Direct asynchronous connection to the ESP32-S3. *(WIP)*
+  * **LoRa / USB:** Serial communication through a LoRa ground module or direct USB payload. *(USB Serial Complete)*
 * **Robust Session Management:** Caches custom plot configurations (50-color palette picker, dynamic axis labels, custom limits) and saves exact telemetry dashboard layouts to `.json` files in your chosen directory for rapid re-deployment.
 * **Raw Telemetry Logging:** Seamlessly capture incoming data from the transmitter and dump it directly into timestamped log files in any directory you choose (defaulting to `/captured_data/`).
-* **Fixed Resolution Centering:** FCDatMon automatically fetches system metrics to perfectly center its 1820x1020 viewport on launch for a distraction-free experience.
 
 ## **🧠 System Architecture**
 
 FCDatMon utilizes a strict **Producer-Consumer Architecture** to ensure that heavy data ingestion never blocks the visual rendering loop.
 
-* **Producers (comms/):** Background threads handle I/O (BLE polling or Serial reading) and binary struct unpacking. 
-* **Core Buffers (core/):** Thread-safe circular buffers (Ring Buffers) utilizing numpy arrays safely hold the telemetry streams, preventing RAM overflows during high-frequency data dumps. 
+* **Producers:** Background threads handle I/O (BLE polling or Serial reading) and binary struct unpacking. 
+* **Core Buffers (core/):** Thread-safe circular buffers (Ring Buffers) safely hold the telemetry streams, preventing RAM overflows during high-frequency data dumps. Sizes can be adjusted dynamically in the UI.
 * **Consumers (gui/):** The main thread runs at a strict 60 FPS, slicing the latest data from the circular buffers and pushing it to the GPU for rendering.
 
 ### **Directory Structure**
@@ -34,20 +34,13 @@ FCDatMon/
 ├── captured_data/            # Captured raw telemetry data logs
 │  
 ├── core/                     # Data management & Mathematics  
-│   ├── data_buffer.py        # Thread-safe circular buffers for high Hz telemetry  
+│   ├── data_manager.py       # Thread-safe circular buffers for high Hz telemetry  
 │   ├── state_manager.py      # Session cache and layout JSON serialization  
-│   └── math_engine.py        # Quat-to-Euler conversions, DSP, filtering  
-│  
-├── comms/                    # Hardware Interface (Producers)  
-│   ├── base_receiver.py      # Strategy pattern interface for receivers  
-│   ├── ble_receiver.py       # ESP32-S3 BLE Asyncio implementation  
-│   ├── lora_serial.py        # PySerial implementation  
-│   └── packet_parser.py      # Binary struct to dictionary unpacker  
+│   └── serial_reader.py      # Background worker for serial telemetry parsing
 │  
 └── gui/                      # Visual Rendering (Consumers)  
     ├── control_panel.py      # Control panel and configuration manager
-    ├── plot_2d_manager.py    # ImPlot 2D dynamic grid manager  
-    └── viewport_3d.py        # 3D spatial vector rendering
+    └── plot_2d_manager.py    # ImPlot 2D dynamic grid manager  
 ```
 
 ## **⚙️ Installation & Setup**
@@ -60,13 +53,8 @@ FCDatMon is built entirely in Python but relies on specific C++ wrapped librarie
 
 Install the required packages using pip: 
 ```bash
-pip install dearpygui numpy bleak pyserial
+pip install dearpygui pyserial
 ```
-
-* `dearpygui`: GPU-accelerated immediate mode GUI. 
-* `numpy`: Used for high-speed circular buffers and mathematical operations. 
-* `bleak`: Cross-platform Bluetooth Low Energy client. 
-* `pyserial`: For reading LoRa/USB COM port data.
 
 ## **🏁 Usage**
 
@@ -92,12 +80,13 @@ FCDatMon can be easily compiled into a single, standalone executable `.exe` file
 2. **Compile:**
    Run the following command in the root project directory:
    ```bash
-   pyinstaller --noconsole --onefile --distpath . --name FCDatMon main.py
+   pyinstaller FCDatMon.spec --clean --noconfirm
    ```
 3. **Locate:**
-   By using the `--distpath .` flag, the final standalone `FCDatMon.exe` will be generated directly in the root of your `/FCDatMon` folder, alongside your `main.py` file.
+   The compiled standalone `FCDatMon.exe` will be generated in the `dist/` directory.
 
 ## **🚧 Current Status**
 
 * **Phase 1 (Complete):** Core GUI framework built using DearPyGui. Session management (saving/loading layouts dynamically) and telemetry dumping systems are fully functional. UI is highly polished with robust numeric input validation, an interactive 50-color distinct palette picker, custom window anchoring, and dynamic layout handling.
-* **Phase 2 (WIP):** Implementation of the background telemetry producers (BLE/Serial) in `comms/` and ring buffers in `core/`.
+* **Phase 2 (Complete):** Implementation of the background telemetry producers (Serial) and thread-safe dynamic ring buffers. Integrated Smart Navigation Engine with complete interaction overrides.
+* **Phase 3 (WIP):** Full implementation of BLE asynchronous polling and binary payload struct parsing for the ESP32-S3.
