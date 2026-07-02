@@ -36,6 +36,7 @@ FCDatMon/
 ├── core/                     # Data management & Mathematics  
 │   ├── data_manager.py       # Thread-safe circular buffers for high Hz telemetry  
 │   ├── state_manager.py      # Session cache and layout JSON serialization  
+│   ├── app_settings.py       # Persistent user preference manager
 │   └── serial_reader.py      # Background worker for serial telemetry parsing
 │  
 └── gui/                      # Visual Rendering (Consumers)  
@@ -71,19 +72,19 @@ python main.py
 
 ## **📦 Building an Executable**
 
-FCDatMon can be easily compiled into a single, standalone executable `.exe` file so it can be deployed to other machines without installing Python.
+FCDatMon can be easily compiled into a standalone app and packaged into a professional Setup Wizard so it can be deployed to other machines without installing Python.
 
 1. **Install PyInstaller:**
    ```bash
    pip install pyinstaller
    ```
-2. **Compile:**
+2. **Compile Application:**
    Run the following command in the root project directory:
    ```bash
    pyinstaller FCDatMon.spec --clean --noconfirm
    ```
-3. **Locate:**
-   The compiled standalone `FCDatMon.exe` will be generated in the `dist/` directory.
+3. **Build Installer Wizard:**
+   Open the `installation_compiler/script.iss` file using **Inno Setup** and hit Compile. This packs the generated `dist/FCDatMon/` bundle into a professional `setup.exe` installer, complete with Start Menu shortcuts and correct directory structures.
 
 ## **🚧 Current Status**
 

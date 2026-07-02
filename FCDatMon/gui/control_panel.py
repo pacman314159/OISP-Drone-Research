@@ -5,6 +5,7 @@ import dearpygui.dearpygui as dpg
 import serial.tools.list_ports
 from core.serial_reader import SerialReader
 from core.state_manager import save_layout, load_layout, get_available_layouts, delete_layout
+from core.app_settings import load_app_settings, save_app_settings
 from gui.plot_2d_manager import update_plots
 
 # Constants
@@ -392,7 +393,7 @@ def _rebuild_plot_ui():
                     dpg.add_color_button(default_value=_hex_to_rgba(s.get("color", "#00FF00")), tag=f"p{i}_s{j+1}_color_box", no_alpha=True, no_tooltip=True)
                     
                     with dpg.popup(f"p{i}_s{j+1}_color_box", mousebutton=dpg.mvMouseButton_Left):
-                        dpg.add_text("Palette (50 Colors)")
+                        dpg.add_text("Color Palette")
                         for row in range(10):
                             with dpg.group(horizontal=True):
                                 for col in range(5):
@@ -604,8 +605,9 @@ def _build_section_session():
     dpg.add_text("Available Setups:", color=COLOR_AXIS_LBL)
     available_setups = get_available_layouts()
 
+    settings = load_app_settings()
     with dpg.group(horizontal=True):
-        dpg.add_text("Folder: default (/saved_setups)", tag="text_save_folder", wrap=250)
+        dpg.add_text(f"Folder: {settings['config_dir']}", tag="text_save_folder", wrap=250)
         dpg.add_button(label="[Select]", width=120, callback=lambda: dpg.show_item("folder_picker_dialog"))
     
     with dpg.group(horizontal=True):
@@ -626,6 +628,10 @@ def _data_folder_picker_callback(sender, app_data):
     folder_path = app_data['file_path_name']
     dpg.set_value("text_data_folder", f"Folder: {folder_path}")
     _log_to_console(f"[*] Data capture folder changed to: {folder_path}")
+    
+    settings = load_app_settings()
+    settings["data_dir"] = folder_path
+    save_app_settings(settings)
 
 def _buffer_size_changed(sender, app_data, user_data):
     """
@@ -655,8 +661,9 @@ def _build_section_additional_settings():
     dpg.add_spacer(height=5)
     dpg.add_checkbox(label="Save Captured Data to Disk", default_value=False, tag="checkbox_save_data")
 
+    settings = load_app_settings()
     with dpg.group(horizontal=True):
-        dpg.add_text("Folder: default (/captured_data)", tag="text_data_folder", wrap=260)
+        dpg.add_text(f"Folder: {settings['data_dir']}", tag="text_data_folder", wrap=260)
         dpg.add_button(label="[Select]", width=100, callback=lambda: dpg.show_item("data_folder_picker_dialog"))
         
     current_time_str = datetime.datetime.now().strftime("FCDatMon %Y-%m-%d_%H-%M")

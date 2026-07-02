@@ -1,7 +1,10 @@
 import os
 import json
 
-CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "saved_setups")
+from core.app_settings import load_app_settings, save_app_settings
+
+settings = load_app_settings()
+CONFIG_DIR = settings["config_dir"]
 
 def set_config_dir(new_path: str):
     """
@@ -9,6 +12,10 @@ def set_config_dir(new_path: str):
     """
     global CONFIG_DIR
     CONFIG_DIR = new_path
+    
+    settings = load_app_settings()
+    settings["config_dir"] = new_path
+    save_app_settings(settings)
 
 def save_layout(setup_name: str, config_data: dict) -> str:
     """
