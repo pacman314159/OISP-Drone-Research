@@ -131,6 +131,24 @@ def _local_fit_y_callback(sender, app_data, user_data):
     if dpg.does_item_exist(f"plot_{plot_id}_y"):
         dpg.fit_axis_data(f"plot_{plot_id}_y")
 
+def _local_time_window_callback(sender, app_data, user_data):
+    """
+    Forces the X-axis window size to a specific duration in ms.
+    """
+    import sys
+    plot_id, window_ms = user_data
+    setattr(sys.modules[__name__], f"MANUAL_WINDOW_{plot_id}", window_ms)
+    if not PLOT_CHASE_ACTIVE.get(plot_id, True):
+        _local_chase_callback(None, None, plot_id)
+
+def _global_time_window_callback(sender, app_data, user_data):
+    import sys
+    window_ms = user_data
+    for i in PLOT_CACHE.keys():
+        setattr(sys.modules[__name__], f"MANUAL_WINDOW_{i}", window_ms)
+        if not PLOT_CHASE_ACTIVE.get(i, True):
+            _local_chase_callback(None, None, i)
+
 def get_com_ports():
     """
     Scans the system for available serial COM ports.
@@ -255,6 +273,9 @@ def _save_ui_to_cache():
                 
             PLOT_CACHE[i] = {
                 "title": dpg.get_value(f"p{i}_title"),
+                "fix_y": dpg.get_value(f"p{i}_fix_y") if dpg.does_item_exist(f"p{i}_fix_y") else False,
+                "y_min": dpg.get_value(f"p{i}_y_min") if dpg.does_item_exist(f"p{i}_y_min") else "-100.0",
+                "y_max": dpg.get_value(f"p{i}_y_max") if dpg.does_item_exist(f"p{i}_y_max") else "100.0",
                 "series": series_list
             }
 
@@ -278,6 +299,9 @@ def _apply_layout_callback(sender=None, app_data=None, user_data=None):
         if i not in PLOT_CACHE:
             PLOT_CACHE[i] = {
                 "title": f"Plot {i}",
+                "fix_y": False,
+                "y_min": "-100.0",
+                "y_max": "100.0",
                 "series": [
                     { "name": "Y-Axis", "unit": "ul", "width": 2.0, "color": _get_hex_color() }
                 ]
@@ -374,7 +398,14 @@ def _rebuild_plot_ui():
     for i, cfg in PLOT_CACHE.items():
         is_open = expanded_states.get(i, True)
         with dpg.tree_node(label=f"Plot {i} Config", parent="plot_settings_container", tag=f"p{i}_tree", default_open=is_open):
-            dpg.add_input_text(label="Title", default_value=cfg["title"], tag=f"p{i}_title", callback=_plot_config_changed)
+            dpg.add_input_text(label="Title", default_value=cfg.get("title", f"Plot {i}"), tag=f"p{i}_title", callback=_plot_config_changed)
+            
+            with dpg.group(horizontal=True):
+                dpg.add_checkbox(label="Fix Y", tag=f"p{i}_fix_y", default_value=cfg.get("fix_y", False), callback=_plot_config_changed)
+                dpg.add_text("Min:")
+                dpg.add_input_text(width=50, default_value=str(cfg.get("y_min", "-100.0")), tag=f"p{i}_y_min", callback=_plot_config_changed)
+                dpg.add_text("Max:")
+                dpg.add_input_text(width=50, default_value=str(cfg.get("y_max", "100.0")), tag=f"p{i}_y_max", callback=_plot_config_changed)
             
             dpg.add_text("Series Configuration:", color=COLOR_AXIS_LBL)
             series_list = cfg.get("series", [])
@@ -410,11 +441,14 @@ def _rebuild_plot_ui():
             dpg.add_spacer(height=5)
             dpg.add_spacer(height=5)
             with dpg.group(horizontal=True):
-                dpg.add_button(label="[Chase]", width=80, tag=f"btn_local_chase_{i}", callback=_local_chase_callback, user_data=i)
+                dpg.add_button(label="[Chase]", width=75, tag=f"btn_local_chase_{i}", callback=_local_chase_callback, user_data=i)
                 if PLOT_CHASE_ACTIVE.get(i, True):
                     dpg.bind_item_theme(dpg.last_item(), THEME_GREEN_BTN)
                 
-                dpg.add_button(label="[Fit Y]", width=80, tag=f"btn_local_fit_y_{i}", callback=_local_fit_y_callback, user_data=i)
+                dpg.add_button(label="[Fit Y]", width=65, tag=f"btn_local_fit_y_{i}", callback=_local_fit_y_callback, user_data=i)
+                dpg.add_button(label="1S", width=28, tag=f"btn_local_1s_{i}", callback=_local_time_window_callback, user_data=(i, 1000.0))
+                dpg.add_button(label="2S", width=28, tag=f"btn_local_2s_{i}", callback=_local_time_window_callback, user_data=(i, 2000.0))
+                dpg.add_button(label="5S", width=28, tag=f"btn_local_5s_{i}", callback=_local_time_window_callback, user_data=(i, 5000.0))
             dpg.add_spacer(height=10)
 
 def _save_setup_callback(sender, app_data, user_data):
@@ -535,16 +569,19 @@ def _build_section_layout():
     dpg.add_text(">> 2. DATA VISUALIZATION", color=COLOR_H1)
     
     with dpg.group(horizontal=True):
-        dpg.add_button(label="[CHASE STREAM]", width=140, tag="btn_global_chase", callback=_global_chase_callback)
+        dpg.add_button(label="[CHASE STREAM]", width=105, tag="btn_global_chase", callback=_global_chase_callback)
         # Check global state to apply theme on boot
         all_on = all(PLOT_CHASE_ACTIVE.get(i, True) for i in PLOT_CACHE.keys())
         if all_on:
             dpg.bind_item_theme("btn_global_chase", THEME_GREEN_BTN)
             
-        dpg.add_button(label="[FIT VERTICAL]", width=140, tag="btn_global_fit_y", callback=_global_fit_y_callback)
+        dpg.add_button(label="[FIT VERTICAL]", width=105, tag="btn_global_fit_y", callback=_global_fit_y_callback)
+        dpg.add_button(label="1S", width=30, tag="btn_global_1s", callback=_global_time_window_callback, user_data=1000.0)
+        dpg.add_button(label="2S", width=30, tag="btn_global_2s", callback=_global_time_window_callback, user_data=2000.0)
+        dpg.add_button(label="5S", width=30, tag=f"btn_global_5s", callback=_global_time_window_callback, user_data=5000.0)
     
     dpg.add_spacer(height=5)
-    dpg.add_combo(["1x1", "1x2", "2x1", "2x2", "2x3", "3x2", "3x3"], default_value="1x2", label="Grid Layout", tag="combo_layout", callback=_layout_changed_callback)
+    dpg.add_combo(["1x1", "1x2", "2x1", "2x2", "2x3", "3x1", "3x2", "3x3"], default_value="1x2", label="Grid Layout", tag="combo_layout", callback=_layout_changed_callback)
     dpg.add_spacer(height=5)
     dpg.add_group(tag="plot_settings_container")
     dpg.add_spacer(height=20)

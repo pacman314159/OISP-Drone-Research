@@ -132,18 +132,32 @@ def main():
         
         for i in list(PLOT_CACHE.keys()):
             if dpg.does_item_exist(f"plot_{i}_x") and dpg.does_item_exist(f"plot_{i}_y"):
-                if is_dragging:
-                    # Free pan
-                    dpg.configure_item(f"plot_{i}_x", lock_min=False, lock_max=False)
-                    dpg.configure_item(f"plot_{i}_y", lock_min=False, lock_max=False)
-                elif is_shift:
-                    # Horizontal stretch only
-                    dpg.configure_item(f"plot_{i}_x", lock_min=False, lock_max=False)
-                    dpg.configure_item(f"plot_{i}_y", lock_min=True, lock_max=True)
+                cfg = PLOT_CACHE[i]
+                fix_y = cfg.get("fix_y", False)
+                try:
+                    y_min = float(cfg.get("y_min", -100.0))
+                    y_max = float(cfg.get("y_max", 100.0))
+                except Exception:
+                    y_min, y_max = -100.0, 100.0
+
+                if fix_y:
+                    dpg.set_axis_limits(f"plot_{i}_y", y_min, y_max)
+                    if is_dragging:
+                        dpg.configure_item(f"plot_{i}_x", lock_min=False, lock_max=False)
+                        dpg.configure_item(f"plot_{i}_y", lock_min=True, lock_max=True)
+                    else:
+                        dpg.configure_item(f"plot_{i}_x", lock_min=True, lock_max=True)
+                        dpg.configure_item(f"plot_{i}_y", lock_min=True, lock_max=True)
                 else:
-                    # Vertical stretch only
-                    dpg.configure_item(f"plot_{i}_x", lock_min=True, lock_max=True)
-                    dpg.configure_item(f"plot_{i}_y", lock_min=False, lock_max=False)
+                    if is_dragging:
+                        dpg.configure_item(f"plot_{i}_x", lock_min=False, lock_max=False)
+                        dpg.configure_item(f"plot_{i}_y", lock_min=False, lock_max=False)
+                    elif is_shift:
+                        dpg.configure_item(f"plot_{i}_x", lock_min=True, lock_max=True)
+                        dpg.configure_item(f"plot_{i}_y", lock_min=True, lock_max=True)
+                    else:
+                        dpg.configure_item(f"plot_{i}_x", lock_min=True, lock_max=True)
+                        dpg.configure_item(f"plot_{i}_y", lock_min=False, lock_max=False)
         
         if was_live and not is_live:
             # Connection just stopped! Unlock all axes so the user can pan freely.
@@ -180,16 +194,25 @@ def main():
                     
                     manual_win = getattr(cp, f"MANUAL_WINDOW_{i}", None)
                     if manual_win is not None:
+                        center = (limits[0] + limits[1]) / 2.0
                         window = manual_win
                         delattr(cp, f"MANUAL_WINDOW_{i}")
+                        
+                        if window < 10.0: window = 10.0
+                        if window > 100000000.0: window = 100000000.0
+                        
+                        # Apply zoom around center if we are not chasing
+                        if not is_chasing:
+                            dpg.set_axis_limits(f"plot_{i}_x", center - window/2.0, center + window/2.0)
+                            limits = [center - window/2.0, center + window/2.0]
                     
-                    if window <= 0.0 or window > 1000000:
+                    if window <= 0.0 or window > 100000000.0:
                         window = 10000.0
                         
                     last_limits = getattr(cp, f"last_limits_{i}", None)
                     
                     if is_chasing:
-                        if last_limits is not None:
+                        if last_limits is not None and manual_win is None:
                             # Detect manual pan left: both min and max decreased by at least 2% of window
                             threshold = window * 0.02
                             if limits[0] < last_limits[0] - threshold and limits[1] < last_limits[1] - threshold:
