@@ -58,6 +58,13 @@ def update_plots(layout_str, plot_cache):
         return
 
     # Delete existing subplots if they exist
+    old_limits = {}
+    for i in list(plot_cache.keys()):
+        if dpg.does_item_exist(f"plot_{i}_x"):
+            old_limits[f"plot_{i}_x"] = dpg.get_axis_limits(f"plot_{i}_x")
+        if dpg.does_item_exist(f"plot_{i}_y"):
+            old_limits[f"plot_{i}_y"] = dpg.get_axis_limits(f"plot_{i}_y")
+            
     dpg.delete_item(PLOT_WINDOW_TAG, children_only=True)
     
     try:
@@ -73,12 +80,16 @@ def update_plots(layout_str, plot_cache):
             title = cfg.get("title", f"Plot {i}")
             title = cfg.get("title", f"Plot {i}")
             
-            with dpg.plot(label=title, no_title=False, tag=f"plot_{i}"):
+            with dpg.plot(label=title, no_title=False, tag=f"plot_{i}", pan_button=dpg.mvMouseButton_Left):
                 # Add Legend
                 dpg.add_plot_legend()
                 
                 # Setup X Axis
                 dpg.add_plot_axis(dpg.mvXAxis, label="Time", tag=f"plot_{i}_x")
+                if f"plot_{i}_x" in old_limits:
+                    dpg.set_axis_limits(f"plot_{i}_x", *old_limits[f"plot_{i}_x"])
+                else:
+                    dpg.set_axis_limits_auto(f"plot_{i}_x")
                 
                 # Setup Y Axis
                 series_list = cfg.get("series", [])
@@ -87,7 +98,10 @@ def update_plots(layout_str, plot_cache):
                 y_axis_label = f"Values{y_unit_str}"
                 
                 dpg.add_plot_axis(dpg.mvYAxis, label=y_axis_label, tag=f"plot_{i}_y")
-                dpg.set_axis_limits_auto(f"plot_{i}_y")
+                if f"plot_{i}_y" in old_limits:
+                    dpg.set_axis_limits(f"plot_{i}_y", *old_limits[f"plot_{i}_y"])
+                else:
+                    dpg.set_axis_limits_auto(f"plot_{i}_y")
                 
                 for j, s in enumerate(series_list):
                     s_name = s.get("name", f"Series {j+1}")

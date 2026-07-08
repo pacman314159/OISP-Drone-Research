@@ -3,8 +3,10 @@ import json
 
 SETTINGS_FILE = os.path.join(os.path.expanduser("~"), ".fcdatmon", "app_settings.json")
 DEFAULT_SETTINGS = {
-    "config_dir": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "saved_setups"),
-    "data_dir": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "captured_data")
+    "config_dir": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "saved_setups"),
+    "data_dir": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "captured_data"),
+    "paired_dir": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "paired_devices"),
+    "ble_scan_timeout": 5.0
 }
 
 def load_app_settings():
