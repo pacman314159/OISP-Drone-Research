@@ -1,0 +1,42 @@
+{
+    "protocol": "BLE",
+    "target": "9DOF_IMU",
+    "baudrate": "115200",
+    "layout": "1x2",
+    "plots": {
+        "1": {
+            "title": "first_val",
+            "fix_y": true,
+            "y_min": "-120",
+            "y_max": "120",
+            "series": [
+                {
+                    "name": "Y-Axis",
+                    "unit": "ul",
+                    "width": "2.0",
+                    "color": "#4363D8"
+                }
+            ]
+        },
+        "2": {
+            "title": "second_val",
+            "fix_y": true,
+            "y_min": "-60",
+            "y_max": "60",
+            "series": [
+                {
+                    "name": "Y-Axis",
+                    "unit": "ul",
+                    "width": "2.0",
+                    "color": "#F58231"
+                }
+            ]
+        }
+    },
+    "ble_target": "Sinusoid_Generator (A0:85:E3:E1:D5:1D)",
+    "ble_service": "14144463-7eb9-408a-b8ff-df2008efde13",
+    "ble_char": "8b082129-9e8c-4a3f-85d7-ecf9273f55ba",
+    "timestamp_mode": "TX",
+    "timestamp_unit": "milliseconds",
+    "batch_size": 20
+}
