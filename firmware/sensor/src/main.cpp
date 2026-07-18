@@ -7,16 +7,16 @@
 #define SCL_PIN 9
 #define DRDY_PIN 7
 
-const uint16_t NUM_READS = 5000;
-const uint16_t SAMPLING_INTERVAL_US = 230;
+const uint16_t NUM_READS = 50;
+const uint16_t SAMPLING_INTERVAL_US = 5000;
 
 GY87_MPU6050 mpu;
 GY87_HMC5883L hmc;
 
-float accXSamples[NUM_READS] = {0},  accYSamples[NUM_READS] {0},    accZSamples[NUM_READS] = {0};
-float gyroXSamples[NUM_READS] = {0}, gyroYSamples[NUM_READS] = {0}, gyroZSamples[NUM_READS] = {0};
-float magXSamples[NUM_READS] = {0},  magYSamples[NUM_READS] = {0},  magZSamples[NUM_READS] = {0};
-float tempSamples[NUM_READS]  = {0};
+float gx, gy, gz;
+float ax, ay, az;
+float mx, my, mz;
+float temp;
 
 uint32_t startTimeUs, endTime;
 uint32_t timeInstances[NUM_READS] = {0};
@@ -38,29 +38,21 @@ void setup(){
   hmc.attachDRDYInterrupt(DRDY_PIN);
 
   delay(100);
-
-  //------MEASURE DURATION (Nhien's version)--------//
-  startTimeUs = micros();
-  for(int i = 0; i < NUM_READS; i++){
-    // mpu.getRawAll();
-    // mpu.getAllData(
-    //   accXSamples[i], accYSamples[i], accZSamples[i],
-    //   tempSamples[i],
-    //   gyroXSamples[i], gyroYSamples[i], gyroZSamples[i]
-    // );
-
-    while(not hmc.isDataReady()) yield();
-    hmc.getRawAll();
-    hmc.setMeasMode(SINGLE_MODE);
-    hmc.getAllData(magXSamples[i], magYSamples[i], magZSamples[i]);
-
-    timeInstances[i] = hmc.getLatestDataTimeUs();
-    delayMicroseconds(SAMPLING_INTERVAL_US);
-  }
-  endTime = micros();
-
 }
 
 void loop(){
+  startTimeUs = micros();
+
+  mpu.getRawAll();
+  mpu.getAllData(ax, ay, az, temp, gx, gy, gz);
+  // while(not hmc.isDataReady()) yield();
+  hmc.getRawAll();
+  hmc.setMeasMode(SINGLE_MODE);
+  hmc.getAllData(mx, my, mz);
+
+  Serial.printf("%f, %f, %f, %f, %f, %f, %f, %f, %f\n",
+                gx, gy, gz, ax, ay, az, mx, my, mz);
+
+  while(micros() - startTimeUs < SAMPLING_INTERVAL_US) yield();
 }
 
