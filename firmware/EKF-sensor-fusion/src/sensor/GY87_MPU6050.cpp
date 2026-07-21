@@ -1,4 +1,4 @@
-#include "GY87_MPU6050.h"
+#include "sensor/GY87_MPU6050.h"
 
 // Constructor
 GY87_MPU6050::GY87_MPU6050()

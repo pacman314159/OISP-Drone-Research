@@ -28,7 +28,6 @@ void setup(){
   mpu.enableBypass();
   mpu.setAccRange(AFS_SEL_4G);
   mpu.setGyroRange(FS_SEL_500);
-
   hmc.init(SDA_PIN, SCL_PIN);
   hmc.setMeasMode(SINGLE_MODE);
   hmc.setAveraging(AVERAGING_1);
