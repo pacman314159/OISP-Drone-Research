@@ -1,4 +1,4 @@
-#include "GY87_HMC5883L.h"
+#include "sensor/GY87_HMC5883L.h"
 
 GY87_HMC5883L* GY87_HMC5883L::instance = nullptr;
 
