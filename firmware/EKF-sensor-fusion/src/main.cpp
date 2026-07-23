@@ -12,34 +12,161 @@ GY87_HMC5883L mag;
 
 // RTOS Handles
 SemaphoreHandle_t ekfMutex;
+SemaphoreHandle_t i2cMutex;
 TaskHandle_t TaskRollPitch_Handle;
 TaskHandle_t TaskYaw_Handle;
 
 // ==========================================
-// 1. HARDWARE ABSTRACTION LAYER (Data Acquisition)
+// 1. DATA ACQUISTION
 // ==========================================
 
 // Function for the 500Hz Task
 void readIMUData(Vector3 &gyro, Vector3 &accel) {
-    mpu.getRawAll();
+// Wait for the I2C bus to be free
+    if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE) {
+        mpu.getRawAll();
+        xSemaphoreGive(i2cMutex);
+    }
+    
     gyro = {mpu.getGyroX(), mpu.getGyroY(), mpu.getGyroZ()};
     accel = {mpu.getAccX(), mpu.getAccY(), mpu.getAccZ()}; 
     accel.normalize();
 }
 
-// Function for the 75Hz Task
-bool readMagData(Vector3 &mag_vec) {
-    if (mag.isDataReady()) {
-        mag.getRawAll();
-        mag_vec = {mag.getX(), mag.getY(), mag.getZ()};
-        mag_vec.normalize();
-        return true; // Tell the task we successfully got data
+// ============================================================
+// 2. READ MAGNETOMETER DATA (75 Hz)
+// ============================================================
+bool readMagData(Vector3 &mag_vec)
+{
+    bool ready = false;
+    // --------------------------------------------------------
+    // Protect I2C bus
+    // --------------------------------------------------------
+    if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE)
+    {
+        // Check DRDY flag set by ISR
+        ready = mag.isDataReady();
+
+        // Only read sensor when new data is available
+        if (ready)
+        {
+            mag.getRawAll();
+        }
+
+        xSemaphoreGive(i2cMutex);
     }
-    return false; // No new data available
+
+    // --------------------------------------------------------
+    // No new magnetometer data
+    // --------------------------------------------------------
+    if (!ready)
+    {
+        return false;
+    }
+
+    // --------------------------------------------------------
+    // Convert raw data to magnetic field
+    // --------------------------------------------------------
+    mag_vec = {
+        mag.getX(),
+        mag.getY(),
+        mag.getZ()
+    };
+
+    // --------------------------------------------------------
+    // Normalize magnetic vector
+    // --------------------------------------------------------
+    mag_vec.normalize();
+
+    return true;
 }
 
 // ==========================================
-// 2. EKF CLASS (Encapsulates Math and State)
+// TELEMETRY "BLACK BOX" (Stores latest data)
+// ==========================================
+struct TelemetryData {
+    // Timing
+    float dt = 0.0f;
+    uint32_t pilot_total_us = 0;
+    uint32_t nav_total_us = 0;
+
+    // Raw Sensors
+    Vector3 accel;
+    Vector3 gyro;
+    Vector3 mag;
+    bool mag_updated = false;
+
+    // Output Angles
+    float ekf_roll = 0.0f, ekf_pitch = 0.0f, ekf_yaw = 0.0f;
+};
+
+// Global instance to hold our data
+TelemetryData tlm;
+
+// ==========================================
+// SEPARATED PRINT FUNCTION
+// ==========================================
+void printEKFValidation() {
+    // 1. Calculate "Raw" Angles from Accelerometer for comparison
+    // These will be noisy! It proves your EKF is doing its job by smoothing them.
+    float raw_roll = atan2f(tlm.accel(1,0), tlm.accel(2,0)) * 57.2958f;
+    float raw_pitch = atan2f(-tlm.accel(0,0), sqrtf(tlm.accel(1,0)*tlm.accel(1,0) + tlm.accel(2,0)*tlm.accel(2,0))) * 57.2958f;
+
+    // 2. Print the beautifully formatted validation block
+    Serial.println("\n============= EKF VALIDATION =============");
+    Serial.printf("TIMING  | dt: %.4f s | Pilot: %lu us | Nav: %lu us\n", 
+                  tlm.dt, tlm.pilot_total_us, tlm.nav_total_us);
+    
+    Serial.println("-------- RAW SENSORS --------");
+    Serial.printf("GYRO    | X: %7.2f | Y: %7.2f | Z: %7.2f\n", tlm.gyro(0,0), tlm.gyro(1,0), tlm.gyro(2,0));
+    Serial.printf("ACCEL   | X: %7.2f | Y: %7.2f | Z: %7.2f\n", tlm.accel(0,0), tlm.accel(1,0), tlm.accel(2,0));
+    Serial.printf("MAG     | X: %7.2f | Y: %7.2f | Z: %7.2f [Ready: %d]\n", tlm.mag(0,0), tlm.mag(1,0), tlm.mag(2,0), tlm.mag_updated);
+    
+    Serial.println("-------- FILTER COMPARISON --------");
+    Serial.printf("RAW ANG | Roll: %7.2f | Pitch: %7.2f\n", raw_roll, raw_pitch);
+    Serial.printf("EKF ANG | Roll: %7.2f | Pitch: %7.2f | Yaw: %7.2f\n", tlm.ekf_roll, tlm.ekf_pitch, tlm.ekf_yaw);
+    Serial.println("==========================================");
+}
+
+// ==========================================
+// UTILITY: TASK PROFILER (Stopwatch)
+// ==========================================
+class TaskProfiler {
+public:
+    uint32_t i2c_time;
+    uint32_t ekf_time;
+    uint32_t total_time;
+
+private:
+    uint32_t t_start;
+    uint32_t t_i2c;
+    uint32_t t_ekf;
+
+public:
+    // 1. Call this at the very beginning of the loop
+    void start() {
+        t_start = micros();
+    }
+
+    // 2. Call this right after talking to sensors
+    void markI2C() {
+        t_i2c = micros();
+        i2c_time = t_i2c - t_start;
+    }
+
+    // 3. Call this right after the EKF mutex is given back
+    void markEKF() {
+        t_ekf = micros();
+        ekf_time = t_ekf - t_i2c;
+        total_time = t_ekf - t_start;
+    }
+};
+
+
+
+
+// ==========================================
+// 3. EKF CLASS
 // ==========================================
 class DroneEKF {
 private:
@@ -61,7 +188,6 @@ private:
     }
 
 public:
-    // Constructor to initialize matrices
     DroneEKF() {
         earth_bx = 1.0f; 
         earth_bz = 0.0f;
@@ -143,7 +269,6 @@ public:
         normalizeQuaternion();
     }
 
-    // Clean API for Control Team to read Data
     void getEulerAngles(float &roll, float &pitch, float &yaw) {
         float q0 = x(0,0), q1 = x(1,0), q2 = x(2,0), q3 = x(3,0);
         roll  = atan2f(2.0f*(q0*q1 + q2*q3), q0*q0 - q1*q1 - q2*q2 + q3*q3) * 57.2958f;
@@ -153,76 +278,119 @@ public:
     }
 };
 
-// Global Instance of the EKF
+
 DroneEKF ekf;
 
 // ==========================================
-// 3. RTOS TASKS (Data flow and Execution)
+// 4. RTOS TASKS (Data flow and Execution)
 // ==========================================
-// CORE 1: High Speed Pilot Task (500Hz)
-void Task_ROLL_PITCH(void *pvParameters) {
+
+
+// ============================================================
+//      TASK: ROLL + PITCH (500 Hz / 2ms)
+// ============================================================
+void Task_ROLL_PITCH(void *pvParameters)
+{
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xFrequency = 2; 
-    float dt = 0.002f;
+    const TickType_t xFrequency = pdMS_TO_TICKS(2);
 
-    Vector3 gyro, accel; // Temporary storage
-    float roll, pitch, yaw; // Variables to store our angles
-    int printTimer = 0;     // Counter to slow down the Serial monitor
+    Vector3 accel, gyro;
+    float roll = 0.0f, pitch = 0.0f, yaw = 0.0f;
+    uint32_t lastTimeUs = micros();
+    uint16_t printCounter = 0;
 
-    while(1) {
+    TaskProfiler profiler; // <--- Create our stopwatch
+
+    while (1)
+    {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
+        profiler.start(); // START STOPWATCH
 
-        // 1. ACQUIRE DATA (Clean and abstracted)
-        readIMUData(gyro, accel);
+        // 1. READ IMU
+        readIMUData(accel, gyro);
+        profiler.markI2C(); // RECORD I2C TIME
 
-        // 2. RUN EKF
-        if (xSemaphoreTake(ekfMutex, portMAX_DELAY) == pdTRUE) {
+        // 2. CALCULATE DT
+        uint32_t nowUs = micros();
+        float dt = (nowUs - lastTimeUs) * 1e-6f;
+        lastTimeUs = nowUs;
+        if (dt <= 0.0f || dt > 0.1f) dt = 0.002f; // Safety Catch
+
+        // 3. EKF MATH
+        if (xSemaphoreTake(ekfMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
             ekf.predict(dt, gyro);
             ekf.updateAccel(accel);
-            xSemaphoreGive(ekfMutex);
-        
-        // 3. GET THE DATA OUT OF THE EKF
             ekf.getEulerAngles(roll, pitch, yaw);
-            
             xSemaphoreGive(ekfMutex);
         }
+        profiler.markEKF();
 
-        // 4. PRINT SAFELY (Only 1 out of every 50 loops -> 10Hz)
-        printTimer++;
-        if (printTimer >= 50) {
-            Serial.printf("Roll: %.2f | Pitch: %.2f | Yaw: %.2f\n", roll, pitch, yaw);
-            printTimer = 0; // Reset the counter    
-        }
+        // ==========================================
+        // 4. SAVE TO TELEMETRY & PRINT
+        // ==========================================
+        tlm.accel = accel;
+        tlm.gyro = gyro;
+        tlm.dt = dt;
+        tlm.ekf_roll = roll;
+        tlm.ekf_pitch = pitch;
+        tlm.ekf_yaw = yaw;
+        tlm.pilot_total_us = profiler.total_time;
+
+        printCounter++;
+        if (printCounter >= 100) { // Call print function at 5Hz
+            printEKFValidation();
+            printCounter = 0;
     }
 }
-
-// CORE 0: Low Speed Navigator Task (75Hz)
-void Task_YAW(void *pvParameters) {
+}
+// ============================================================
+// TASK: YAW (~77 Hz / 13 ms)
+// ============================================================
+void Task_YAW(void *pvParameters)
+{
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xFrequency = 13; 
+    const TickType_t xFrequency = pdMS_TO_TICKS(13);
 
     Vector3 mag_vec;
+    uint16_t printCounter = 0;
+    TaskProfiler profiler; // <--- Create our stopwatch
 
-    while(1) {
+    while (1)
+    {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
+        profiler.start(); // START STOPWATCH
 
-        // 1. ACQUIRE DATA
-        if (readMagData(mag_vec)) { 
-            // 2. RUN EKF
-            if (xSemaphoreTake(ekfMutex, 10 / portTICK_PERIOD_MS) == pdTRUE) {
+        // 1. READ MAGNETOMETER
+        bool gotData = readMagData(mag_vec);
+        profiler.markI2C(); // RECORD I2C TIME
+
+        // 2. EKF UPDATE
+        if (gotData) {
+            if (xSemaphoreTake(ekfMutex, pdMS_TO_TICKS(10)) == pdTRUE) {
                 ekf.updateMag(mag_vec);
                 xSemaphoreGive(ekfMutex);
             }
         }
-    }
+        profiler.markEKF(); // RECORD MATH AND TOTAL TIME
+
+        // ==========================================
+        // UPDATE TELEMETRY (No printing here)
+        // ==========================================
+        tlm.mag_updated = gotData;
+        if (gotData) {
+            tlm.mag = mag_vec;
+        }
+        tlm.nav_total_us = profiler.total_time;
+    } 
 }
+
 
 // ==========================================
 // 4. SETUP & LOOP
 // ==========================================
 void setup() {
     Serial.begin(115200);
-
+    uint8_t DRDY_PIN = 7;
     uint8_t SDA_PIN = 10; 
     uint8_t SCL_PIN = 9;
 
@@ -239,18 +407,20 @@ void setup() {
     mag.setOutputRate(RATE_75);
     mag.setGain(FIELD_RANGE_1_3);
 
-    // EKF is now automatically initialized by its Constructor!
+    mag.attachDRDYInterrupt(DRDY_PIN);
+    printEKFValidation;
+
+
 
     // Start RTOS
     ekfMutex = xSemaphoreCreateMutex();
+    i2cMutex = xSemaphoreCreateMutex();
     
-    xTaskCreatePinnedToCore(Task_ROLL_PITCH, "Raw Pitch", 8192, NULL, 2, &TaskRollPitch_Handle, 1);
+    xTaskCreatePinnedToCore(Task_ROLL_PITCH, "Roll Pitch", 8192, NULL, 2, &TaskRollPitch_Handle, 1);
     xTaskCreatePinnedToCore(Task_YAW, "Yaw", 4096, NULL, 1, &TaskYaw_Handle, 0);
-
-
 
 }
 
-void loop() {
+void loop(){
     vTaskDelete(NULL); 
 }
