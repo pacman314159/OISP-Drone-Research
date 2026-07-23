@@ -1,2 +1,8 @@
 pcb/Drone/Drone-backups/
-pcb/Drone/.history/
+pcb/**/.history/
+pcb/**/.history_trim/
+3d_models/Full_body/OldVersions/
+*.zip
+*.bak
+*.lck
+*-backups/

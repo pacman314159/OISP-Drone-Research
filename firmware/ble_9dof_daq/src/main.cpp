@@ -30,17 +30,17 @@ bool deviceConnected = false;
 
 // --- BLE Server Callbacks ---
 class MyServerCallbacks : public NimBLEServerCallbacks {
-    void onConnect(NimBLEServer* pServer) override {
-        deviceConnected = true;
-        Serial.println("Client connected!");
-    }
+  void onConnect(NimBLEServer* pServer) override {
+    deviceConnected = true;
+    Serial.println("Client connected!");
+  }
 
-    void onDisconnect(NimBLEServer* pServer) override {
-        deviceConnected = false;
-        Serial.println("Client disconnected!");
-        // Restart advertising
-        NimBLEDevice::startAdvertising();
-    }
+  void onDisconnect(NimBLEServer* pServer) override {
+    deviceConnected = false;
+    Serial.println("Client disconnected!");
+    // Restart advertising
+    NimBLEDevice::startAdvertising();
+  }
 };
 
 // --- Tasks ---
@@ -70,13 +70,16 @@ void imu_task(void* pvParameters) {
 
   Serial.println("IMU Task Started.");
 
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(SAMPLING_INTERVAL_US / 1000);
+
   while (true) {
     startTimeUs = micros();
     buffer.timestamp = startTimeUs;
 
     mpu.getRawAll();
     mpu.getAllData(buffer.ax, buffer.ay, buffer.az, temp, buffer.gx, buffer.gy, buffer.gz);
-    
+
     // while(not hmc.isDataReady()) yield();
     // hmc.getRawAll();
     // hmc.setMeasMode(SINGLE_MODE);
@@ -87,9 +90,7 @@ void imu_task(void* pvParameters) {
       // Serial.println("Queue full, dropping sample");
     }
 
-    while (micros() - startTimeUs < SAMPLING_INTERVAL_US) {
-      vTaskDelay(1); // Small delay to prevent watchdog trigger while spinning
-    }
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
 
@@ -103,8 +104,8 @@ void ble_task(void* pvParameters) {
 
   NimBLEService *pServiceIMU = pServer->createService(NIMBLE_SERVICE_UUID);
   pSensorChar = pServiceIMU->createCharacteristic(
-      NIMBLE_CHAR_SENSOR_UUID, 
-      NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
+    NIMBLE_CHAR_SENSOR_UUID, 
+    NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
   );
 
   pServiceIMU->start();
@@ -123,7 +124,7 @@ void ble_task(void* pvParameters) {
   while (true) {
     if (xQueueReceive(imuQueue, &batch[batch_index], portMAX_DELAY) == pdPASS) {
       batch_index++;
-      
+
       if (batch_index >= BATCH_SIZE) {
         if (deviceConnected && pSensorChar->getSubscribedCount() > 0) {
           pSensorChar->setValue((uint8_t*)batch, sizeof(batch));
@@ -140,9 +141,9 @@ void setup() {
   while (!Serial && millis() < 5000) { delay(10); }
 
   Serial.println("\n--- Starting ESP32S3 IMU + NimBLE ---");
-  
+
   log_i("Free Internal Heap: %d bytes", ESP.getFreeHeap());
-  
+
   imuQueue = xQueueCreate(QUEUE_LENGTH, sizeof(IMUData));
   if (imuQueue == NULL) {
     Serial.println("Failed to create IMU Queue!");
