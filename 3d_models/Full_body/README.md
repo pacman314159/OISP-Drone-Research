@@ -11,7 +11,8 @@ Every file begins with a subsystem and file type code so team members can immedi
 * `MEC` = Mechanical (Frames, structural mounts, hardware)
 * `PWR` = Power Delivery (Batteries, power distribution boards, cables)
 * `PRP` = Propulsion (Motors, ESCs, propellers)
-* `AVI` = Avionics & Electronics (Flight controllers, sensors, receivers)
+* `AVI` = Avionics
+* `ELE` = Electronics (Flight controllers, PCBs)
 
 **`[TYP]` - File Type:**
 * `ASM` = Assembly (`.iam` files)
