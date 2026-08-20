@@ -4,7 +4,7 @@
 #include <LoRa.h>
 #include <WebServer.h>
 
-#define NODE_ID 2
+#define NODE_ID 1
 
 const char* ssid = "TRANSMITTER";
 const char* password = "Boboiboy123";
@@ -58,7 +58,7 @@ void handleRoot(){
     </head>
     <body>
   
-  <!-- Heading of website for TRANSMITTER -->
+  <!-- Heading of website for TRANSMITTER== -->
     <h2>LoRa Chat - TRANSMITTER </h2>
     <p style='font-size:16px;'>
     <a href='https://youtube.com/@veritasium' style='color:white;'> 
@@ -66,7 +66,7 @@ void handleRoot(){
     </p>
 
   <!-- Texting interface, typing area, sending button -->
-    //Create empty space <div> for message
+    <!-- Create empty space <div> for message -->
     <div class="chat" id="chat"></div>
 
     <!-- Message -->
@@ -77,7 +77,7 @@ void handleRoot(){
 
     <script>
     function loadChat(){
-      //Sending request for esp32, waiting for respond
+      <!-- Sending request for esp32, waiting for respond -->
       fetch('/get').then(function(response){
         return response.text();
         }).then(function(data){
@@ -121,7 +121,7 @@ void handleSend(){
     LoRa.endPacket();
   }
 
-  chatHistory += "<div class='msgA'>Receiver: " + msg + "</div>";
+  chatHistory += "<div class='msgB'>Transmitter: " + msg + "</div>";
   server.send(200, "text/plain", "OK");
 }
 
@@ -168,7 +168,7 @@ void loop() {
       while (LoRa.available()) 
         msg += (char)LoRa.read();
       chatHistory += "<div class='msgA'>" + msg + "</div>";
-      Serial.println("RX: " + msg);
+      Serial.println("TX: " + msg);
     }
   }
 }

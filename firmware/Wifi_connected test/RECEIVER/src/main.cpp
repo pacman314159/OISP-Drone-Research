@@ -4,7 +4,7 @@
 #include <LoRa.h>
 #include <WebServer.h>
 
-#define NODE_ID 1
+#define NODE_ID 2
 
 const char* ssid = "RECEIVER";
 const char* password = "Boboiboy123";
@@ -66,7 +66,7 @@ void handleRoot(){
     </p>
 
   <!-- Texting interface, typing area, sending button -->
-    //Create empty space <div> for message
+    <!-- Create empty space <div> for message -->
     <div class="chat" id="chat"></div>
 
     <!-- Message -->
@@ -77,7 +77,7 @@ void handleRoot(){
 
     <script>
     function loadChat(){
-      //Sending request for esp32, waiting for respond
+      <!-- Sending request for esp32, waiting for respond -->
       fetch('/get').then(function(response){
         return response.text();
         }).then(function(data){
