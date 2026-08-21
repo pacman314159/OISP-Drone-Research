@@ -9,12 +9,12 @@
 const char* ssid = "TRANSMITTER";
 const char* password = "Boboiboy123";
 
-#define NSS 13
-#define RST 6
-#define DIO0 1
-#define SCK 9
-#define MISO 10
-#define MOSI 11
+#define NSS 4
+#define RST 8
+#define DIO0 9
+#define SCK 7
+#define MISO 6
+#define MOSI 5
 #define FREQUENCY 433E6
 
 WebServer server(80);
