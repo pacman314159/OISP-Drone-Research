@@ -207,6 +207,7 @@ void GY87_HMC5883L::attachDRDYInterrupt(uint8_t pin){
 }
 
 bool GY87_HMC5883L::isDataReady(){
+  
   return dataReady;
 }
 
