@@ -1,80 +1,53 @@
 #include <Arduino.h>
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "TaskStatsAnalyzer.h"
 
-// -----------------------------------------------------------------------------
-// Example workload task
-// This task simulates CPU usage so we can observe core utilization
-// -----------------------------------------------------------------------------
-void workTask(void *arg)
-{
-  // Volatile prevents compiler optimization removing the busy loop
-  volatile uint32_t sink = 0;
-
-  while (true)
-  {
-
-    // Busy loop to burn CPU cycles
-    for (int i = 0; i < 200000; ++i)
-    {
-      sink += i;
+// A dummy task that consumes a little bit of CPU
+void dummyTask(void *arg) {
+    while (1) {
+        // Burn some CPU cycles
+        for (volatile int i = 0; i < 50000; i++) {}
+        // Yield to allow other tasks to run
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
-
-    // Yield CPU time for ~20 ms
-    // Without this, the task would starve lower-priority tasks
-    vTaskDelay(pdMS_TO_TICKS(20));
-  }
 }
 
-TaskStatsAnalyzer taskStatsAnalyzer(5000);
-
-void setup()
-{
-  Serial.begin(115200);
-  delay(500);
-
-  // Create a worker task pinned to core 0
-  xTaskCreatePinnedToCore(
-      workTask, // Task function
-      "WORK0",  // Task name (shows up in stats)
-      8192,     // Stack size in bytes
-      nullptr,  // Task parameters
-      2,        // Priority
-      nullptr,  // Task handle
-      0);       // Core 0
-
-  // Create a worker task pinned to core 1
-  xTaskCreatePinnedToCore(
-      workTask,
-      "WORK1",
-      4096,
-      nullptr,
-      2,
-      nullptr,
-      1); // Core 1
-
-  // Create a worker task with no affinity
-  xTaskCreatePinnedToCore(
-      workTask,
-      "WORK2",
-      4096,
-      nullptr,
-      2,
-      nullptr,
-      tskNO_AFFINITY);
-
-  // Create a worker task with no affinity
-  xTaskCreate(
-      workTask,
-      "WORK3",
-      4096,
-      nullptr,
-      2,
-      nullptr);
+void setup() {
+    Serial.begin(115200);
+    delay(1000);
+    
+    // Create 5 dummy tasks spread across the dual-core system
+    xTaskCreatePinnedToCore(dummyTask, "Task_1", 2048, NULL, 1, NULL, tskNO_AFFINITY); // Core 0
+    xTaskCreatePinnedToCore(dummyTask, "Task_2", 2048, NULL, 1, NULL, tskNO_AFFINITY); // Core 1
+    xTaskCreatePinnedToCore(dummyTask, "Task_3", 2048, NULL, 1, NULL, tskNO_AFFINITY); // Core 0
+    xTaskCreatePinnedToCore(dummyTask, "Task_4", 2048, NULL, 1, NULL, tskNO_AFFINITY); // Core 1
+    xTaskCreatePinnedToCore(dummyTask, "Task_5", 2048, NULL, 1, NULL, tskNO_AFFINITY); // No Affinity
 }
 
-void loop()
-{
-  Serial.print(".");
-  vTaskDelay(pdMS_TO_TICKS(10));
+void loop() {
+    // Allocate a buffer large enough to hold the text. 
+    // FreeRTOS recommends ~40 bytes per task. 1024 is plenty for a typical project.
+    char statsBuffer[1024];
+    
+    // Call the built-in FreeRTOS formatting function
+    vTaskGetRunTimeStats(statsBuffer);
+
+    Serial.println("\n--- FreeRTOS Task Runtime Statistics ---");
+    Serial.println("Task            Abs Time      % Time");
+    Serial.println("----------------------------------------");
+    
+    // Print the raw formatted buffer
+    Serial.print(statsBuffer);
+    
+    // Print out the statistics every 2 seconds
+    delay(2000);
+}
+
+// Required ESP-IDF entry point for Arduino-as-a-component
+extern "C" void app_main() {
+    initArduino();
+    setup();
+    while(true) {
+        loop();
+    }
 }

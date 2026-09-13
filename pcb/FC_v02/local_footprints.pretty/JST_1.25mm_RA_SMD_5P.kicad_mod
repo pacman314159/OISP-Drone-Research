@@ -1,0 +1,194 @@
+(footprint "JST_1.25mm_RA_SMD_5P"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at 1.25 6.1 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "9596f928-ccc7-4ef7-8ee0-cf6eb8dbf05d")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "JST_1.25mm_RA_SMD_5P"
+		(at 1.2 9.6 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "ca463f85-ebb1-4db7-b828-90f8e2142ddd")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "01fa1220-91e3-4e82-9da8-8553b83dc1bd")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "e6991fc8-fbfc-4033-b954-afdf97ab6a04")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Supplier" "https://icdayroi.com/5p-1-25mm-smt-connector"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "48f1f159-ecee-4821-8e96-f31bb2b01653")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+		)
+	)
+	(attr smd)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start -3.8 -1)
+		(end -3.8 4.6)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "ae7e0e17-1bf8-443a-aee5-933e73963fe1")
+	)
+	(fp_line
+		(start 6.8 -1)
+		(end -3.8 -1)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "d64e377f-7e12-487a-bb7a-1a17d621400a")
+	)
+	(fp_line
+		(start 8.8 4.6)
+		(end -3.8 4.6)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "6ee725fb-4322-4f24-bf88-dcdfcce53628")
+	)
+	(fp_line
+		(start 8.8 4.6)
+		(end 8.8 1)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "3c1621a7-35e4-4d93-8120-bbed3b278d1a")
+	)
+	(fp_rect
+		(start -3.8 -1)
+		(end 8.8 4.6)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "8c877497-141e-4fe6-b688-419abbf9ce5c")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 1.2 8 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "6f90abca-8988-474c-b096-38ed2f98097f")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "" smd roundrect
+		(at -2.55 2.9)
+		(size 2.1 3)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "61e344b7-3afb-4ad6-bd7e-92f12439e30a")
+	)
+	(pad "" smd roundrect
+		(at 7.55 2.9)
+		(size 2.1 3)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "b9cdaa49-c2b8-4ad4-8427-6b2a99cc891c")
+	)
+	(pad "1" smd roundrect
+		(at 0 0)
+		(size 0.8 1.6)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "d8b9df09-e639-4456-a4fa-4917e23da276")
+	)
+	(pad "2" smd roundrect
+		(at 1.25 0)
+		(size 0.8 1.6)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "be821ccc-98a3-45aa-8462-8fcbf7b8cfdd")
+	)
+	(pad "3" smd roundrect
+		(at 2.5 0)
+		(size 0.8 1.6)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "59bf9684-74a7-4026-a9fd-a5433cd7daff")
+	)
+	(pad "4" smd roundrect
+		(at 3.75 0)
+		(size 0.8 1.6)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "2e8d4e86-4d94-4b49-a76a-a865daf23bd6")
+	)
+	(pad "5" smd roundrect
+		(at 5 0)
+		(size 0.8 1.6)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.15)
+		(uuid "f011384e-6218-41fe-be65-1d62b9c1d0bf")
+	)
+	(embedded_fonts no)
+	(model "${KICAD10_3DMODEL_DIR}/Connector_Molex.3dshapes/Molex_PicoBlade_53261-0571_1x05-1MP_P1.25mm_Horizontal.step"
+		(offset
+			(xyz 2.5 -2 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz -0 -0 -0)
+		)
+	)
+)

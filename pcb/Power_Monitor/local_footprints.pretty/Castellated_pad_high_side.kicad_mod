@@ -1,0 +1,91 @@
+(footprint "Castellated_pad_high_side"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at -0.65 -8.15 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "4cb311fa-cac9-4d12-ad00-60050e31496a")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.1)
+			)
+		)
+	)
+	(property "Value" "Castellated_pad_high_side"
+		(at -0.65 -6.65 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "509dabff-dca3-4f22-8944-2bd9a696f73b")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "baebb022-d81e-4cf3-93f6-a815eea1a443")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "77172000-3984-4e0f-8cfa-a3fd10ee626a")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_rect
+		(start -2 3)
+		(end 2 -3)
+		(stroke
+			(width 0.1)
+			(type solid)
+		)
+		(fill no)
+		(layer "Dwgs.User")
+		(uuid "dcd79718-155c-445e-820e-c341e102e451")
+	)
+	(fp_text user "${REFERENCE}"
+		(at -0.65 -5.15 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "54bbace0-bf24-4e4c-91f1-51294301715e")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" thru_hole roundrect
+		(at 0 0)
+		(size 4 6)
+		(drill oval 3 4.6)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(roundrect_rratio 0.1968503937)
+		(zone_connect 2)
+		(uuid "a694a831-d27b-4590-b32d-06d09b7aa6b6")
+	)
+	(embedded_fonts no)
+)

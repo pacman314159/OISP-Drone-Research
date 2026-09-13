@@ -14932,7 +14932,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "1u"
+		(property "Value" "0.1u"
 			(at 124.46 81.2862 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -17454,7 +17454,7 @@
 				)
 			)
 		)
-		(property "Value" "100"
+		(property "Value" "100R"
 			(at 213.36 52.07 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -19674,7 +19674,7 @@
 				)
 			)
 		)
-		(property "Value" "JST1.25"
+		(property "Value" "2.54mm"
 			(at 97.028 218.186 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -24754,7 +24754,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4K7"
+		(property "Value" "5K1"
 			(at 144.78 97.7899 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -25835,7 +25835,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "2K"
+		(property "Value" "330R"
 			(at 215.8277 125.7299 0)
 			(show_name no)
 			(do_not_autoplace no)
