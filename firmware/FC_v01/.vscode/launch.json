@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "PlatformIO Debug (ESP32-S3 Built-in JTAG)",
+      "type": "platformio-debug",
+      "request": "launch",
+      "executable": "${workspaceFolder}/.pio/build/esp32-s3-devkitc-1/firmware.elf",
+      "projectEnvName": "esp32-s3-devkitc-1"
+    }
+  ]
+}
