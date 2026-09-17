@@ -4,113 +4,137 @@
 #include <cstring>
 #include <cmath>
 #include <initializer_list>
+#include <type_traits>
+#include "config.h"
+#include "platforms/hal/hal_simd.h"
 
-template<uint8_t ROWS, uint8_t COLS>
+template<typename T = float, uint8_t ROWS = 3, uint8_t COLS = 1>
 class Matrix {
 public:
-  float m[ROWS * COLS];
+  union {
+    T m[ROWS * COLS];
+    struct { T x, y, z; };
+  };
 
-  // Default constructor does nothing to prevent double-writing 0s for speed.
-  Matrix() = default;
+  Matrix() : m{0}{}
 
-  // Initializer list constructor (e.g., Vec7 x = {1, 0, 0, 0, 0, 0, 0};)
-  Matrix(std::initializer_list<float> values){
+  Matrix(std::initializer_list<T> values){
     uint8_t i = 0;
-    for(float val : values)
+    for(T val : values)
       if(i < ROWS * COLS) m[i++] = val;
   }
 
-  static Matrix<ROWS, COLS> zeros(){
-    Matrix<ROWS, COLS> Z;
+  static Matrix<T, ROWS, COLS> zeros(){
+    Matrix<T, ROWS, COLS> Z;
     memset(Z.m, 0, sizeof(Z.m));
     return Z;
   }
 
-  static Matrix<ROWS, COLS> identity(){
+  static Matrix<T, ROWS, COLS> identity(){
     static_assert(ROWS == COLS, "Identity only valid for square matrices");
-    Matrix<ROWS, COLS> I = zeros();
-    for(uint8_t i = 0; i < ROWS; i++){
-      I.m[i * COLS + i] = 1.0f;
-    }
+    Matrix<T, ROWS, COLS> I = zeros();
+    for(uint8_t i = 0; i < ROWS; i++)
+      I.m[i * COLS + i] = static_cast<T>(1);
     return I;
   }
 
-  // Access operator: M(row, col) - zero indexed
-  float& operator()(uint8_t row, uint8_t col){
+  T& operator()(uint8_t row, uint8_t col){
     return m[row * COLS + col];
   }
 
-  const float& operator()(uint8_t row, uint8_t col) const{
+  const T& operator()(uint8_t row, uint8_t col) const {
     return m[row * COLS + col];
   }
 
-  Matrix<ROWS, COLS>& operator+=(const Matrix<ROWS, COLS>& B){
+  T& operator[](size_t index){
+    return m[index];
+  }
+
+  const T& operator[](size_t index) const {
+    return m[index];
+  }
+
+  Matrix<T, COLS, ROWS> transpose() const {
+    Matrix<T, COLS, ROWS> T_mat;
+    for(uint8_t i = 0; i < ROWS; ++i)
+      for(uint8_t j = 0; j < COLS; ++j)
+        T_mat.m[j * ROWS + i] = m[i * COLS + j];
+    return T_mat;
+  }
+
+  // =========================================================================
+  // MATHEMATICAL OPERATIONS (Conventional Block vs SIMD Accelerated Block)
+  // =========================================================================
+#if (!ENABLE_SIMD_ACCELERATION)
+
+  Matrix<T, ROWS, COLS>& operator+=(const Matrix<T, ROWS, COLS>& B){
     for(uint8_t i = 0; i < ROWS * COLS; ++i) this->m[i] += B.m[i];
     return *this;
   }
 
-  Matrix<ROWS, COLS>& operator-=(const Matrix<ROWS, COLS>& B){
+  Matrix<T, ROWS, COLS>& operator-=(const Matrix<T, ROWS, COLS>& B){
     for(uint8_t i = 0; i < ROWS * COLS; ++i) this->m[i] -= B.m[i];
     return *this;
   }
 
-  Matrix<ROWS, COLS>& operator*=(float scalar){
+  Matrix<T, ROWS, COLS>& operator*=(T scalar){
     for(uint8_t i = 0; i < ROWS * COLS; ++i) this->m[i] *= scalar;
     return *this;
   }
 
-  Matrix<ROWS, COLS> operator+(const Matrix<ROWS, COLS>& B) const{
-    Matrix<ROWS, COLS> result = *this;
-    result += B;
-    return result;
+  Matrix<T, ROWS, COLS> operator+(const Matrix<T, ROWS, COLS>& B) const {
+    Matrix<T, ROWS, COLS> res = *this;
+    res += B;
+    return res;
   }
 
-  Matrix<ROWS, COLS> operator-(const Matrix<ROWS, COLS>& B) const{
-    Matrix<ROWS, COLS> result = *this;
-    result -= B;
-    return result;
+  Matrix<T, ROWS, COLS> operator-(const Matrix<T, ROWS, COLS>& B) const {
+    Matrix<T, ROWS, COLS> res = *this;
+    res -= B;
+    return res;
   }
 
-  Matrix<ROWS, COLS> operator*(float scalar) const{
-    Matrix<ROWS, COLS> result = *this;
-    result *= scalar;
-    return result;
+  Matrix<T, ROWS, COLS> operator*(T scalar) const {
+    Matrix<T, ROWS, COLS> res = *this;
+    res *= scalar;
+    return res;
   }
 
   template<uint8_t OTHER_COLS>
-  Matrix<ROWS, OTHER_COLS> operator*(const Matrix<COLS, OTHER_COLS>& B) const{
-    Matrix<ROWS, OTHER_COLS> C = Matrix<ROWS, OTHER_COLS>::zeros();
-    for(uint8_t i = 0; i < ROWS; ++i){
+  Matrix<T, ROWS, OTHER_COLS> operator*(const Matrix<T, COLS, OTHER_COLS>& B) const {
+    Matrix<T, ROWS, OTHER_COLS> C;
+    memset(C.m, 0, sizeof(C.m));
+    for(uint8_t i = 0; i < ROWS; ++i)
       for(uint8_t k = 0; k < COLS; ++k){
-        float temp = m[i * COLS + k];
-        for(uint8_t j = 0; j < OTHER_COLS; ++j){
+        T temp = m[i * COLS + k];
+        for(uint8_t j = 0; j < OTHER_COLS; ++j)
           C.m[i * OTHER_COLS + j] += temp * B.m[k * OTHER_COLS + j];
-        }
       }
-    }
     return C;
   }
 
-  Matrix<COLS, ROWS> transpose() const{
-    Matrix<COLS, ROWS> T;
-    for(uint8_t i = 0; i < ROWS; ++i){
-      for(uint8_t j = 0; j < COLS; ++j){
-        T.m[j * ROWS + i] = m[i * COLS + j];
-      }
-    }
-    return T;
+  T norm() const {
+    T sum = 0;
+    for(uint8_t i = 0; i < ROWS * COLS; ++i) sum += m[i] * m[i];
+    return static_cast<T>(sqrt(sum));
   }
 
-  Matrix<3, 3> inverse3x3() const{
+  void normalize(){
+    T mag = norm();
+    if(mag > static_cast<T>(0))
+      *this *= (static_cast<T>(1) / mag);
+  }
+
+  Matrix<T, 3, 3> inverse3x3() const {
     static_assert(ROWS == 3 && COLS == 3, "inverse3x3 only valid for 3x3 matrices");
-    Matrix<3, 3> inv;
-    float det = m[0]*(m[4]*m[8] - m[5]*m[7]) -
-                m[1]*(m[3]*m[8] - m[5]*m[6]) +
-                m[2]*(m[3]*m[7] - m[4]*m[6]);
+    Matrix<T, 3, 3> inv;
+    T det = m[0]*(m[4]*m[8] - m[5]*m[7]) -
+            m[1]*(m[3]*m[8] - m[5]*m[6]) +
+            m[2]*(m[3]*m[7] - m[4]*m[6]);
 
-    if(fabs(det) < 1e-6f) return zeros();
+    if(fabs(static_cast<float>(det)) < 1e-6f) return zeros();
 
-    float inv_det = 1.0f / det;
+    T inv_det = static_cast<T>(1) / det;
     inv.m[0] =  (m[4]*m[8] - m[5]*m[7]) * inv_det;
     inv.m[1] = -(m[1]*m[8] - m[2]*m[7]) * inv_det;
     inv.m[2] =  (m[1]*m[5] - m[2]*m[4]) * inv_det;
@@ -123,25 +147,122 @@ public:
     return inv;
   }
 
-  // ==========================================
-  // Vector Specific Functions (Nx1 vectors)
-  // ==========================================
+#else // ENABLE_SIMD_ACCELERATION (Hardware SIMD Vector Math Acceleration)
 
-  // Magnitude of vector
-  float norm() const{
-    float sum = 0.0f;
-    for(uint8_t i = 0; i < ROWS * COLS; ++i) sum += m[i] * m[i];
-    return sqrtf(sum);
+  Matrix<T, ROWS, COLS>& operator+=(const Matrix<T, ROWS, COLS>& B){
+    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int16_t> || std::is_same_v<T, int8_t>)
+      hal_simd::add(this->m, B.m, this->m, ROWS * COLS);
+    else
+      for(uint8_t i = 0; i < ROWS * COLS; ++i) this->m[i] += B.m[i];
+    return *this;
   }
 
-  // In-place normalization (Crucial for Quaternions, Accel, Mag readings)
+  Matrix<T, ROWS, COLS>& operator-=(const Matrix<T, ROWS, COLS>& B){
+    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int16_t> || std::is_same_v<T, int8_t>)
+      hal_simd::sub(this->m, B.m, this->m, ROWS * COLS);
+    else
+      for(uint8_t i = 0; i < ROWS * COLS; ++i) this->m[i] -= B.m[i];
+    return *this;
+  }
+
+  Matrix<T, ROWS, COLS>& operator*=(T scalar){
+    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int16_t> || std::is_same_v<T, int8_t>)
+      hal_simd::scale(this->m, scalar, this->m, ROWS * COLS);
+    else
+      for(uint8_t i = 0; i < ROWS * COLS; ++i) this->m[i] *= scalar;
+    return *this;
+  }
+
+  Matrix<T, ROWS, COLS> operator+(const Matrix<T, ROWS, COLS>& B) const {
+    Matrix<T, ROWS, COLS> res = *this;
+    res += B;
+    return res;
+  }
+
+  Matrix<T, ROWS, COLS> operator-(const Matrix<T, ROWS, COLS>& B) const {
+    Matrix<T, ROWS, COLS> res = *this;
+    res -= B;
+    return res;
+  }
+
+  Matrix<T, ROWS, COLS> operator*(T scalar) const {
+    Matrix<T, ROWS, COLS> res = *this;
+    res *= scalar;
+    return res;
+  }
+
+  template<uint8_t OTHER_COLS>
+  Matrix<T, ROWS, OTHER_COLS> operator*(const Matrix<T, COLS, OTHER_COLS>& B) const {
+    Matrix<T, ROWS, OTHER_COLS> C;
+    if constexpr (std::is_same_v<T, float>)
+      hal_simd::mat_mul_f32(this->m, B.m, C.m, ROWS, COLS, OTHER_COLS);
+    else{
+      memset(C.m, 0, sizeof(C.m));
+      for(uint8_t i = 0; i < ROWS; ++i)
+        for(uint8_t k = 0; k < COLS; ++k){
+          T temp = m[i * COLS + k];
+          for(uint8_t j = 0; j < OTHER_COLS; ++j)
+            C.m[i * OTHER_COLS + j] += temp * B.m[k * OTHER_COLS + j];
+        }
+    }
+    return C;
+  }
+
+  T norm() const {
+    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int16_t> || std::is_same_v<T, int8_t>)
+      return static_cast<T>(sqrt(hal_simd::dot_product(this->m, this->m, ROWS * COLS)));
+    else{
+      T sum = 0;
+      for(uint8_t i = 0; i < ROWS * COLS; ++i) sum += m[i] * m[i];
+      return static_cast<T>(sqrt(sum));
+    }
+  }
+
   void normalize(){
-    float mag = norm();
-    if(mag > 0.0f)
-      for(uint8_t i = 0; i < ROWS * COLS; ++i) m[i] /= mag;
+    T mag = norm();
+    if(mag > static_cast<T>(0))
+      *this *= (static_cast<T>(1) / mag);
   }
+
+  Matrix<T, 3, 3> inverse3x3() const {
+    static_assert(ROWS == 3 && COLS == 3, "inverse3x3 only valid for 3x3 matrices");
+    Matrix<T, 3, 3> inv;
+    if constexpr (std::is_same_v<T, float>){
+      if(hal_simd::inv3x3_f32(this->m, inv.m)) return inv;
+      return zeros();
+    }else{
+      T det = m[0]*(m[4]*m[8] - m[5]*m[7]) -
+              m[1]*(m[3]*m[8] - m[5]*m[6]) +
+              m[2]*(m[3]*m[7] - m[4]*m[6]);
+
+      if(fabs(static_cast<float>(det)) < 1e-6f) return zeros();
+
+      T inv_det = static_cast<T>(1) / det;
+      inv.m[0] =  (m[4]*m[8] - m[5]*m[7]) * inv_det;
+      inv.m[1] = -(m[1]*m[8] - m[2]*m[7]) * inv_det;
+      inv.m[2] =  (m[1]*m[5] - m[2]*m[4]) * inv_det;
+      inv.m[3] = -(m[3]*m[8] - m[5]*m[6]) * inv_det;
+      inv.m[4] =  (m[0]*m[8] - m[2]*m[6]) * inv_det;
+      inv.m[5] = -(m[0]*m[5] - m[2]*m[3]) * inv_det;
+      inv.m[6] =  (m[3]*m[7] - m[4]*m[6]) * inv_det;
+      inv.m[7] = -(m[0]*m[7] - m[1]*m[6]) * inv_det;
+      inv.m[8] =  (m[0]*m[4] - m[1]*m[3]) * inv_det;
+      return inv;
+    }
+  }
+
+#endif
 };
 
-typedef Matrix<7, 1> Vec7; // State Vector (x)
-typedef Matrix<4, 1> Vec4; // Quaternions (q_pred, q_update)
-typedef Matrix<3, 1> Vec3; // Sensor Readings, Innovation (z, h, y, omega)
+typedef Matrix<float, 7, 1> Vec7; // State Vector (x)
+typedef Matrix<float, 4, 1> Vec4; // Quaternions (q_pred, q_update)
+
+// Vec3 inherits Matrix<T, 3, 1>
+template<typename T = float>
+struct Vec3 : public Matrix<T, 3, 1> {
+  using Matrix<T, 3, 1>::Matrix;
+
+  Vec3() : Matrix<T, 3, 1>{0, 0, 0}{}
+  Vec3(T x_, T y_, T z_) : Matrix<T, 3, 1>{x_, y_, z_}{}
+  Vec3(const Matrix<T, 3, 1>& mat) : Matrix<T, 3, 1>(mat){}
+};

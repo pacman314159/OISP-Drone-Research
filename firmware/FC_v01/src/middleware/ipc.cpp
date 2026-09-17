@@ -1,11 +1,12 @@
 #include "middleware/ipc.h"
 
-// Instantiate Global FreeRTOS Mutex Handles
 SemaphoreHandle_t i2c0_mutex = nullptr;
 SemaphoreHandle_t i2c1_mutex = nullptr;
 
-// Instantiate Global Thread-Safe Static IMU Ring Buffer
-RingBuffer<IMUSample, GYRO_RAW_RING_BUF_SIZE> imu_ring_buffer;
+RingBuffer<Vec3<int16_t>, GYRO_RAW_RING_BUF_SIZE> accel_raw_msb;
+RingBuffer<Vec3<int16_t>, GYRO_RAW_RING_BUF_SIZE> gyro_raw_msb;
+RingBuffer<Vec3<int16_t>, GYRO_RAW_RING_BUF_SIZE> mag_raw_msb;
+RingBuffer<Vec3<int16_t>, GYRO_RAW_RING_BUF_SIZE> pressure_raw_msb;
 
 bool init_ipc(){
   if(i2c0_mutex == nullptr)

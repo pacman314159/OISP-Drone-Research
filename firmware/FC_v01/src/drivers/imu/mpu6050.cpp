@@ -109,7 +109,7 @@ bool MPU6050::enable_bypass(){
   return _i2c.write_reg(_dev_addr, REG_INT_CFG, int_cfg);
 }
 
-bool MPU6050::get_all_data(IMUSample& sample){
+bool MPU6050::get_all_data_raw(Vec3<int16_t>& accel_raw_msb, Vec3<int16_t>& gyro_raw_msb, int16_t& temp_raw_msb){
   uint8_t raw_buf[14];
   if(!_i2c.read_reg_multi(_dev_addr, REG_ACCEL_X, raw_buf, 14))
     return false;
@@ -122,16 +122,35 @@ bool MPU6050::get_all_data(IMUSample& sample){
   _gyro_raw_y  = static_cast<int16_t>((raw_buf[10] << 8) | raw_buf[11]);
   _gyro_raw_z  = static_cast<int16_t>((raw_buf[12] << 8) | raw_buf[13]);
 
-  // Physical unit conversions (m/s^2, rad/s, Celsius)
-  sample.a[0] = (_accel_raw_x / _accel_sens) * GRAVITY_MSS;
-  sample.a[1] = (_accel_raw_y / _accel_sens) * GRAVITY_MSS;
-  sample.a[2] = (_accel_raw_z / _accel_sens) * GRAVITY_MSS;
+  accel_raw_msb.x = _accel_raw_x;
+  accel_raw_msb.y = _accel_raw_y;
+  accel_raw_msb.z = _accel_raw_z;
 
-  sample.g[0] = (_gyro_raw_x / _gyro_sens) * DEG_TO_RAD;
-  sample.g[1] = (_gyro_raw_y / _gyro_sens) * DEG_TO_RAD;
-  sample.g[2] = (_gyro_raw_z / _gyro_sens) * DEG_TO_RAD;
+  gyro_raw_msb.x = _gyro_raw_x;
+  gyro_raw_msb.y = _gyro_raw_y;
+  gyro_raw_msb.z = _gyro_raw_z;
 
-  sample.t = (_temp_raw / 340.0f) + 36.53f;
+  temp_raw_msb = _temp_raw;
+
+  return true;
+}
+
+bool MPU6050::get_all_data(Vec3<float>& accel, Vec3<float>& gyro, float& temp){
+  Vec3<int16_t> accel_raw, gyro_raw;
+  int16_t temp_raw;
+
+  if(!get_all_data_raw(accel_raw, gyro_raw, temp_raw))
+    return false;
+
+  accel.x = (accel_raw.x / _accel_sens) * GRAVITY_MSS;
+  accel.y = (accel_raw.y / _accel_sens) * GRAVITY_MSS;
+  accel.z = (accel_raw.z / _accel_sens) * GRAVITY_MSS;
+
+  gyro.x = (gyro_raw.x / _gyro_sens) * DEG_TO_RAD;
+  gyro.y = (gyro_raw.y / _gyro_sens) * DEG_TO_RAD;
+  gyro.z = (gyro_raw.z / _gyro_sens) * DEG_TO_RAD;
+
+  temp = (static_cast<float>(temp_raw) / 340.0f) + 36.53f;
 
   return true;
 }

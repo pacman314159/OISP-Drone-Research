@@ -35,9 +35,9 @@ public:
     size_t count_copy = _count;
     size_t head_copy = _head;
 
-    if(count_copy < N){ // Buffer not full yet, copy elements 0..count_copy-1
+    if(count_copy < N)
       memcpy(out_window, _buffer, count_copy * sizeof(T));
-    } else { // Buffer full, copy in two chunks around the head index
+    else{ // Buffer full, copy in two chunks around the head index
       size_t right_len = N - head_copy;
       memcpy(out_window, &_buffer[head_copy], right_len * sizeof(T));
       if(head_copy > 0)

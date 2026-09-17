@@ -14,8 +14,10 @@
 - **Indentation level**: 1 level corresponds with 2 spaces (1 tab)
 
 ## 5. Coding Style & Bracing Conventions
-- **Single-Line `if` Statements**: If an `if` statement contains only 1 line of code inside its body, omit the curly braces `{}`. (e.g., `if(condition) return false;`).
+- **Single-Line Control Flow Bracing**: If an `if`, `else`, `while`, `for`, or `switch` statement contains only 1 statement/line inside its body (including nested single-statement control flows), omit the curly braces `{}`. (e.g., `if(condition) return false;`, `for(uint8_t j = 0; j < N; ++j) sum += a[j];`).
 - **Function Declaration Bracing**: Functions and method bodies must have NO space between the closing parenthesis `)` and opening brace `{` (e.g., `bool empty(){` instead of `bool empty() {`).
 - **Control Flow Keyword & Opening Brace Spacing**: Control flow statements (`if`, `while`, `for`, `switch`) must have NO space between the keyword and opening parenthesis `(`, and NO space between the closing parenthesis `)` and opening brace `{` (e.g., `if(condition){` instead of `if (condition) {`, `while(true){` instead of `while (true) {`).
+- **`else` Keyword Spacing**: `else` statements attached to closing braces must have NO space around `else` (e.g., `}else{` instead of `} else {`, `}else if(condition){` instead of `} else if (condition) {`).
+- **Namespace Indentation**: Everything declared/defined inside a `namespace` block (`namespace hal_simd { ... }`) must be indented by 1 level (2 spaces).
 
 

@@ -15,12 +15,17 @@ void accel_gyro_daq_task(void* arg){
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
     if(xSemaphoreTake(i2c0_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) != pdTRUE) continue;
-    IMUSample sample;
-    bool success = mpu->get_all_data(sample);
+    Vec3<int16_t> accel_raw;
+    Vec3<int16_t> gyro_raw;
+    float temp_raw = 0.0f;
+    bool success = mpu->get_all_data_raw(accel_raw, gyro_raw, temp_raw);
     xSemaphoreGive(i2c0_mutex);
 
-    if(success) imu_ring_buffer.push(sample);
-    Serial.printf("%.4f, %.4f, %.4f\n", sample.a[0], sample.a[1], sample.a[2]);
+    if(success){
+      accel_raw_msb.push(accel_raw);
+      gyro_raw_msb.push(gyro_raw);
+    }
+    Serial.printf("%d, %d, %d\n", accel_raw.x, accel_raw.y, accel_raw.z);
   }
 }
 

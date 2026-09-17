@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "config.h"
+#include "src/core/math/matrix.h"
 
 // Conditional HAL abstraction selector (Sync when SYSTEM_I2C0_MODE_ASYNC is false)
 #if (!SYSTEM_I2C0_MODE_ASYNC)
@@ -58,8 +59,6 @@ enum ClockSource {
   CLOCK_KEEP_RESET       = 7
 };
 
-#include "types.h"
-
 class MPU6050 {
 
 public:
@@ -72,8 +71,9 @@ public:
   bool set_gyro_range(GyroRange range);
   bool set_accel_range(AccelRange range);
 
-  // Synchronous multi-byte burst read & physical conversion
-  bool get_all_data(IMUSample& sample);
+  // Synchronous multi-byte burst raw read & converted data
+  bool get_all_data_raw(Vec3<int16_t>& accel_raw_msb, Vec3<int16_t>& gyro_raw_msb, int16_t& temp_raw_msb);
+  bool get_all_data(Vec3<float>& accel, Vec3<float>& gyro, float& temp);
 
   // Raw data getters
   int16_t get_raw_accel_x(){ return _accel_raw_x; }
