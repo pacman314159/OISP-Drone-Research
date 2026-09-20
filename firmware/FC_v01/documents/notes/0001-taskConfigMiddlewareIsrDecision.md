@@ -4,15 +4,7 @@ title: Centralized Task Config, Middleware ISR Callbacks & RMT PPM Decoding Deci
 author: Drone Research Team / Developer
 date: 2026-09-15
 time: 19:43:36 +07:00
-tags:
-  - #zettelkasten
-  - #firmware
-  - #architecture
-  - #fc_v01
-  - #freertos
-  - #config
-  - #espressif
-  - #rmt
+tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#freertos", "#config", "#espressif", "#rmt"]
 references:
   - "[[0000-firmwareStructureLayerDecision]]"
 ---

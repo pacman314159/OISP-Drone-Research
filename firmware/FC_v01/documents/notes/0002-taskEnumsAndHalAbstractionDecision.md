@@ -4,15 +4,7 @@ title: System 4 Priority Levels, Enum Task Config, Target-Agnostic HAL, Explicit
 author: Drone Research Team / Developer
 date: 2026-09-15
 time: 20:48:49 +07:00
-tags:
-  - #zettelkasten
-  - #firmware
-  - #architecture
-  - #fc_v01
-  - #freertos
-  - #config
-  - #hal
-  - #ipc
+tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#freertos", "#config", "#hal", "#ipc"]
 references:
   - "[[0000-firmwareStructureLayerDecision]]"
   - "[[0001-taskConfigMiddlewareIsrDecision]]"
@@ -81,6 +73,10 @@ enum TaskFrequencies : uint16_t {
 - All Layer 3 shared RTOS resources — including synchronization primitives (mutexes `i2c0_mutex`/`i2c1_mutex`, semaphores), inter-task data pipes (queues, ring buffers `imu_ring_buffer`), and shared memory allocations — MUST be declared centrally in `src/middleware/ipc.h` and instantiated in `src/middleware/ipc.cpp`.
 - Initialization of all system IPC handles MUST be executed via `init_ipc()`. Scattering IPC declarations across drivers or application code is strictly forbidden.
 
+### Rule 7: FreeRTOS Task Scoping & Scoped Layering
+- FreeRTOS tasks MUST be declared and defined strictly in Layer 4 (`src/core/`, e.g. `src/core/daq/`, `src/core/control/`, `src/core/estimators/`, `src/core/telemetry/`) or Layer 5 (`src/app/`).
+- Declaring or creating FreeRTOS tasks inside Layer 2 (`drivers/`) or below is strictly prohibited. `daq/` stands for **Data Acquisition**.
+
 ---
 
 ## 3. Impact & Architectural Constraints
@@ -90,3 +86,4 @@ enum TaskFrequencies : uint16_t {
 4. **Explicit Typing Rule**: Replace any `auto` declarations with explicit types.
 5. **Deterministic Delay Rule**: Use `vTaskDelayUntil()` for all periodic loops.
 6. **Centralized IPC Rule**: Declare all shared locks, semaphores, queues, and ring buffers inside `src/middleware/ipc.h` / `ipc.cpp` and initialize via `init_ipc()`.
+7. **Task Scoping Rule**: Ensure all task functions reside exclusively in `core/` or `app/` (e.g. `src/core/daq/daq_tasks.h`).

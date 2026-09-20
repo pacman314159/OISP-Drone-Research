@@ -4,13 +4,7 @@ title: Layer 1 SIMD HAL Architecture & Zero-Fallback Rule
 author: Drone Research Team / Developer
 date: 2026-09-17
 time: 15:40:00 +07:00
-tags:
-  - #zettelkasten
-  - #firmware
-  - #architecture
-  - #fc_v01
-  - #simd
-  - #hal
+tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#simd", "#hal"]
 references:
   - "[[0000-firmwareStructureLayerDecision]]"
   - "[[0002-taskEnumsAndHalAbstractionDecision]]"

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <cstddef>
+#include "config.h"
 
 class HAL_I2C {
 public:
@@ -11,8 +12,6 @@ public:
   virtual bool read_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t* out_data) = 0;
   virtual bool read_reg_multi(uint8_t dev_addr, uint8_t reg_addr, uint8_t* buf, size_t len) = 0;
 };
-
-#include "config.h"
 
 // Global Target Bus Accessors (Pure HAL interface, defined per platform target build)
 HAL_I2C& get_i2c0_bus();

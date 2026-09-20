@@ -20,9 +20,7 @@ title: "Descriptive Note Title"
 author: "Author Name"
 date: YYYY-MM-DD
 time: HH:MM:SS +TZ
-tags:
-  - #tag1
-  - #tag2
+tags: ["#tag1", "#tag2"]
 references:
   - "[[note_id or document_title]]"
 ---

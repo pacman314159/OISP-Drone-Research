@@ -1,0 +1,5 @@
+managed_components/
+.pio/
+build/
+.vscode/
+compile_commands.json

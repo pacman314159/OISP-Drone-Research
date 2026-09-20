@@ -94,6 +94,8 @@ private:
 
   float _accel_sens;
   float _gyro_sens;
+  float _inv_accel_sens;
+  float _inv_gyro_sens;
 
   int16_t _accel_raw_x;
   int16_t _accel_raw_y;

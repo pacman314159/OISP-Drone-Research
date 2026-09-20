@@ -5,6 +5,8 @@ MPU6050::MPU6050(HAL_I2C_BUS& i2c_bus, uint8_t dev_addr)
     _dev_addr(dev_addr),
     _accel_sens(DEFAULT_ACCEL_SENS),
     _gyro_sens(DEFAULT_GYRO_SENS),
+    _inv_accel_sens(1.0f / DEFAULT_ACCEL_SENS),
+    _inv_gyro_sens(1.0f / DEFAULT_GYRO_SENS),
     _accel_raw_x(0),
     _accel_raw_y(0),
     _accel_raw_z(0),
@@ -70,6 +72,7 @@ bool MPU6050::set_gyro_range(GyroRange range){
     case GYRO_RANGE_1000DPS: _gyro_sens = 32.8f;  break;
     case GYRO_RANGE_2000DPS: _gyro_sens = 16.4f;  break;
   }
+  _inv_gyro_sens = 1.0f / _gyro_sens;
 
   return _i2c.write_reg(_dev_addr, REG_GYRO_CFG, reg);
 }
@@ -88,6 +91,7 @@ bool MPU6050::set_accel_range(AccelRange range){
     case ACCEL_RANGE_8G:  _accel_sens = 4096.0f;  break;
     case ACCEL_RANGE_16G: _accel_sens = 2048.0f;  break;
   }
+  _inv_accel_sens = 1.0f / _accel_sens;
 
   return _i2c.write_reg(_dev_addr, REG_ACCEL_CFG, reg);
 }
@@ -137,18 +141,20 @@ bool MPU6050::get_all_data_raw(Vec3<int16_t>& accel_raw_msb, Vec3<int16_t>& gyro
 
 bool MPU6050::get_all_data(Vec3<float>& accel, Vec3<float>& gyro, float& temp){
   Vec3<int16_t> accel_raw, gyro_raw;
-  int16_t temp_raw;
+  int16_t temp_raw = 0;
 
   if(!get_all_data_raw(accel_raw, gyro_raw, temp_raw))
     return false;
 
-  accel.x = (accel_raw.x / _accel_sens) * GRAVITY_MSS;
-  accel.y = (accel_raw.y / _accel_sens) * GRAVITY_MSS;
-  accel.z = (accel_raw.z / _accel_sens) * GRAVITY_MSS;
+  accel.x = static_cast<float>(accel_raw.x);
+  accel.y = static_cast<float>(accel_raw.y);
+  accel.z = static_cast<float>(accel_raw.z);
+  accel *= _inv_accel_sens;
 
-  gyro.x = (gyro_raw.x / _gyro_sens) * DEG_TO_RAD;
-  gyro.y = (gyro_raw.y / _gyro_sens) * DEG_TO_RAD;
-  gyro.z = (gyro_raw.z / _gyro_sens) * DEG_TO_RAD;
+  gyro.x = static_cast<float>(gyro_raw.x);
+  gyro.y = static_cast<float>(gyro_raw.y);
+  gyro.z = static_cast<float>(gyro_raw.z);
+  gyro *= _inv_gyro_sens;
 
   temp = (static_cast<float>(temp_raw) / 340.0f) + 36.53f;
 

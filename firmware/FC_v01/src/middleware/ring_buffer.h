@@ -13,14 +13,13 @@ class RingBuffer {
   static_assert(N > 0, "RingBuffer size must be greater than zero!");
 
 public:
-  RingBuffer() : _head(0), _count(0){
-    memset(_buffer, 0, sizeof(_buffer));
-  }
+  RingBuffer() : _head(0), _count(0){}
 
   void push(const T& sample){
     SYS_ENTER_CRITICAL();
     _buffer[_head] = sample;
-    _head = (_head + 1) % N;
+    _head++;
+    if(_head >= N) _head = 0;
     if(_count < N) _count++;
     SYS_EXIT_CRITICAL();
   }
@@ -32,41 +31,55 @@ public:
       return false;
     }
 
-    size_t count_copy = _count;
-    size_t head_copy = _head;
-
-    if(count_copy < N)
-      memcpy(out_window, _buffer, count_copy * sizeof(T));
-    else{ // Buffer full, copy in two chunks around the head index
-      size_t right_len = N - head_copy;
-      memcpy(out_window, &_buffer[head_copy], right_len * sizeof(T));
-      if(head_copy > 0)
-        memcpy(&out_window[right_len], &_buffer[0], head_copy * sizeof(T));
-    }
+    copy_window_internal(out_window, _count, _head);
     SYS_EXIT_CRITICAL();
     return true;
   }
 
-  size_t count(){
+  size_t get_snapshot_then_clear(T out_window[N]){
     SYS_ENTER_CRITICAL();
-    size_t c = _count;
+    size_t count_copy = _count;
+    if(count_copy == 0){
+      SYS_EXIT_CRITICAL();
+      return 0;
+    }
+
+    copy_window_internal(out_window, count_copy, _head);
+
+    _head = 0;
+    _count = 0;
     SYS_EXIT_CRITICAL();
-    return c;
+    return count_copy;
   }
 
-  bool empty(){
-    return (count() == 0);
+
+  inline size_t count() const {
+    return _count;
+  }
+
+  inline bool empty() const {
+    return (_count == 0);
   }
 
   void clear(){
     SYS_ENTER_CRITICAL();
     _head = 0;
     _count = 0;
-    memset(_buffer, 0, sizeof(_buffer));
     SYS_EXIT_CRITICAL();
   }
 
 private:
+  inline void copy_window_internal(T out_window[N], size_t count_copy, size_t head_copy){
+    if(count_copy < N)
+      memcpy(out_window, _buffer, count_copy * sizeof(T));
+    else{
+      size_t right_len = N - head_copy;
+      memcpy(out_window, &_buffer[head_copy], right_len * sizeof(T));
+      if(head_copy > 0)
+        memcpy(&out_window[right_len], &_buffer[0], head_copy * sizeof(T));
+    }
+  }
+
   T _buffer[N];
   size_t _head;
   size_t _count;

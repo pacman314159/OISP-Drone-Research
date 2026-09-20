@@ -13,6 +13,10 @@
 ## 3. Indentation
 - **Indentation level**: 1 level corresponds with 2 spaces (1 tab)
 
+## 4. FreeRTOS Task Scoping & Architecture Rules
+- **Task Scoping**: All FreeRTOS tasks MUST be declared and defined strictly within `core/` (e.g., `src/core/daq/`, `src/core/control/`, `src/core/estimators/`, `src/core/telemetry/`) or `app/` layers. FreeRTOS task declarations are strictly prohibited inside `drivers/` or below.
+- **`daq/` Definition**: `daq/` stands for **Data Acquisition** (`src/core/daq/`), housing high-frequency sensor sampling task runners (`daq_tasks.cpp`, `daq_tasks.h`).
+
 ## 5. Coding Style & Bracing Conventions
 - **Single-Line Control Flow Bracing**: If an `if`, `else`, `while`, `for`, or `switch` statement contains only 1 statement/line inside its body (including nested single-statement control flows), omit the curly braces `{}`. (e.g., `if(condition) return false;`, `for(uint8_t j = 0; j < N; ++j) sum += a[j];`).
 - **Function Declaration Bracing**: Functions and method bodies must have NO space between the closing parenthesis `)` and opening brace `{` (e.g., `bool empty(){` instead of `bool empty() {`).

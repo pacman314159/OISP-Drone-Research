@@ -1,10 +1,6 @@
 #include "platforms/hal/hal_simd.h"
 #include <cmath>
-#include "dsps_dotprod.h"
-#include "dsps_add.h"
-#include "dsps_sub.h"
-#include "dsps_mulc.h"
-#include "dsps_mat.h"
+#include "esp_dsp.h"
 
 namespace hal_simd {
 
@@ -36,7 +32,7 @@ namespace hal_simd {
 
   void mat_mul_f32(const float* A, const float* B, float* C, uint8_t m, uint8_t n, uint8_t k){
     if(A == nullptr || B == nullptr || C == nullptr || m == 0 || n == 0 || k == 0) return;
-    dsps_mat_mul_f32(A, B, C, m, n, k);
+    dspm_mult_f32(A, B, C, m, n, k);
   }
 
   bool inv3x3_f32(const float M[9], float Out[9]){
@@ -90,7 +86,7 @@ namespace hal_simd {
 
   void scale(const int16_t* in, int16_t scalar, int16_t* out, size_t count){
     if(in == nullptr || out == nullptr || count == 0) return;
-    dsps_mulc_s16(in, out, static_cast<int>(count), scalar, 1, 1, 0);
+    dsps_mulc_s16(in, out, static_cast<int>(count), scalar, 1, 1);
   }
 
   // =========================================================================
@@ -99,9 +95,9 @@ namespace hal_simd {
 
   int8_t dot_product(const int8_t* a, const int8_t* b, size_t count){
     if(a == nullptr || b == nullptr || count == 0) return 0;
-    int8_t result = 0;
-    dsps_dotprod_s8(a, b, &result, static_cast<int>(count), 0);
-    return result;
+    int32_t result = 0;
+    dsps_dp_s8(a, b, &result, static_cast<int>(count));
+    return static_cast<int8_t>(result);
   }
 
   void add(const int8_t* a, const int8_t* b, int8_t* out, size_t count){
@@ -116,7 +112,7 @@ namespace hal_simd {
 
   void scale(const int8_t* in, int8_t scalar, int8_t* out, size_t count){
     if(in == nullptr || out == nullptr || count == 0) return;
-    dsps_mulc_s8(in, out, static_cast<int>(count), scalar, 1, 1, 0);
+    for(size_t i = 0; i < count; ++i) out[i] = static_cast<int8_t>(in[i] * scalar);
   }
 
 } // namespace hal_simd

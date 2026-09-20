@@ -4,13 +4,7 @@ title: Firmware 5-Layer Architectural Decision & Directory Layout
 author: Drone Research Team / Developer
 date: 2026-09-15
 time: 19:17:05 +07:00
-tags:
-  - #zettelkasten
-  - #firmware
-  - #architecture
-  - #fc_v01
-  - #layers
-  - #freertos
+tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#layers", "#freertos"]
 references:
   - "[[Firmware Structure]]"
   - "[[System Architecture v01]]"
@@ -36,14 +30,15 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 +-------------------------------------------------------------+
 | Layer 4: Flight Core & Algorithms                           |
 |          (`src/core/control/`, `src/core/estimators/`,      |
-|           `src/core/math/`, `src/core/telemetry/`)          |
+|           `src/core/math/`, `src/core/telemetry/`,          |
+|           `src/core/daq/`)                                  |
 +-------------------------------------------------------------+
 | Layer 3: Middleware & Inter-Task IPC Layer                  |
 |          (`src/middleware/`)                                |
 +-------------------------------------------------------------+
 | Layer 2: Drivers Layer                                      |
 |          (`src/drivers/imu/`, `src/drivers/baro/`,          |
-|           `src/drivers/rc_rx/`, `src/drivers/driver_tasks`) |
+|           `src/drivers/rc_rx/`, `src/drivers/led/`)         |
 +-------------------------------------------------------------+
 | Layer 1: Platform HAL & Targets                             |
 |          (`src/platforms/hal/`,                             |
@@ -62,10 +57,11 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 
 ### Layer 4: Flight Core & Algorithms Layer
 - **Directory**: `src/core/`
+  - `src/core/daq/`: Data Acquisition (DAQ) task runners (`daq_tasks.cpp`, `daq_tasks.h`) for high-frequency sensor sampling loops.
   - `src/core/control/`: Cascaded PID rate/angle controllers, motor mixer.
   - `src/core/estimators/`: Complementary / Kalman filters for orientation & altitude estimation.
   - `src/core/math/`: Fast fixed-point / vector / quaternion mathematics libraries.
-  - `src/core/telemetry/`: Reserved for future implementation of the Ra-02 LoRa module using SPI protocol.
+  - `src/core/telemetry/`: Telemetry transport and data packaging tasks.
 
 ### Layer 3: Middleware & Centralized Inter-Task IPC Layer
 - **Directory**: `src/middleware/`
@@ -78,7 +74,7 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
   - `src/drivers/imu/`: MPU6050, HMC5883L drivers under active development.
   - `src/drivers/baro/`: BMP180 driver under active development. BMP280 and MS5611 are dummy implementations reserved for future sensor development.
   - `src/drivers/rc_rx/`: FS-iA6B IBUS/PPM receiver drivers.
-  - `driver_tasks.cpp`, `driver_tasks.h`: High-frequency sensor DAQ tasks.
+  - **Task Scoping Constraint**: All FreeRTOS task declarations inside `src/drivers/` are strictly forbidden; all task runners belong exclusively to Layer 4 (`src/core/daq/`, `src/core/control/`, `src/core/estimators/`, `src/core/telemetry/`) or Layer 5 (`src/app/`).
 
 ### Layer 1: Platform HAL & Hardware Target Drivers Layer
 - **Directory**: `src/platforms/`
