@@ -60,14 +60,13 @@ constexpr int LORA_RST_PIN      = 7;
 constexpr int SD_CARD_DET_PIN   = 3;
 constexpr int IMU_MAG_DRDY_PIN  = 10;
 constexpr int USER_BTN_PIN      = 38;
-constexpr int RGB_LED_PIN       = 47;
 
 // =============================================================================
 // OPERATING SYSTEM ABSTRACTION LAYER (OSAL) Synchronization configs
 // =============================================================================
 constexpr int RING_BUF_MAX_SIZE         = 100; // Maximum allowable ring buffer size
 constexpr int IMU_RAW_RING_BUF_SIZE     = 10;
-constexpr uint32_t BUS_MUTEX_TIMEOUT_MS = 5;   // Global xSemaphoreTake timeout (5 ms)
+constexpr uint32_t BUS_MUTEX_TIMEOUT_MS = 20;  // Global xSemaphoreTake timeout (20 ms, must exceed Wire timeout + max I2C transaction)
 
 // =============================================================================
 // BLE CONFIGURATION & GATT SERVICE DEFINITIONS
@@ -87,7 +86,7 @@ enum TelemSensorSource {
   TELEM_SENSOR_ACCEL = 1,
   TELEM_SENSOR_MAG   = 2
 };
-constexpr TelemSensorSource BLE_TELEM_SENSOR_SRC = TELEM_SENSOR_GYRO;
+constexpr TelemSensorSource BLE_TELEM_SENSOR_SRC = TELEM_SENSOR_MAG;
 
 // Telemetry GATT Service (Compatible with ble_9dof_daq / FCDatMon)
 constexpr const char* BLE_SERVICE_TELEM_UUID   = "d3a9f560-8f77-4a45-b3e0-3c22d8f23c91";
@@ -102,45 +101,49 @@ constexpr const char* BLE_CHAR_OTA_DATA_UUID    = "2340888a-1f40-4cd8-9b89-ca8d4
 // CENTRALIZED FREERTOS TASK CONFIGURATIONS
 // =============================================================================
 
-constexpr const char* TASK_IMU_DAQ_NAME        = "IMU_DAQ";
-constexpr const char* TASK_ATTITUDE_NAME       = "ATTITUDE";
-constexpr const char* TASK_BARO_DAQ_NAME       = "BARO_DAQ";
-constexpr const char* TASK_MAG_DAQ_NAME        = "MAG_DAQ";
-constexpr const char* TASK_BLE_VEC3_TRANS_NAME = "BLE_VEC3_TRANS_TASK";
-constexpr const char* TASK_LED_BLINK_NAME      = "LED_BLINK";
+constexpr const char* TASK_ACCEL_GYRO_DAQ_NAME   = "ACCEL_GYRO_DAQ";
+constexpr const char* TASK_ATTITUDE_NAME         = "ATTITUDE";
+constexpr const char* TASK_BARO_DAQ_NAME         = "BARO_DAQ";
+constexpr const char* TASK_MAG_DAQ_NAME          = "MAG_DAQ";
+constexpr const char* TASK_BLE_VEC3_TRANS_NAME   = "BLE_VEC3_TRANS_TASK";
+
+enum TaskIDs : uint32_t {
+  TASK_ACCEL_GYRO_DAQ_ID = 0,
+  TASK_ATTITUDE_ID,
+  TASK_BARO_DAQ_ID,
+  TASK_MAG_DAQ_ID,
+  TASK_BLE_VEC3_TRANS_ID,
+  TASK_COUNT
+};
 
 enum TaskCores : int32_t {
-  TASK_IMU_DAQ_CORE        = tskNO_AFFINITY,
-  TASK_ATTITUDE_CORE       = 1,
-  TASK_BARO_DAQ_CORE       = 1,
-  TASK_MAG_DAQ_CORE        = 1,
-  TASK_BLE_VEC3_TRANS_CORE = tskNO_AFFINITY,
-  TASK_LED_BLINK_CORE      = 1
+  TASK_ACCEL_GYRO_DAQ_CORE = tskNO_AFFINITY,
+  TASK_ATTITUDE_CORE       = tskNO_AFFINITY,
+  TASK_BARO_DAQ_CORE       = tskNO_AFFINITY,
+  TASK_MAG_DAQ_CORE        = tskNO_AFFINITY,
+  TASK_BLE_VEC3_TRANS_CORE = tskNO_AFFINITY
 };
 
 enum TaskPriorities : UBaseType_t {
-  TASK_IMU_DAQ_PRIORITY        = 4,
-  TASK_ATTITUDE_PRIORITY       = 3,
-  TASK_BARO_DAQ_PRIORITY       = 2,
-  TASK_MAG_DAQ_PRIORITY        = 2,
-  TASK_BLE_VEC3_TRANS_PRIORITY = 1,
-  TASK_LED_BLINK_PRIORITY      = 1
+  TASK_ACCEL_GYRO_DAQ_PRIORITY = 3, // 500 Hz Realtime DAQ Loop
+  TASK_ATTITUDE_PRIORITY       = 4, // Control Loop
+  TASK_BARO_DAQ_PRIORITY       = 2, // Medium priority sensor DAQ
+  TASK_MAG_DAQ_PRIORITY        = 2, // Medium priority sensor DAQ
+  TASK_BLE_VEC3_TRANS_PRIORITY = 1  // Low priority telemetry task
 };
 
 enum TaskSizesBytes : uint32_t {
-  TASK_IMU_DAQ_STACK_SIZE        = 4096,
+  TASK_ACCEL_GYRO_DAQ_STACK_SIZE = 4096,
   TASK_ATTITUDE_STACK_SIZE       = 4096,
-  TASK_BARO_DAQ_STACK_SIZE       = 2048,
-  TASK_MAG_DAQ_STACK_SIZE        = 2048,
-  TASK_BLE_VEC3_TRANS_STACK_SIZE = 8192,
-  TASK_LED_BLINK_STACK_SIZE      = 2048
+  TASK_BARO_DAQ_STACK_SIZE       = 4096,
+  TASK_MAG_DAQ_STACK_SIZE        = 4096,
+  TASK_BLE_VEC3_TRANS_STACK_SIZE = 8192
 };
 
 enum TaskFrequenciesHz : uint32_t {
-  TASK_IMU_DAQ_FREQ_HZ        = 500,
-  TASK_ATTITUDE_FREQ_HZ       = 500,
-  TASK_BARO_DAQ_FREQ_HZ       = 50,
-  TASK_MAG_DAQ_FREQ_HZ        = 50,
-  TASK_BLE_VEC3_TRANS_FREQ_HZ = 100,
-  TASK_LED_BLINK_FREQ_HZ      = 2
+  TASK_ACCEL_GYRO_DAQ_FREQ_HZ   = 500,
+  TASK_ATTITUDE_FREQ_HZ         = 500,
+  TASK_BARO_DAQ_FREQ_HZ         = 50,
+  TASK_MAG_DAQ_FREQ_HZ          = 100,
+  TASK_BLE_VEC3_TRANS_FREQ_HZ   = 100
 };

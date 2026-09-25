@@ -2,4 +2,5 @@ managed_components/
 .pio/
 build/
 .vscode/
+.cache/
 compile_commands.json

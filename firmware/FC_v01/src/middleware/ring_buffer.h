@@ -24,16 +24,17 @@ public:
     SYS_EXIT_CRITICAL();
   }
 
-  bool get_snapshot(T out_window[N]){
+  size_t get_snapshot(T out_window[N]){
     SYS_ENTER_CRITICAL();
-    if(_count == 0){
+    size_t count_copy = _count;
+    if(count_copy == 0){
       SYS_EXIT_CRITICAL();
-      return false;
+      return 0;
     }
 
-    copy_window_internal(out_window, _count, _head);
+    copy_window_internal(out_window, count_copy, _head);
     SYS_EXIT_CRITICAL();
-    return true;
+    return count_copy;
   }
 
   size_t get_snapshot_then_clear(T out_window[N]){
@@ -52,13 +53,25 @@ public:
     return count_copy;
   }
 
+  inline T front() const {
+    SYS_ENTER_CRITICAL();
+    T sample = _buffer[_head];
+    SYS_EXIT_CRITICAL();
+    return sample;
+  }
 
   inline size_t count() const {
-    return _count;
+    SYS_ENTER_CRITICAL();
+    size_t val = _count;
+    SYS_EXIT_CRITICAL();
+    return val;
   }
 
   inline bool empty() const {
-    return (_count == 0);
+    SYS_ENTER_CRITICAL();
+    bool val = (_count == 0);
+    SYS_EXIT_CRITICAL();
+    return val;
   }
 
   void clear(){

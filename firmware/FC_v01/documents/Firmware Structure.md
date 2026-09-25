@@ -10,7 +10,6 @@ references:
   - "[[0002-taskEnumsAndHalAbstractionDecision]]"
   - "[[0003-simdHalArchitectureAndLayeringRule]]"
   - "[[0004-simdMultiTypeSupportAndBuildIntegration]]"
-  - "[[0005-ws2812bDriverAndFutureStatusPresetsDecision]]"
 ---
 
 # FC_v01 Firmware Architecture & Structure Specification
@@ -23,7 +22,7 @@ The `FC_v01` flight controller firmware is designed for hard real-time, determin
 1. **Strict 500 Hz IMU Flight Loop Rate**: Primary sensor data acquisition (DAQ) and cascaded PID control loops operate at deterministic intervals (2.0 ms execution budget).
 2. **Zero Dynamic Memory Allocation During Flight**: All RTOS tasks, ring buffers, queues, semaphores, and math structures are allocated statically during initialization. Zero `malloc()`, `free()`, `new`, or `delete` calls are permitted inside the flight execution loop.
 3. **Strict Downward Dependency Hierarchy**: Higher application and flight core layers may consume lower layer abstractions, but lower layers (drivers, middleware, HAL) must never import or depend on higher layers.
-4. **Target Hardware Isolation**: Driver, middleware, and core math modules across Layers 2 through 5 are entirely target-agnostic and consume standard HAL interfaces (`HAL_I2C`, `HAL_RGB_LED`, `hal_simd`). Target-specific SDK headers (`<Wire.h>`, `esp_err.h`, `stm32f4xx_hal.h`) are restricted exclusively to Layer 1 target modules (`src/platforms/targets/`).
+4. **Target Hardware Isolation**: Driver, middleware, and core math modules across Layers 2 through 5 are entirely target-agnostic and consume standard HAL interfaces (`HAL_I2C`, `hal_simd`). Target-specific SDK headers (`<Wire.h>`, `esp_err.h`, `stm32f4xx_hal.h`) are restricted exclusively to Layer 1 target modules (`src/platforms/targets/`).
 
 ---
 
@@ -75,12 +74,12 @@ The codebase is organized into **5 decoupled structural layers**:
 
 #### Layer 2: Sensor & Peripheral Drivers Layer
 - **Directory**: [`src/drivers/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers)
-  - Sensor-specific drivers: IMU ([`mpu6050`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/imu/mpu6050.h), [`hmc5883l`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/imu/hmc5883l.h)), Barometer ([`bmp180`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/baro/bmp180.h), `bmp280`, `ms5611`), RC RX ([`rc_rx`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/rc_rx)), LED ([`ws2812b`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/led/ws2812b.h)).
+  - Sensor-specific drivers: IMU ([`mpu6050`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/imu/mpu6050.h), [`hmc5883l`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/imu/hmc5883l.h)), Barometer ([`bmp180`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/baro/bmp180.h), `bmp280`, `ms5611`), RC RX ([`rc_rx`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/rc_rx)).
   - Hardware peripheral drivers are strictly stateless/class-based drivers; FreeRTOS task creation is forbidden inside Layer 2.
 
 #### Layer 1: Platform HAL & Hardware Target Drivers Layer
 - **Directory**: [`src/platforms/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms)
-  - `src/platforms/hal/`: Target-agnostic C++ pure abstract interfaces ([`hal_i2c.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_i2c.h), [`hal_i2c_async.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_i2c_async.h), [`hal_rgb_led.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_rgb_led.h), [`hal_simd.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_simd.h)).
+  - `src/platforms/hal/`: Target-agnostic C++ pure abstract interfaces ([`hal_i2c.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_i2c.h), [`hal_i2c_async.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_i2c_async.h), [`hal_simd.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_simd.h)).
   - `src/platforms/targets/espressif/`: Physical ESP32-S3 implementations (I2C driver, RMT transmitter/receiver, ESP-DSP vector SIMD routines).
   - `src/platforms/targets/stm/`: Placeholder for target STM32 porting.
 
@@ -102,7 +101,7 @@ enum TaskPriorities : uint8_t {
 };
 
 enum TaskFrequencies : uint16_t {
-  TASK_IMU_DAQ_FREQ_HZ  = 500,
+  TASK_ACCEL_GYRO_DAQ_FREQ_HZ  = 500,
   TASK_ATTITUDE_FREQ_HZ = 250,
   TASK_MAG_DAQ_FREQ_HZ   = 75,
   TASK_BARO_DAQ_FREQ_HZ  = 50
@@ -162,11 +161,6 @@ For ESP32-S3 targets, SIMD primitives map directly to Espressif ESP-DSP assembly
 ### RMT PPM RC Receiver Decoding (ESP32-S3)
 Pulse Position Modulation (PPM) decoding for RC receivers is offloaded to the ESP32-S3 **RMT (Remote Control Transceiver)** hardware peripheral on RX channel 0. Measuring pulse edge timings in hardware eliminates CPU interrupt starvation and preserves execution cycles for the 500 Hz flight loop.
 
-### WS2812B RGB LED Driver Architecture
-- **Layer 1 HAL Driver**: Hardware-pure RMT driver ([`rgb_led_rmt.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/targets/espressif/rgb_led_rmt.cpp)) bound to GPIO 47 (`RGB_LED_PIN`).
-- **Layer 2 Minimal Peripheral Driver**: Light API wrapper ([`ws2812b.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/led/ws2812b.h), [`ws2812b.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/led/ws2812b.cpp)) exposing direct functions (`init()`, `set_color()`, `set_hex()`, `off()`). No dedicated RTOS task is spawned for the LED.
-- **Future Status Presets Roadmap**: System status color schemes (Booting = Blue, Disarmed = Green, Armed = Red, Error = Magenta) will be integrated directly into the central FSM (`src/app/fsm.cpp`).
-
 ---
 
 ## 7. System Coding Style & Formatting Rules
@@ -212,4 +206,4 @@ To maintain high readability and clean git diffs across developers, all C++ code
 | `[0002]` | System 4 Priority Levels, Enum Task Config, Target-Agnostic HAL, Explicit Typing, Deterministic Delays & Centralized IPC | Section 3 (Enums & Delays), Section 4 (IPC), Section 7 (Coding Style) |
 | `[0003]` | Layer 1 SIMD HAL Architecture & Zero-Fallback Rule | Section 5 (SIMD Zero-Fallback & Layer Purity) |
 | `[0004]` | Multi-Type SIMD Hardware Acceleration & ESP-DSP Integration | Section 5 (Multi-Type SIMD, Matrix, ESP-DSP) |
-| `[0005]` | WS2812B Hardware-Pure Layer 1 HAL, Layer 2 Minimal Driver & Future Status Presets Roadmap | Section 6 (WS2812B RGB LED Driver & Roadmap) |
+| `[0006]` | Centralized Task Parameter Enums, Mandatory TaskIDs & Direct Driver Pointer Argument Passing | Section 3 (Task Config & TaskIDs) |

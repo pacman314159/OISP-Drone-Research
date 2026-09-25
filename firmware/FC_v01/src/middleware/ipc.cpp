@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "middleware/ipc.h"
+#include "middleware/sysview_tracing.h"
 #include "drivers/telemetry/ble_driver.h"
 
 SemaphoreHandle_t i2c0_mutex = nullptr;
@@ -29,6 +30,8 @@ void FcBleServerCallbacks::onDisconnect(NimBLEServer* pServer){
 }
 
 bool init_ipc(){
+  sysview_init_markers();
+
   if(i2c0_mutex == nullptr)
     i2c0_mutex = xSemaphoreCreateMutex();
 
