@@ -1,0 +1,716 @@
+{
+  "nodes": [
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dsps_dotprod_api",
+      "label": "ESP-DSP Dot Product API (dsps_dotprod)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dotprod\\dsps_dotprod.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dsps_dotprod_simd_accel",
+      "label": "SIMD Hardware Acceleration for Dot Products",
+      "file_type": "rationale",
+      "rationale": "Dot product primitives utilize Xtensa AE32 and ESP32-S3 AES3 SIMD vector instructions to achieve high-throughput multiply-accumulate performance for signal filtering.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dotprod\\dsps_dotprod.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_index_module",
+      "label": "ESP-DSP Dot Product Module Reference",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dotprod\\index.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft_api",
+      "label": "Fast Fourier Transform (FFT) Architecture & Overview",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\dsps_fft.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft2r_radix2",
+      "label": "Radix-2 Complex Fast Fourier Transform (dsps_fft2r)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\dsps_fft2r.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft2r_bit_reversal",
+      "label": "Precomputed Bit-Reversal Tables for Radix-2 FFT",
+      "file_type": "rationale",
+      "rationale": "Decimation-in-time radix-2 FFT requires bit-reversed indexing; storing lookup tables eliminates runtime bit permutation overhead.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\dsps_fft2r.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft4r_radix4",
+      "label": "Radix-4 Real/Complex Fast Fourier Transform (dsps_fft4r)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\dsps_fft4r.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft4r_real_optimization",
+      "label": "Radix-4 Real Transform Arithmetic Minimization",
+      "file_type": "rationale",
+      "rationale": "Radix-4 FFT computes real sequences by packing two real inputs into one complex butterfly stage, halving execution cycles relative to radix-2.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\dsps_fft4r.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_index_module",
+      "label": "ESP-DSP FFT Module Reference",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\index.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_fir_filter",
+      "label": "Finite Impulse Response (FIR) Filter Engine",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\dsps_fir.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_fir_circular_delay",
+      "label": "Circular Delay Line State Buffering for FIR",
+      "file_type": "rationale",
+      "rationale": "Using a wrapped circular delay line avoids costly memory copies of previous sample states in high-frequency sensor filtering loops.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\dsps_fir.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_resampler_polyphase",
+      "label": "Polyphase Multi-Rate FIR Resampler",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\dsps_resampler.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_index_module",
+      "label": "ESP-DSP FIR Filter Module Reference",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\index.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_dsps_biquad_filter",
+      "label": "Direct Form II Biquad IIR Filter",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\iir\\dsps_biquad.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_dsps_biquad_second_order",
+      "label": "Cascaded Second-Order Sections (SOS) Stability",
+      "file_type": "rationale",
+      "rationale": "Decomposing high-order IIR filters into cascaded second-order Direct Form II biquads minimizes sensitivity to coefficient quantization and pole drift.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\iir\\dsps_biquad.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_index_module",
+      "label": "ESP-DSP IIR Filter Module Reference",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\iir\\index.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_index_api_root",
+      "label": "ESP-DSP API Reference Root Documentation",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\index.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_base",
+      "label": "Extended Kalman Filter (EKF) Core Algorithm",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\ekf.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_covariance_update",
+      "label": "EKF State Prediction and Covariance Correction Flow",
+      "file_type": "rationale",
+      "rationale": "Separates state transition Jacobian linearization from observation updates, balancing process noise Q and measurement noise covariance R.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\ekf.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_imu13states_filter",
+      "label": "13-State IMU Extended Kalman Filter (ekf_imu13states)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\ekf_imu13states.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_imu13states_state_vector",
+      "label": "13-State Vector Formulation for Attitude & Sensor Drift Fusion",
+      "file_type": "rationale",
+      "rationale": "Incorporates 4D attitude quaternion, 3D gyro bias, 3D magnetic amplitude, and 3D magnetometer deviation into a single state vector to eliminate sensor bias drifts.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\ekf_imu13states.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_index_module",
+      "label": "ESP-DSP Kalman Filter Module Reference",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\index.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_add_vector_addition",
+      "label": "Vector Element-wise Addition (dsps_add)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_add.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_addc_constant_addition",
+      "label": "Vector Scalar Constant Addition (dsps_addc)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_addc.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_math_module",
+      "label": "ESP-DSP Vector Basic Math Suite",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_math.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_mul_vector_multiplication",
+      "label": "Vector Element-wise Multiplication (dsps_mul)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_mul.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_mulc_constant_multiplication",
+      "label": "Vector Scalar Constant Scaling (dsps_mulc)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_mulc.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_sqrt_vector_root",
+      "label": "Vector Square Root Operation (dsps_sqrt)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_sqrt.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_sub_vector_subtraction",
+      "label": "Vector Element-wise Subtraction (dsps_sub)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_sub.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dsps_dotprod_simd_accel",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dsps_dotprod_api",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dotprod\\dsps_dotprod.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft2r_bit_reversal",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft2r_radix2",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\dsps_fft2r.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft4r_real_optimization",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft4r_radix4",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\dsps_fft4r.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_fir_circular_delay",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_fir_filter",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\dsps_fir.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_dsps_biquad_second_order",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_dsps_biquad_filter",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\iir\\dsps_biquad.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_covariance_update",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_base",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\ekf.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_imu13states_state_vector",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_imu13states_filter",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\ekf_imu13states.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_index_api_root",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_index_module",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_index_api_root",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_index_module",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_index_api_root",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_index_module",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_index_api_root",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_index_module",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_index_api_root",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_index_module",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_index_api_root",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_math_module",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dsps_dotprod_api",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dotprod\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft_api",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft2r_radix2",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft4r_radix4",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_fir_filter",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_resampler_polyphase",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_dsps_biquad_filter",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\iir\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_base",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_imu13states_filter",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_math_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_add_vector_addition",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_math.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_math_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_addc_constant_addition",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_math.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_math_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_mul_vector_multiplication",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_math.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_math_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_mulc_constant_multiplication",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_math.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_math_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_sqrt_vector_root",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_math.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_math_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_sub_vector_subtraction",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_math.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_imu13states_filter",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_base",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\ekf_imu13states.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_resampler_polyphase",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_fir_filter",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\dsps_resampler.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_fir_filter",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dsps_dotprod_api",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\dsps_fir.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft2r_radix2",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft4r_radix4",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\dsps_fft2r.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_fir_filter",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_dsps_biquad_filter",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\dsps_fir.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_kalman_ekf_base",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_math_module",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\kalman\\ekf.rst",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "esp_dsp_spectral_transforms",
+      "label": "ESP-DSP Frequency Domain Spectral Analysis Transforms",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft_api",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft2r_radix2",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_fft_dsps_fft4r_radix4"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fft\\index.rst"
+    },
+    {
+      "id": "esp_dsp_digital_filtering_suite",
+      "label": "ESP-DSP Real-Time Digital Filter Pipeline",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_fir_filter",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_fir_dsps_resampler_polyphase",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_iir_dsps_biquad_filter"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\fir\\index.rst"
+    },
+    {
+      "id": "esp_dsp_vector_arithmetic_primitives",
+      "label": "ESP-DSP SIMD Vector Arithmetic Primitives",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_add_vector_addition",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_sub_vector_subtraction",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_math_dsps_mul_vector_multiplication",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dsps_dotprod_api"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\math\\dsps_math.rst"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

@@ -100,3 +100,4 @@ In the future, 3 primary technical documents will be developed simultaneously al
 3. **Zero Dynamic Allocation**: No `malloc()`, `free()`, `new`, or `delete` within the core 500 Hz flight loop.
 4. **Explicit Physical Units**: Standard SI units specified in code comments (`float accel; // m/s^2`, `float gyro; // rad/s`).
 5. **Naming Conventions**: `snake_case` for variables & functions, `PascalCase` for classes & structs, `ALL_CAPS_SNAKE` for constants & enums.
+6. **FreeRTOS Task Scoping**: All FreeRTOS tasks MUST be declared and defined strictly within `core/` (e.g., `src/core/daq/`, `src/core/control/`, `src/core/estimators/`, `src/core/telemetry/`) or `app/` (`src/app/`) layers. FreeRTOS task declarations are strictly prohibited inside `drivers/` or lower layers. `daq/` stands for Data Acquisition (`src/core/daq/`), housing high-frequency sensor sampling task runners (`daq_tasks.cpp`, `daq_tasks.h`).

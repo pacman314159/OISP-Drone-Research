@@ -207,3 +207,4 @@ To maintain high readability and clean git diffs across developers, all C++ code
 | `[0003]` | Layer 1 SIMD HAL Architecture & Zero-Fallback Rule | Section 5 (SIMD Zero-Fallback & Layer Purity) |
 | `[0004]` | Multi-Type SIMD Hardware Acceleration & ESP-DSP Integration | Section 5 (Multi-Type SIMD, Matrix, ESP-DSP) |
 | `[0006]` | Centralized Task Parameter Enums, Mandatory TaskIDs & Direct Driver Pointer Argument Passing | Section 3 (Task Config & TaskIDs) |
+| `[0007]` | SEGGER SystemView Trace Instrumentation, OpenOCD Dual-Core Setup & RTOS Loop Profiling Conventions | Section 3 (Timing & Tracing Guardrails) |

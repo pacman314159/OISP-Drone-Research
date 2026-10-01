@@ -1,0 +1,888 @@
+{
+  "nodes": [
+    {
+      "id": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "label": "ESP-DSP Library Overview",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_readme_matrix_operations",
+      "label": "ESP-DSP Matrix Operations",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_readme_fft",
+      "label": "ESP-DSP Fast Fourier Transform (FFT)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_readme_iir_filter",
+      "label": "ESP-DSP Infinite Impulse Response (IIR) Filter",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_readme_fir_filter",
+      "label": "ESP-DSP Finite Impulse Response (FIR) Filter",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_readme_vector_math",
+      "label": "ESP-DSP Vector Math Operations",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_readme_kalman_filter",
+      "label": "ESP-DSP Kalman Filter Implementation",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_readme_simd_assembly_optimization",
+      "label": "ESP-DSP SIMD Assembly Optimization",
+      "file_type": "rationale",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_readme_applications_layout",
+      "label": "ESP-DSP Applications Layout",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_azure_demo_apps",
+      "label": "ESP-DSP Azure IoT Kit Demo Applications",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_mat_3d_projection",
+      "label": "ESP-DSP Mat Matrix 3D Projection & Transformation",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_cmakelists_project",
+      "label": "esp-dsp-azure-board-app-3d-graphics Project",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_readme_app_guide",
+      "label": "Azure 3D Graphics Demo Application Guide",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_main_cmakelists_component",
+      "label": "Azure 3D Graphics Main Component",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\main\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_main_idf_component_manifest",
+      "label": "Azure 3D Graphics IDF Component Manifest",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\main\\idf_component.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_cmakelists_project",
+      "label": "esp-dsp-azure-board-app-kalman-filter Project",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_app_guide",
+      "label": "Azure Kalman Filter Demo Application Guide",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_imu_sensor_fusion",
+      "label": "IMU 9-DOF Sensor Fusion via Kalman Filter",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_nvs_calibration_storage",
+      "label": "Kalman Filter NVS State Vector Calibration Persistence",
+      "file_type": "rationale",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_main_cmakelists_component",
+      "label": "Azure Kalman Filter Main Component",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\main\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_main_idf_component_manifest",
+      "label": "Azure Kalman Filter IDF Component Manifest",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\main\\idf_component.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_graphics_img_to_3d_matrix_example_readme_guide",
+      "label": "ImgTo3D Generation Example Guide",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\graphics\\img_to_3d_matrix\\example\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_graphics_img_to_3d_matrix_example_readme_img_to_3d_pipeline",
+      "label": "ImgTo3D 2D to 3D Matrix Generator Pipeline",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\graphics\\img_to_3d_matrix\\example\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_cmakelists_project",
+      "label": "LyraT Audio App Project",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_app_guide",
+      "label": "LyraT Audio Processing Demo Guide",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_triple_buffering",
+      "label": "Triple Audio Buffer Real-Time Streaming Architecture",
+      "file_type": "rationale",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_iir_audio_processing",
+      "label": "ESP-DSP IIR Biquad Equalizer & Digital Limiter",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_main_cmakelists_component",
+      "label": "LyraT Audio Main Component",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\main\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_main_idf_component_manifest",
+      "label": "LyraT Audio IDF Component Manifest",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\main\\idf_component.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_cmakelists_project",
+      "label": "esp-dsp-m5stack-3d-graphics Project",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_readme_app_guide",
+      "label": "M5Stack Core S3 3D Graphics Demo Guide",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_main_cmakelists_component",
+      "label": "M5Stack Core S3 3D Graphics Main Component",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\main\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_main_idf_component_manifest",
+      "label": "M5Stack Core S3 3D Graphics IDF Component Manifest",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\main\\idf_component.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_cmakelists_project",
+      "label": "esp-dsp-m5stack-3d-kalman Project",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_readme_app_guide",
+      "label": "M5Stack Core S3 Kalman Filter Demo Guide",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_readme_bmi270_bmm150_fusion",
+      "label": "BMI270 & BMM150 Sensor Fusion via ESP-DSP Kalman",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "target": "managed_components_espressif__esp_dsp_readme_matrix_operations",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "target": "managed_components_espressif__esp_dsp_readme_fft",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "target": "managed_components_espressif__esp_dsp_readme_iir_filter",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "target": "managed_components_espressif__esp_dsp_readme_fir_filter",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "target": "managed_components_espressif__esp_dsp_readme_vector_math",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "target": "managed_components_espressif__esp_dsp_readme_kalman_filter",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_readme_simd_assembly_optimization",
+      "target": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_readme_applications_layout",
+      "target": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_azure_demo_apps",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_mat_3d_projection",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_azure_demo_apps",
+      "target": "managed_components_espressif__esp_dsp_applications_readme_applications_layout",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_mat_3d_projection",
+      "target": "managed_components_espressif__esp_dsp_readme_matrix_operations",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_cmakelists_project",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_mat_3d_projection",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_cmakelists_project",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_main_cmakelists_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_main_cmakelists_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_cmakelists_project",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_imu_sensor_fusion",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_nvs_calibration_storage",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_imu_sensor_fusion",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_imu_sensor_fusion",
+      "target": "managed_components_espressif__esp_dsp_readme_kalman_filter",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_cmakelists_project",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_main_cmakelists_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_main_cmakelists_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_graphics_img_to_3d_matrix_example_readme_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_graphics_img_to_3d_matrix_example_readme_img_to_3d_pipeline",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\graphics\\img_to_3d_matrix\\example\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_graphics_img_to_3d_matrix_example_readme_img_to_3d_pipeline",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_mat_3d_projection",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\graphics\\img_to_3d_matrix\\example\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_cmakelists_project",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_triple_buffering",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_iir_audio_processing",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_triple_buffering",
+      "target": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_iir_audio_processing",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_readme_iir_audio_processing",
+      "target": "managed_components_espressif__esp_dsp_readme_iir_filter",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_cmakelists_project",
+      "target": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_main_cmakelists_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_main_cmakelists_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_lyrat_board_app_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\lyrat_board_app\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_cmakelists_project",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_mat_3d_projection",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_cmakelists_project",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_main_cmakelists_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_main_cmakelists_component",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_graphics_img_to_3d_matrix_example_readme_img_to_3d_pipeline",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\main\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_main_cmakelists_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_readme_esp_dsp_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_cmakelists_project",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_readme_app_guide",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_readme_bmi270_bmm150_fusion",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_readme_bmi270_bmm150_fusion",
+      "target": "managed_components_espressif__esp_dsp_readme_kalman_filter",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_imu_sensor_fusion",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_readme_bmi270_bmm150_fusion",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_cmakelists_project",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_cmakelists_project",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\3d_graphics\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge_esp_dsp_kalman_sensor_fusion_apps",
+      "label": "ESP-DSP IMU Kalman Filter Sensor Fusion Demonstrations",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_readme_kalman_filter",
+        "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_kalman_filter_readme_imu_sensor_fusion",
+        "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_readme_bmi270_bmm150_fusion"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\kalman_filter\\README.md"
+    },
+    {
+      "id": "hyperedge_esp_dsp_3d_matrix_graphics_pipeline",
+      "label": "ESP-DSP 3D Matrix Transformation and Projection Pipeline",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_applications_azure_board_apps_readme_mat_3d_projection",
+        "managed_components_espressif__esp_dsp_applications_azure_board_apps_graphics_img_to_3d_matrix_example_readme_img_to_3d_pipeline",
+        "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_3d_graphics_main_cmakelists_component"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\README.md"
+    },
+    {
+      "id": "hyperedge_esp_dsp_core_dsp_primitives",
+      "label": "ESP-DSP Core Digital Signal Processing Primitives",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_readme_matrix_operations",
+        "managed_components_espressif__esp_dsp_readme_fft",
+        "managed_components_espressif__esp_dsp_readme_iir_filter",
+        "managed_components_espressif__esp_dsp_readme_fir_filter",
+        "managed_components_espressif__esp_dsp_readme_vector_math",
+        "managed_components_espressif__esp_dsp_readme_kalman_filter"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\README.md"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

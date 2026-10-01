@@ -8,9 +8,28 @@ SemaphoreHandle_t i2c1_mutex = nullptr;
 
 RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> accel_raw;
 RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> gyro_raw;
-RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE> accel_gyro_timestamp;
 RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> mag_raw;
 RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> pressure_raw;
+
+RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_accel_gyro_timestamp;
+RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_mag_timestamp;
+RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_pressure_timestamp;
+
+RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> accel_filtered;
+RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> gyro_filtered;
+RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> mag_filtered;
+
+RingBuffer<uint32_t, IMU_FILT_RING_BUF_SIZE>    filtered_accel_gyro_timestamp;
+RingBuffer<uint32_t, IMU_FILT_RING_BUF_SIZE>    filtered_mag_timestamp;
+
+Vec3<float> accel{0.0f, 0.0f, 0.0f};
+Vec3<float> gyro{0.0f, 0.0f, 0.0f};
+uint32_t accel_gyro_timestamp = 0;
+
+Vec3<float> mag{0.0f, 0.0f, 0.0f};
+uint32_t mag_timestamp = 0;
+
+
 
 QueueHandle_t gyro_telemetry_queue = nullptr;
 FcBleServerCallbacks ble_server_callbacks;

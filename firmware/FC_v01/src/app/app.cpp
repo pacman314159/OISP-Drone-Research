@@ -10,6 +10,7 @@
 #include "drivers/telemetry/ble_driver.h"
 
 #include "core/daq/daq_tasks.h"
+#include "core/filters/filter_tasks.h"
 #include "core/telemetry/telem_tasks.h"
 
 // Pure HAL Interface Accessor (Target Hardware Decoupled per [Note 0002])
@@ -38,6 +39,16 @@ void app_start(){
   );
 
   xTaskCreatePinnedToCore(
+    accel_gyro_lpf_task,
+    TASK_ACCEL_GYRO_LPF_NAME,
+    TASK_ACCEL_GYRO_LPF_STACK_SIZE,
+    nullptr,
+    TASK_ACCEL_GYRO_LPF_PRIORITY,
+    nullptr,
+    TASK_ACCEL_GYRO_LPF_CORE
+  );
+
+  xTaskCreatePinnedToCore(
     mag_daq_task,
     TASK_MAG_DAQ_NAME,
     TASK_MAG_DAQ_STACK_SIZE,
@@ -48,13 +59,35 @@ void app_start(){
   );
 
   xTaskCreatePinnedToCore(
-    ble_vec3_trans_task,
-    TASK_BLE_VEC3_TRANS_NAME,
-    TASK_BLE_VEC3_TRANS_STACK_SIZE,
+    mag_lpf_task,
+    TASK_MAG_LPF_NAME,
+    TASK_MAG_LPF_STACK_SIZE,
     nullptr,
-    TASK_BLE_VEC3_TRANS_PRIORITY,
+    TASK_MAG_LPF_PRIORITY,
     nullptr,
-    TASK_BLE_VEC3_TRANS_CORE
+    TASK_MAG_LPF_CORE
+  );
+
+  xTaskCreatePinnedToCore(
+    ble_vec3_raw_trans_task,
+    TASK_BLE_VEC3_RAW_TRANS_NAME,
+    TASK_BLE_VEC3_RAW_TRANS_STACK_SIZE,
+    nullptr,
+    TASK_BLE_VEC3_RAW_TRANS_PRIORITY,
+    nullptr,
+    TASK_BLE_VEC3_RAW_TRANS_CORE
+  );
+
+  xTaskCreatePinnedToCore(
+    ble_vec3_filtered_trans_task,
+    TASK_BLE_VEC3_FILT_TRANS_NAME,
+    TASK_BLE_VEC3_FILT_TRANS_STACK_SIZE,
+    nullptr,
+    TASK_BLE_VEC3_FILT_TRANS_PRIORITY,
+    nullptr,
+    TASK_BLE_VEC3_FILT_TRANS_CORE
   );
 }
+
+
 

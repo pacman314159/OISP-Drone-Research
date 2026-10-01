@@ -209,3 +209,44 @@ The SystemView JTAG measurements align closely with the onboard FreeRTOS hardwar
   - Integrates steady-state verification against runtime Serial Monitor ground-truth timestamps.
 - `analyzers/plot_slice_view.py`:
   - Generates high-resolution forensic timeline diagrams (`accel_gyro_interrupted_slice.png`) showing sub-slice segmentation, mutex contention, ISR preemption, and I2C hardware wait phases.
+
+---
+
+## 8. SystemView & JTAG Tracing Anti-Choking Guardrails
+
+To prevent JTAG buffer saturation, CPU stalls, and corrupted trace files (`Incomplete block`, `Unsupported predef event`), adhere strictly to the following rules:
+
+1. **Zero Buffer Wait Timeout (Never Block Real-Time Tasks)**:
+   - `CONFIG_SYSVIEW_BUF_WAIT_TMO=0` and `CONFIG_APPTRACE_SV_BUF_WAIT_TMO=0` MUST be enforced in `sdkconfig.defaults`.
+   - Never allow the tracing engine to halt or stall a CPU when the trace buffer is full; dropped trace packets are always preferred over compromising flight stability.
+
+2. **Expanded Trace Buffer**:
+   - `CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX` must be set to at least `65536` (64 KB) to absorb multi-core execution spikes in ESP32-S3 internal SRAM.
+
+3. **High-Frequency Interrupt (ISR) & Timer Event Suppression**:
+   - Disable `ISR_ENTER`, `ISR_EXIT`, `ISR_TO_SCHED`, and `TIMER_*` events in `sdkconfig.defaults`.
+   - Only retain task execution events (`TASK_START_EXEC`, `TASK_STOP_EXEC`, `TASK_START_READY`, `TASK_STOP_READY`, `TASK_CREATE`) and user markers (`SYSVIEW_START`/`SYSVIEW_END`). This cuts trace bandwidth by ~75% to stay well within USB-JTAG transfer limits.
+
+4. **OpenOCD Command Syntax & Polling Guard**:
+   - Espressif OpenOCD syntax is strictly:
+     `esp sysview start <out0> <out1> [poll_period_ms] [trace_size_bytes] [stop_timeout_s]`
+   - NEVER pass `-1` as the 3rd argument (`poll_period_ms`), as OpenOCD parses unsigned `-1` as `4294967295 ms` (stopping JTAG draining). Always pass `1` (1 ms active polling):
+     `esp sysview start file://core0.SVDat file://core1.SVDat 1 200000 -1`
+
+5. **FreeRTOS Overrun / Anti-Windup Guard**:
+   - Any high-frequency task using `vTaskDelayUntil` must guard against debugger/JTAG halt latencies by resetting schedule if lagging by more than 2 periods:
+     ```cpp
+     TickType_t now = xTaskGetTickCount();
+     if((now - last_wake_time) > (period_ticks * 2)){
+       last_wake_time = now;
+     }
+     vTaskDelayUntil(&last_wake_time, period_ticks);
+     ```
+
+6. **JTAG Adapter Speed**:
+   - Always issue `adapter speed 20000` (or higher) in OpenOCD Telnet before initiating trace capture to maximize USB-JTAG throughput.
+
+7. **Optimal Live Snapshot Sizing (12 KB Sweet Spot)**:
+   - For live dual-core trace captures on ESP32-S3, set the `trace_size_bytes` parameter in OpenOCD between `12000` and `14000` bytes:
+     `esp sysview start file://core0.SVDat file://core1.SVDat 1 12000 -1`
+   - This captures ~50 to 100 complete iterations of the 500 Hz flight loop and automatically halts before the 16 KB hardware TRAX buffer wraps around, eliminating `Incomplete block` warnings and data corruption.

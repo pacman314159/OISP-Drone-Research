@@ -1,0 +1,733 @@
+{
+  "nodes": [
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_cmakelists_component",
+      "label": "M5Stack CoreS3 Kalman Demo Component Registration",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\main\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_cmakelists_cube_config",
+      "label": "3D Object Cube Render Configuration",
+      "file_type": "rationale",
+      "rationale": "Enables CONFIG_3D_OBJECT_CUBE compile definition to render 3D cube model oriented by BMI270 Kalman attitude estimates.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\main\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_idf_component_manifest",
+      "label": "M5Stack CoreS3 Kalman Demo Component Manifest",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\main\\idf_component.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_idf_component_m5stack_bsp",
+      "label": "M5Stack CoreS3 Board Support Package Dependency",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\main\\idf_component.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_cmakelists_project",
+      "label": "Spectrum Box Lite CMake Project Definition",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_overview",
+      "label": "ESP32-S3-BOX-Lite Spectrum Demo Overview",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_audio_pipeline",
+      "label": "Dual-Channel Audio FFT Processing Flow",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_two_channel_fft_trick",
+      "label": "Two Real Channel FFT Spectrum Separation Rationale",
+      "file_type": "rationale",
+      "rationale": "Computes FFT of two real audio channels simultaneously in one complex FFT to halve computation overhead on ESP32-S3.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_main_cmakelists_component",
+      "label": "Spectrum Box Lite Main Component Registration",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\main\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_main_idf_component_manifest",
+      "label": "Spectrum Box Lite Component Dependencies",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\main\\idf_component.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_main_idf_component_lvgl_dep",
+      "label": "LVGL Graphics Integration for Spectrum Display",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\main\\idf_component.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_cmakelists_docs_build",
+      "label": "ESP-DSP Documentation Build System",
+      "file_type": "code",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\CMakeLists.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_doxyfile_config",
+      "label": "ESP-DSP Doxygen API Extraction Configuration",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\Doxyfile",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_doxyfile_simd_grouping",
+      "label": "DSP Assembly and SIMD Architecture Documentation Grouping",
+      "file_type": "rationale",
+      "rationale": "Groups ANSI C fallback and AE32/AES3 SIMD assembly implementations under unified API interfaces in generated Doxygen trees.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\Doxyfile",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_readme_docs_guide",
+      "label": "ESP-DSP Documentation Compilation Guide",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_readme_index",
+      "label": "ESP-DSP English Documentation Master Index",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_about_readme_overview",
+      "label": "About ESP-DSP Architecture & Principles",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\about\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_about_history_changelog",
+      "label": "ESP-DSP Library Evolution & Version History",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\about\\history.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_about_history_simd_evolution",
+      "label": "Evolution of Hardware SIMD Acceleration in ESP-DSP",
+      "file_type": "rationale",
+      "rationale": "Documents transition from pure software ANSI C to Xtensa dual-MAC AE32 assembly and subsequent ESP32-S3 AES3 vector instructions.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\about\\history.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_about_index_toc",
+      "label": "ESP-DSP About Section Table of Contents",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\about\\index.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_readme_overview",
+      "label": "ESP-DSP API Reference Structure & Guidelines",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dspi_conv_api",
+      "label": "2D Image Convolution API (dspi_conv)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dspi_conv.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dspi_conv_stride_rationale",
+      "label": "2D Convolution Stride and Step Flexibility",
+      "file_type": "rationale",
+      "rationale": "Allows stride and step parameterization on input and output image2d_t structs to support arbitrary ROI spatial filtering.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dspi_conv.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_ccorr_api",
+      "label": "Cross-Correlation API (dsps_ccorr)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dsps_ccorr.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_ccorr_ae32_optimization",
+      "label": "AE32 Vector Optimization for Cross-Correlation",
+      "file_type": "rationale",
+      "rationale": "Leverages Xtensa dual multiply-accumulate (MAC) assembly loop unrolling to compute cross-correlation inner products in constant cycles.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dsps_ccorr.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_conv_api",
+      "label": "1D Signal Convolution API (dsps_conv)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dsps_conv.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_conv_ae32_mac",
+      "label": "Xtensa AE32 Multiply-Accumulate Convolution Acceleration",
+      "file_type": "rationale",
+      "rationale": "Achieves single-cycle MAC instructions on Xtensa LX6/LX7 DSP extensions by packing 32-bit floating point coefficients into vector registers.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dsps_conv.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_corr_api",
+      "label": "Pattern Correlation API (dsps_corr)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dsps_corr.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_index_module",
+      "label": "ESP-DSP Convolution & Correlation Module Index",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\index.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_dct_dsps_dct_api",
+      "label": "Discrete Cosine Transform API (dsps_dct)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dct\\dsps_dct.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_dct_dsps_dct_fft_basis",
+      "label": "FFT-Based Radix-2 DCT Computation Rationale",
+      "file_type": "rationale",
+      "rationale": "Formulates Discrete Cosine Transform via radix-2 Fast Fourier Transform kernel to achieve O(N log N) computational complexity on embedded DSPs.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dct\\dsps_dct.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_dct_index_module",
+      "label": "ESP-DSP Discrete Cosine Transform Module Index",
+      "file_type": "document",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dct\\index.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dspi_dotprod_api",
+      "label": "2D Image Dot Product API (dspi_dotprod)",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dotprod\\dspi_dotprod.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dspi_dotprod_spatial_accel",
+      "label": "Spatial Matrix Dot Product Acceleration Rationale",
+      "file_type": "rationale",
+      "rationale": "Accelerates 2D image matrix dot products via aligned row-stride memory fetches and SIMD MAC unrolling for computer vision on ESP32.",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dotprod\\dspi_dotprod.rst",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_cmakelists_cube_config",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_cmakelists_component",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\main\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_cmakelists_component",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_idf_component_manifest",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\main\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_applications_m5stack_core_s3_apps_kalman_filter_main_idf_component_m5stack_bsp",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\m5stack_core_s3\\apps\\kalman_filter\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_cmakelists_project",
+      "target": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_main_cmakelists_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_overview",
+      "target": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_audio_pipeline",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_two_channel_fft_trick",
+      "target": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_audio_pipeline",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_main_idf_component_manifest",
+      "target": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_main_idf_component_lvgl_dep",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\main\\idf_component.yml",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_audio_pipeline",
+      "target": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_main_idf_component_lvgl_dep",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_doxyfile_simd_grouping",
+      "target": "managed_components_espressif__esp_dsp_docs_doxyfile_config",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\Doxyfile",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_cmakelists_docs_build",
+      "target": "managed_components_espressif__esp_dsp_docs_doxyfile_config",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\CMakeLists.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_readme_docs_guide",
+      "target": "managed_components_espressif__esp_dsp_docs_cmakelists_docs_build",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_readme_index",
+      "target": "managed_components_espressif__esp_dsp_docs_en_about_readme_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_about_index_toc",
+      "target": "managed_components_espressif__esp_dsp_docs_en_about_readme_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\about\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_about_index_toc",
+      "target": "managed_components_espressif__esp_dsp_docs_en_about_history_changelog",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\about\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_about_history_simd_evolution",
+      "target": "managed_components_espressif__esp_dsp_docs_en_about_history_changelog",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\about\\history.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_readme_index",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_readme_overview",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\README.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_conv_api",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_corr_api",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_ccorr_api",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dspi_conv_api",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_conv_ae32_mac",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_conv_api",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dsps_conv.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_ccorr_ae32_optimization",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_ccorr_api",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dsps_ccorr.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dspi_conv_stride_rationale",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dspi_conv_api",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dspi_conv.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_conv_api",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_ccorr_api",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dsps_conv.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_corr_api",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_ccorr_api",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dsps_corr.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dspi_conv_api",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dspi_dotprod_api",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\dspi_conv.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_dct_index_module",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_dct_dsps_dct_api",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dct\\index.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_dct_dsps_dct_fft_basis",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_dct_dsps_dct_api",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dct\\dsps_dct.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_dct_dsps_dct_api",
+      "target": "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_audio_pipeline",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dct\\dsps_dct.rst",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dspi_dotprod_spatial_accel",
+      "target": "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dspi_dotprod_api",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\dotprod\\dspi_dotprod.rst",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "conv_corr_spatial_ops_group",
+      "label": "ESP-DSP Convolution and Correlation Filter Suite",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_conv_api",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_corr_api",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_ccorr_api",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dspi_conv_api"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\api-reference\\conv\\index.rst"
+    },
+    {
+      "id": "spectrum_box_lite_audio_visualizer_pipeline",
+      "label": "Dual-Microphone Real-Time Audio Visualizer Pipeline",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_overview",
+        "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_readme_audio_pipeline",
+        "managed_components_espressif__esp_dsp_applications_spectrum_box_lite_main_idf_component_lvgl_dep"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\spectrum_box_lite\\README.md"
+    },
+    {
+      "id": "simd_hardware_accelerated_math_primitives",
+      "label": "Xtensa AE32 SIMD Vector Acceleration Architecture",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_conv_ae32_mac",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_conv_dsps_ccorr_ae32_optimization",
+        "managed_components_espressif__esp_dsp_docs_en_api_reference_dotprod_dspi_dotprod_spatial_accel"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\en\\about\\history.rst"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

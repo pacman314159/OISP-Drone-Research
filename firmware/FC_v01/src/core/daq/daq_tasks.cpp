@@ -38,7 +38,7 @@ void accel_gyro_daq_task(void* arg){
       if(success){
         accel_raw.push(accel);
         gyro_raw.push(gyro);
-        accel_gyro_timestamp.push(ts_us);
+        raw_accel_gyro_timestamp.push(ts_us);
       }
     }
 
@@ -60,19 +60,24 @@ void mag_daq_task(void* arg){
   while(true){
     // Anti-windup overrun guard: if behind schedule reset it
     TickType_t now = xTaskGetTickCount();
-    if((now - last_wake_time) > (period_ticks * 2))
-      last_wake_time = now;
+    if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
     SYSVIEW_START(task_id); //=========================================================================
+    
+    uint32_t ts_us = static_cast<uint32_t>(micros());
 
     if(xSemaphoreTake(i2c0_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTRUE){
       bool success = hmc->get_all_data(mag);
       hmc->set_meas_mode(HMC_MODE_SINGLE);
       xSemaphoreGive(i2c0_mutex);
 
-      if(success) mag_raw.push(mag);
+      if(success){
+        mag_raw.push(mag);
+        raw_mag_timestamp.push(ts_us);
+      }
     }
+
 
     SYSVIEW_END(task_id); //=========================================================================
   }

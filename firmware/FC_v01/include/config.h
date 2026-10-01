@@ -66,6 +66,7 @@ constexpr int USER_BTN_PIN      = 38;
 // =============================================================================
 constexpr int RING_BUF_MAX_SIZE         = 100; // Maximum allowable ring buffer size
 constexpr int IMU_RAW_RING_BUF_SIZE     = 10;
+constexpr int IMU_FILT_RING_BUF_SIZE    = 10;
 constexpr uint32_t BUS_MUTEX_TIMEOUT_MS = 20;  // Global xSemaphoreTake timeout (20 ms, must exceed Wire timeout + max I2C transaction)
 
 // =============================================================================
@@ -73,7 +74,8 @@ constexpr uint32_t BUS_MUTEX_TIMEOUT_MS = 20;  // Global xSemaphoreTake timeout 
 // =============================================================================
 constexpr const char* BLE_DEVICE_NAME           = "FC_v01";
 constexpr uint16_t BLE_MTU_SIZE                 = 512; // bytes
-constexpr uint8_t BLE_TELEM_SAMPLES_PER_PACKET = 31;  // 31 samples x 16B = 496B payload
+constexpr uint8_t BLE_TELEM_SAMPLES_PER_PACKET  = 31;  // 31 samples x 16B = 496B payload
+constexpr uint32_t BLE_TELEM_MIN_PACKET_FREQ_HZ = 10;
 
 enum TelemTimestampUnit {
   TIMESTAMP_UNIT_MICROSECONDS,
@@ -89,8 +91,9 @@ enum TelemSensorSource {
 constexpr TelemSensorSource BLE_TELEM_SENSOR_SRC = TELEM_SENSOR_MAG;
 
 // Telemetry GATT Service (Compatible with ble_9dof_daq / FCDatMon)
-constexpr const char* BLE_SERVICE_TELEM_UUID   = "d3a9f560-8f77-4a45-b3e0-3c22d8f23c91";
-constexpr const char* BLE_CHAR_GYRO_TELEM_UUID = "b4f61a92-4c35-4f93-b2e1-89a37f6a5fdd";
+constexpr const char* BLE_SERVICE_TELEM_UUID        = "d3a9f560-8f77-4a45-b3e0-3c22d8f23c91";
+constexpr const char* BLE_CHAR_VEC3_RAW_TELEM_UUID  = "b4f61a92-4c35-4f93-b2e1-89a37f6a5fdd";
+constexpr const char* BLE_CHAR_VEC3_FILT_TELEM_UUID = "e7b29a14-8f43-4c92-a1b5-3d86ef297c41";
 
 // Reserved BLE OTA Service (Dual-bank firmware update support)
 constexpr const char* BLE_SERVICE_OTA_UUID      = "23408888-1f40-4cd8-9b89-ca8d45f8a5b0";
@@ -101,49 +104,76 @@ constexpr const char* BLE_CHAR_OTA_DATA_UUID    = "2340888a-1f40-4cd8-9b89-ca8d4
 // CENTRALIZED FREERTOS TASK CONFIGURATIONS
 // =============================================================================
 
-constexpr const char* TASK_ACCEL_GYRO_DAQ_NAME   = "ACCEL_GYRO_DAQ";
-constexpr const char* TASK_ATTITUDE_NAME         = "ATTITUDE";
-constexpr const char* TASK_BARO_DAQ_NAME         = "BARO_DAQ";
-constexpr const char* TASK_MAG_DAQ_NAME          = "MAG_DAQ";
-constexpr const char* TASK_BLE_VEC3_TRANS_NAME   = "BLE_VEC3_TRANS_TASK";
+constexpr const char* TASK_ACCEL_GYRO_DAQ_NAME       = "ACCEL_GYRO_DAQ";
+constexpr const char* TASK_ACCEL_GYRO_LPF_NAME       = "ACCEL_GYRO_LPF";
+constexpr const char* TASK_ATTITUDE_NAME             = "ATTITUDE";
+constexpr const char* TASK_BARO_DAQ_NAME             = "BARO_DAQ";
+constexpr const char* TASK_MAG_DAQ_NAME              = "MAG_DAQ";
+constexpr const char* TASK_MAG_LPF_NAME              = "MAG_LPF";
+constexpr const char* TASK_BLE_VEC3_RAW_TRANS_NAME   = "BLE_VEC3_RAW_TRANS_TASK";
+constexpr const char* TASK_BLE_VEC3_FILT_TRANS_NAME  = "BLE_VEC3_FILT_TRANS_TASK";
 
 enum TaskIDs : uint32_t {
   TASK_ACCEL_GYRO_DAQ_ID = 0,
+  TASK_ACCEL_GYRO_LPF_ID,
   TASK_ATTITUDE_ID,
   TASK_BARO_DAQ_ID,
   TASK_MAG_DAQ_ID,
-  TASK_BLE_VEC3_TRANS_ID,
+  TASK_MAG_LPF_ID,
+  TASK_BLE_VEC3_RAW_TRANS_ID,
+  TASK_BLE_VEC3_FILT_TRANS_ID,
   TASK_COUNT
 };
 
 enum TaskCores : int32_t {
-  TASK_ACCEL_GYRO_DAQ_CORE = tskNO_AFFINITY,
-  TASK_ATTITUDE_CORE       = tskNO_AFFINITY,
-  TASK_BARO_DAQ_CORE       = tskNO_AFFINITY,
-  TASK_MAG_DAQ_CORE        = tskNO_AFFINITY,
-  TASK_BLE_VEC3_TRANS_CORE = tskNO_AFFINITY
+  TASK_ACCEL_GYRO_DAQ_CORE      = tskNO_AFFINITY,
+  TASK_ACCEL_GYRO_LPF_CORE      = tskNO_AFFINITY,
+  TASK_ATTITUDE_CORE            = tskNO_AFFINITY,
+  TASK_BARO_DAQ_CORE            = tskNO_AFFINITY,
+  TASK_MAG_DAQ_CORE             = tskNO_AFFINITY,
+  TASK_MAG_LPF_CORE             = tskNO_AFFINITY,
+  TASK_BLE_VEC3_RAW_TRANS_CORE  = tskNO_AFFINITY,
+  TASK_BLE_VEC3_FILT_TRANS_CORE = tskNO_AFFINITY
 };
 
 enum TaskPriorities : UBaseType_t {
-  TASK_ACCEL_GYRO_DAQ_PRIORITY = 3, // 500 Hz Realtime DAQ Loop
-  TASK_ATTITUDE_PRIORITY       = 4, // Control Loop
-  TASK_BARO_DAQ_PRIORITY       = 2, // Medium priority sensor DAQ
-  TASK_MAG_DAQ_PRIORITY        = 2, // Medium priority sensor DAQ
-  TASK_BLE_VEC3_TRANS_PRIORITY = 1  // Low priority telemetry task
-};
-
-enum TaskSizesBytes : uint32_t {
-  TASK_ACCEL_GYRO_DAQ_STACK_SIZE = 4096,
-  TASK_ATTITUDE_STACK_SIZE       = 4096,
-  TASK_BARO_DAQ_STACK_SIZE       = 4096,
-  TASK_MAG_DAQ_STACK_SIZE        = 4096,
-  TASK_BLE_VEC3_TRANS_STACK_SIZE = 8192
+  TASK_ACCEL_GYRO_DAQ_PRIORITY      = 3, // 500 Hz Realtime DAQ Loop
+  TASK_ACCEL_GYRO_LPF_PRIORITY      = 3, // 500 Hz Realtime LPF Loop
+  TASK_ATTITUDE_PRIORITY            = 4, // Control Loop
+  TASK_BARO_DAQ_PRIORITY            = 2, // Medium priority sensor DAQ
+  TASK_MAG_DAQ_PRIORITY             = 2, // Medium priority sensor DAQ
+  TASK_MAG_LPF_PRIORITY             = 2, // Medium priority sensor LPF
+  TASK_BLE_VEC3_RAW_TRANS_PRIORITY  = 1, // Low priority raw telemetry task
+  TASK_BLE_VEC3_FILT_TRANS_PRIORITY = 1  // Low priority filtered telemetry task
 };
 
 enum TaskFrequenciesHz : uint32_t {
-  TASK_ACCEL_GYRO_DAQ_FREQ_HZ   = 500,
-  TASK_ATTITUDE_FREQ_HZ         = 500,
-  TASK_BARO_DAQ_FREQ_HZ         = 50,
-  TASK_MAG_DAQ_FREQ_HZ          = 100,
-  TASK_BLE_VEC3_TRANS_FREQ_HZ   = 100
+  TASK_ACCEL_GYRO_DAQ_FREQ_HZ      = 500,
+  TASK_ACCEL_GYRO_LPF_FREQ_HZ      = 500,
+  TASK_ATTITUDE_FREQ_HZ            = 500,
+  TASK_BARO_DAQ_FREQ_HZ            = 50,
+  TASK_MAG_DAQ_FREQ_HZ             = 100,
+  TASK_MAG_LPF_FREQ_HZ             = 100,
+  TASK_BLE_VEC3_RAW_TRANS_FREQ_HZ  = 100,
+  TASK_BLE_VEC3_FILT_TRANS_FREQ_HZ = 100
 };
+
+enum TaskSizesBytes : uint32_t {
+  TASK_ACCEL_GYRO_DAQ_STACK_SIZE      = 4096,
+  TASK_ACCEL_GYRO_LPF_STACK_SIZE      = 4096,
+  TASK_ATTITUDE_STACK_SIZE            = 4096,
+  TASK_BARO_DAQ_STACK_SIZE            = 4096,
+  TASK_MAG_DAQ_STACK_SIZE             = 4096,
+  TASK_MAG_LPF_STACK_SIZE             = 4096,
+  TASK_BLE_VEC3_RAW_TRANS_STACK_SIZE  = 8192,
+  TASK_BLE_VEC3_FILT_TRANS_STACK_SIZE = 8192
+};
+
+
+// =============================================================================
+// MATH AND DSP PARAMETERS
+// =============================================================================
+constexpr float GYRO_LPF_CUTOFF_FREQ_HZ  = 25.0f;
+constexpr float ACCEL_LPF_CUTOFF_FREQ_HZ = 30.0f;
+constexpr float MAG_LPF_CUTOFF_FREQ_HZ   = 10.0f;
+

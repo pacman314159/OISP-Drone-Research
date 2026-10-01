@@ -1,0 +1,107 @@
+{
+  "nodes": [
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_3d_graphics_demo_animation",
+      "label": "ESP32-Azure IoT Kit 3D Graphics Demo Animation",
+      "file_type": "image",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\3d_graphics.gif",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_3d_graphics_matrix_rendering",
+      "label": "3D Matrix Transformation and Projection on LCD",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\3d_graphics.gif",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs__static_esp_dsp_fft_bench_performance_chart",
+      "label": "ESP-DSP FFT Execution Time Benchmark Chart",
+      "file_type": "image",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\_static\\esp_dsp_fft_bench.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "managed_components_espressif__esp_dsp_docs__static_esp_dsp_fft_bench_radix_comparison",
+      "label": "Radix-2 and Radix-4 FFT Performance Optimization",
+      "file_type": "concept",
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\_static\\esp_dsp_fft_bench.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_3d_graphics_demo_animation",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_3d_graphics_matrix_rendering",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\3d_graphics.gif",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_3d_graphics_demo_animation",
+      "target": "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_readme_app_guide",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\3d_graphics.gif",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs__static_esp_dsp_fft_bench_performance_chart",
+      "target": "managed_components_espressif__esp_dsp_docs__static_esp_dsp_fft_bench_radix_comparison",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\_static\\esp_dsp_fft_bench.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "managed_components_espressif__esp_dsp_docs__static_esp_dsp_fft_bench_radix_comparison",
+      "target": "managed_components_espressif__esp_dsp_readme_fft",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\docs\\_static\\esp_dsp_fft_bench.png",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "esp_dsp_azure_3d_graphics_visualization",
+      "label": "ESP-DSP Azure IoT Kit 3D Graphics Visualization Flow",
+      "nodes": [
+        "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_3d_graphics_demo_animation",
+        "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_3d_graphics_matrix_rendering",
+        "managed_components_espressif__esp_dsp_applications_azure_board_apps_apps_3d_graphics_readme_app_guide"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "D:\\OneDrive_MSFT\\Work\\Drone_Research\\firmware\\FC_v01\\managed_components\\espressif__esp-dsp\\applications\\azure_board_apps\\apps\\3d_graphics\\3d_graphics.gif"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

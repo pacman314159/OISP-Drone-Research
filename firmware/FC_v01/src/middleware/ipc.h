@@ -18,9 +18,27 @@ extern QueueHandle_t gyro_telemetry_queue;
 // Thread-Safe Inter-Task Ring Buffers
 extern RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> accel_raw;
 extern RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> gyro_raw;
-extern RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE> accel_gyro_timestamp;
 extern RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> mag_raw;
 extern RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> pressure_raw;
+
+extern RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_accel_gyro_timestamp;
+extern RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_mag_timestamp;
+extern RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_pressure_timestamp;
+
+// Thread-Safe Filtered Inter-Task Ring Buffers
+extern RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> accel_filtered;
+extern RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> gyro_filtered;
+extern RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> mag_filtered;
+
+extern RingBuffer<uint32_t, IMU_FILT_RING_BUF_SIZE>    filtered_accel_gyro_timestamp;
+extern RingBuffer<uint32_t, IMU_FILT_RING_BUF_SIZE>    filtered_mag_timestamp;
+
+// Processed & Filtered Sensor Variables (Single Output State)
+extern Vec3<float> accel;
+extern Vec3<float> gyro;
+extern Vec3<float> mag;
+extern uint32_t accel_gyro_timestamp;
+extern uint32_t mag_timestamp;
 
 
 // Layer 3 Middleware Callbacks for NimBLE Server Events ([Note 0001])
