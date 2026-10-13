@@ -51,15 +51,14 @@ enum TaskPriorities : uint8_t {
 
 enum TaskFrequencies : uint16_t {
   TASK_IMU_DAQ_FREQ_HZ  = 500,
-  TASK_ATTITUDE_FREQ_HZ = 250,
-  TASK_MAG_DAQ_FREQ_HZ   = 75,
-  TASK_BARO_DAQ_FREQ_HZ  = 50
+  TASK_MAG_DAQ_FREQ_HZ  = 75,
+  TASK_BARO_DAQ_FREQ_HZ = 50
 };
 ```
 
 ### Rule 3: Complete Target Hardware Abstraction Across Layers 1 to 4
-- No entity, peripheral driver, middleware module, algorithm, or application component across Layers 1 to 4 shall import target-specific headers (e.g. `<Wire.h>`, `esp_err.h`, or `stm32f4xx_hal.h`) or have any awareness of whether the underlying physical I2C or peripheral drivers are for STM32, ESP32, or any other target SoC.
-- All hardware interactions MUST occur strictly through abstract HAL interfaces (`HAL_I2C`, `HAL_I2C_ASYNC`) and target hardware accessor functions (`get_i2c0_bus()`).
+- No entity, peripheral driver, middleware module, algorithm, or application component across Layers 1 to 4 shall import target-specific headers (e.g. `<Wire.h>`, `<driver/rmt.h>`, `esp_err.h`, or `stm32f4xx_hal.h`) or have any awareness of whether the underlying physical I2C or peripheral drivers are for STM32, ESP32, or any other target SoC.
+- All hardware interactions MUST occur strictly through abstract HAL interfaces (`HAL_I2C`, `HAL_I2C_ASYNC`, `HAL_PulseTX`) and target hardware accessor functions (`get_i2c0_bus()`, `get_pulse_tx0()`).
 
 ### Rule 4: Prohibition of `auto` Variable Declarations
 - `auto` type deduction for variables is strictly forbidden across all firmware layers to prevent type ambiguity, hidden conversions, pointer/reference decay, and unintended value copies.
@@ -70,12 +69,12 @@ enum TaskFrequencies : uint16_t {
 - This eliminates loop execution phase drift and guarantees precise, deterministic release frequencies (e.g. exact 500 Hz / 2 ms periods for the IMU loop).
 
 ### Rule 6: Centralized Inter-Task Communication (`ipc.h` / `ipc.cpp`)
-- All Layer 3 shared RTOS resources — including synchronization primitives (mutexes `i2c0_mutex`/`i2c1_mutex`, semaphores), inter-task data pipes (queues, ring buffers `imu_ring_buffer`), and shared memory allocations — MUST be declared centrally in `src/middleware/ipc.h` and instantiated in `src/middleware/ipc.cpp`.
+- All Layer 3 shared RTOS resources — including synchronization primitives (mutexes `i2c0_mutex`/`i2c1_mutex`/`status_led_mutex`, semaphores), inter-task data pipes (queues, ring buffers `imu_ring_buffer`), and shared memory allocations — MUST be declared centrally in `src/middleware/ipc.h` and instantiated in `src/middleware/ipc.cpp`.
 - Initialization of all system IPC handles MUST be executed via `init_ipc()`. Scattering IPC declarations across drivers or application code is strictly forbidden.
 
 ### Rule 7: FreeRTOS Task Scoping & Scoped Layering
-- FreeRTOS tasks MUST be declared and defined strictly in Layer 4 (`src/core/`, e.g. `src/core/daq/`, `src/core/control/`, `src/core/estimators/`, `src/core/telemetry/`) or Layer 5 (`src/app/`).
-- Declaring or creating FreeRTOS tasks inside Layer 2 (`drivers/`) or below is strictly prohibited. `daq/` stands for **Data Acquisition**.
+- FreeRTOS tasks MUST be declared and defined strictly in Layer 4 (`src/core/`, e.g. `src/core/sensor/`, `src/core/control/`, `src/core/math/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or Layer 5 (`src/app/`).
+- Declaring or creating FreeRTOS tasks inside Layer 2 (`drivers/`) or below is strictly prohibited. `sensor/` houses high-frequency sensor Data Acquisition and calibration routines [Note 0016].
 
 ---
 
@@ -86,4 +85,4 @@ enum TaskFrequencies : uint16_t {
 4. **Explicit Typing Rule**: Replace any `auto` declarations with explicit types.
 5. **Deterministic Delay Rule**: Use `vTaskDelayUntil()` for all periodic loops.
 6. **Centralized IPC Rule**: Declare all shared locks, semaphores, queues, and ring buffers inside `src/middleware/ipc.h` / `ipc.cpp` and initialize via `init_ipc()`.
-7. **Task Scoping Rule**: Ensure all task functions reside exclusively in `core/` or `app/` (e.g. `src/core/daq/daq_tasks.h`).
+7. **Task Scoping Rule**: Ensure all task functions reside exclusively in `core/` or `app/` (e.g. `src/core/sensor/daq_tasks.h`, `src/core/math/filter_tasks.h`, `src/core/telemetry/ble_telem_tasks.h`).

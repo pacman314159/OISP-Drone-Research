@@ -52,7 +52,7 @@ Following the rules set in **Zettel 0003**:
 - **ESP-IDF Component Manager**: Registered `espressif/esp-dsp: "^1.4.0"` in `src/idf_component.yml` and added `REQUIRES esp-dsp` to `src/CMakeLists.txt`.
 - **Header Standardization**: Included `#include "esp_dsp.h"` in `simd.cpp` to pull in Espressif DSP vector and matrix prototypes cleanly.
 - **PlatformIO Configuration**: Added `-Wno-error=implicit-function-declaration` to `build_flags` in `platformio.ini` and cleaned up git `lib_deps` to prevent PlatformIO from trying to compile demo applications inside `esp-dsp`.
-- **Driver Fix**: Resolved reference type binding mismatch in `daq_tasks.cpp` (`temp_raw` changed from `float` to `int16_t`).
+- **Driver Fix**: Resolved reference type binding mismatch in `src/core/sensor/daq_tasks.cpp` (`temp_raw` changed from `float` to `int16_t`).
 
 ---
 

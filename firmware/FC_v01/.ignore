@@ -3,4 +3,7 @@ managed_components/
 build/
 .vscode/
 .cache/
+graphify-out/
 compile_commands.json
+sdkconfig.*
+documents/

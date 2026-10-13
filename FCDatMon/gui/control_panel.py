@@ -84,7 +84,6 @@ def _build_section_payload_settings():
     with dpg.group(tag="group_payload_settings", show=(state.DEFAULT_PROTOCOL in ["BLE", "USB (Serial)"])):
         dpg.add_combo(["RX", "TX"], default_value="RX", label="Timestamp", tag="combo_timestamp", callback=cb._update_expected_format_callback)
         dpg.add_combo(["milliseconds", "microseconds"], default_value="milliseconds", label="Time Unit", tag="combo_timestamp_unit")
-        dpg.add_input_int(default_value=1, min_value=1, label="Batch size", tag="input_batch_size", width=120, show=(state.DEFAULT_PROTOCOL=="BLE"))
         dpg.add_spacer(height=5)
         dpg.add_text("Expected Payload Format:", color=(200, 200, 200))
         dpg.add_text("Calculating...", color=(150, 255, 150), tag="text_expected_format")

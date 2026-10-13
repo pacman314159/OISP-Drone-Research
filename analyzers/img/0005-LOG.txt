@@ -1,0 +1,80 @@
+[INFO] Opening File Explorer to select binary flight log (.BIN)...
+[INFO] Selected file via Explorer: D:\OneDrive_MSFT\Work\Drone_Research\analyzers\binary_black_box_data\LOG_0022.BIN
+[INFO] Initialized next Run ID from img/: 0005
+
+================================================================================
+  FLIGHT LOG SCAN REPORT: LOG_0022.BIN
+  Target Board:     esp32-s3-fc-v02-n8r8
+  Session ID:       LOG_0022
+  Boot Timestamp:   888488 us (0.888 s)
+  Limit Policy:     STOP_ON_SIZE
+  Max File Size:    50.0 MB
+================================================================================
+  Tracked Data Streams in Log:
+    [OK] Accelerometer & Gyroscope RAW   : 16,510 samples (~33.02 s @ ~500 Hz)
+    [ ] Accelerometer & Gyroscope FILT  : Not logged
+    [OK] Magnetometer RAW                :  3,302 samples (~33.01 s @ ~100 Hz)
+    [ ] Magnetometer FILT               : Not logged
+    [ ] Barometer RAW                   : Not logged
+    [ ] Barometer FILT                  : Not logged
+    [ ] Attitude Euler Angles           : Not logged
+    [ ] Attitude Quaternions            : Not logged
+================================================================================
+
+------------------------------------------------------------
+  ANALYSIS SELECTION MENU (Assigned Run ID: 0005)
+------------------------------------------------------------
+  ACCELEROMETER:
+    [1] Accelerometer - Histogram & Standard Deviation
+    [2] Accelerometer - Fast Fourier Transform (FFT)
+    [3] Accelerometer - Time Series (Value vs. Time)
+
+  GYROSCOPE:
+    [4] Gyroscope     - Histogram & Standard Deviation
+    [5] Gyroscope     - Fast Fourier Transform (FFT)
+    [6] Gyroscope     - Time Series (Value vs. Time)
+
+  MAGNETOMETER:
+    [7] Magnetometer  - Histogram & Standard Deviation
+    [8] Magnetometer  - Fast Fourier Transform (FFT)
+    [9] Magnetometer  - Time Series (Value vs. Time)
+
+  BAROMETER:
+   [10] Barometer     - Histogram & Standard Deviation
+   [11] Barometer     - Fast Fourier Transform (FFT)
+   [12] Barometer     - Time Series (Value vs. Time)
+
+  ATTITUDE (ORIENTATION):
+   [13] Attitude      - Time Series (Roll / Pitch / Yaw vs. Time)
+
+  BATCH / COMBINED:
+   [14] All Time Series Plots
+   [15] All Histograms
+   [16] All FFTs
+   [17] Complete Analysis (All Time Series, Histograms & FFTs)
+    [0] Exit
+------------------------------------------------------------
+Enter option number(s) [e.g. 1, 3, 6 or 1-6 or 17]: 
+[INFO] Commencing Analysis with Run ID: 0005 (Trimming: First 10.0% and Last 10.0%)
+[INFO] All output images will be saved in: D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img
+
+
+>> Processing Accelerometer: 13208 samples analyzed (trimmed 1651 to 14859 of 16510)
+
+==========================================================================================
+  STATISTICAL REPORT: Accelerometer RAW (Session LOG_0022)
+==========================================================================================
+ Channel            | Samples | Mean        | StDev       | Range       | Fs (Hz)  | Peak Freq 
+-------------------+---------+-------------+-------------+-------------+----------+-----------
+ Accel X            | 13208   | +0.1753 g   | 0.3063 g    | 3.9999      | 500.0    | 0.2 Hz    
+ Accel Y            | 13208   | -0.0575 g   | 0.2293 g    | 3.9999      | 500.0    | 0.0 Hz    
+ Accel Z            | 13208   | +0.8135 g   | 0.5276 g    | 3.9999      | 500.0    | 0.0 Hz    
+==========================================================================================
+
+  [OK] Saved: 0005-TIME-Accel_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0005-TIME-Accel_raw.png
+
+==========================================================================================
+  ANALYSIS COMPLETE! Run ID 0005 artifacts saved into: D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img
+  Session Log Output saved to: 0005-LOG.txt in img/ and analyzers/
+==========================================================================================
+

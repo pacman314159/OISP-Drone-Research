@@ -735,7 +735,7 @@
     "last_paths": {
       "idf": "",
       "netlist": "",
-      "plot": "",
+      "plot": "FC_v02 gerbers/",
       "specctra_dsn": "",
       "vrml": ""
     },

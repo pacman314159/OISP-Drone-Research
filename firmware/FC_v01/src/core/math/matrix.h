@@ -100,6 +100,12 @@ public:
     return res;
   }
 
+  Matrix<T, ROWS, COLS> hadamard(const Matrix<T, ROWS, COLS>& B) const {
+    Matrix<T, ROWS, COLS> res;
+    for(uint8_t i = 0; i < ROWS * COLS; ++i) res.m[i] = this->m[i] * B.m[i];
+    return res;
+  }
+
   template<uint8_t OTHER_COLS>
   Matrix<T, ROWS, OTHER_COLS> operator*(const Matrix<T, COLS, OTHER_COLS>& B) const {
     Matrix<T, ROWS, OTHER_COLS> C;
@@ -113,10 +119,18 @@ public:
     return C;
   }
 
-  T norm() const {
+  T dot(const Matrix<T, ROWS, COLS>& B) const {
     T sum = 0;
-    for(uint8_t i = 0; i < ROWS * COLS; ++i) sum += m[i] * m[i];
-    return static_cast<T>(sqrt(sum));
+    for(uint8_t i = 0; i < ROWS * COLS; ++i) sum += m[i] * B.m[i];
+    return sum;
+  }
+
+  T norm_sq() const {
+    return dot(*this);
+  }
+
+  T norm() const {
+    return static_cast<T>(sqrt(norm_sq()));
   }
 
   void normalize(){
@@ -191,6 +205,15 @@ public:
     return res;
   }
 
+  Matrix<T, ROWS, COLS> hadamard(const Matrix<T, ROWS, COLS>& B) const {
+    Matrix<T, ROWS, COLS> res;
+    if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int16_t> || std::is_same_v<T, int8_t>)
+      hal_simd::mul(this->m, B.m, res.m, ROWS * COLS);
+    else
+      for(uint8_t i = 0; i < ROWS * COLS; ++i) res.m[i] = this->m[i] * B.m[i];
+    return res;
+  }
+
   template<uint8_t OTHER_COLS>
   Matrix<T, ROWS, OTHER_COLS> operator*(const Matrix<T, COLS, OTHER_COLS>& B) const {
     Matrix<T, ROWS, OTHER_COLS> C;
@@ -208,14 +231,22 @@ public:
     return C;
   }
 
-  T norm() const {
+  T dot(const Matrix<T, ROWS, COLS>& B) const {
     if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int16_t> || std::is_same_v<T, int8_t>)
-      return static_cast<T>(sqrt(hal_simd::dot_product(this->m, this->m, ROWS * COLS)));
+      return static_cast<T>(hal_simd::dot_product(this->m, B.m, ROWS * COLS));
     else{
       T sum = 0;
-      for(uint8_t i = 0; i < ROWS * COLS; ++i) sum += m[i] * m[i];
-      return static_cast<T>(sqrt(sum));
+      for(uint8_t i = 0; i < ROWS * COLS; ++i) sum += m[i] * B.m[i];
+      return sum;
     }
+  }
+
+  T norm_sq() const {
+    return dot(*this);
+  }
+
+  T norm() const {
+    return static_cast<T>(sqrt(norm_sq()));
   }
 
   void normalize(){
@@ -253,6 +284,11 @@ public:
 
 #endif
 };
+
+template<typename T, uint8_t ROWS, uint8_t COLS>
+inline Matrix<T, ROWS, COLS> operator*(T scalar, const Matrix<T, ROWS, COLS>& mat){
+  return mat * scalar;
+}
 
 typedef Matrix<float, 7, 1> Vec7; // State Vector (x)
 typedef Matrix<float, 4, 1> Vec4; // Quaternions (q_pred, q_update)

@@ -13,7 +13,7 @@ class BLEReader:
     telemetry notifications, decodes raw 36-byte (9 floats) binary payloads, 
     and pushes them to DATA_MANAGER.
     """
-    def __init__(self, mac, service_uuid, char_uuid, log_file_path=None, on_disconnect=None, on_connect_success=None, on_connect_error=None, timestamp_mode="RX", timestamp_unit="milliseconds", batch_size=1, log_frequency=False, freq_window_size=500, on_freq_log=None):
+    def __init__(self, mac, service_uuid, char_uuid, log_file_path=None, on_disconnect=None, on_connect_success=None, on_connect_error=None, timestamp_mode="RX", timestamp_unit="milliseconds", num_series=0, log_frequency=False, freq_window_size=500, on_freq_log=None):
         self.mac = mac
         self.service_uuid = service_uuid
         self.char_uuid = char_uuid
@@ -23,7 +23,7 @@ class BLEReader:
         
         self.timestamp_mode = timestamp_mode
         self.timestamp_unit = timestamp_unit
-        self.batch_size = batch_size
+        self.num_series = num_series
         
         self.on_disconnect = on_disconnect
         self.on_connect_success = on_connect_success
@@ -116,16 +116,29 @@ class BLEReader:
                 return
             
             data_len = len(data)
-            if data_len == 0 or data_len % self.batch_size != 0:
+            if data_len == 0:
                 return
-                
-            sample_size = data_len // self.batch_size
-            if sample_size % 4 != 0:
+
+            # Dynamically determine sample size from user-configured series lines
+            num_series = self.num_series
+            if not num_series:
+                try:
+                    import gui.ui_state as state
+                    num_series = sum(len(cfg.get('series', [])) for cfg in state.PLOT_CACHE.values())
+                except Exception:
+                    num_series = 0
+
+            if not num_series or num_series <= 0:
                 return
-                
+
+            sample_size = (4 if self.timestamp_mode == "TX" else 0) + (num_series * 4)
+            if sample_size <= 0 or data_len % sample_size != 0:
+                return
+
+            num_samples = data_len // sample_size
             curr_time = time.perf_counter()
                 
-            for b in range(self.batch_size):
+            for b in range(num_samples):
                 sample_data = data[b * sample_size : (b + 1) * sample_size]
                 try:
                     if self.timestamp_mode == "TX":

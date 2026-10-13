@@ -75,7 +75,7 @@ def _global_scroll_handler(sender, app_data, user_data):
                 if state.PLOT_CHASE_ACTIVE.get(i, True):
                     limits = dpg.get_axis_limits(f"plot_{i}_x")
                     window = limits[1] - limits[0]
-                    if window <= 0: window = 10000.0
+                    if window <= 0: window = state.DEFAULT_TIME_WINDOW_MS
                     factor = 1.15 if app_data < 0 else 0.85
                     setattr(state, f"MANUAL_WINDOW_{i}", window * factor)
 
@@ -226,7 +226,7 @@ def main():
                         old_win = last_x[1] - last_x[0]
                         target_win = new_win if h_zoom else old_win
                     
-                    if target_win <= 0: target_win = 10000.0
+                    if target_win <= 0: target_win = state.DEFAULT_TIME_WINDOW_MS
                     
                     x_limits = [t_max - target_win, t_max]
                     dpg.set_axis_limits(f"plot_{i}_x", x_limits[0], x_limits[1])
@@ -241,7 +241,7 @@ def main():
                         target_center = old_center if not h_pan else new_center
                         target_win = old_win if not h_zoom else new_win
                         
-                        if target_win <= 0: target_win = 10000.0
+                        if target_win <= 0: target_win = state.DEFAULT_TIME_WINDOW_MS
                         
                         x_limits = [target_center - target_win/2.0, target_center + target_win/2.0]
                         dpg.set_axis_limits(f"plot_{i}_x", x_limits[0], x_limits[1])

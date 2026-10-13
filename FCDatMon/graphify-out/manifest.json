@@ -1,0 +1,104 @@
+{
+  "core/app_settings.py": {
+    "mtime": 1783102694.8424199,
+    "seen": 1790878370.0959198,
+    "ast_hash": "48eec62e9fbd3970e3d0d8c04fe75ce2",
+    "semantic_hash": "48eec62e9fbd3970e3d0d8c04fe75ce2"
+  },
+  "core/ble_reader.py": {
+    "mtime": 1790878534.2167015,
+    "seen": 1790878576.4534087,
+    "ast_hash": "9591036b0e352b448796b6e3d4c677f6",
+    "semantic_hash": "9591036b0e352b448796b6e3d4c677f6"
+  },
+  "core/ble_scanner.py": {
+    "mtime": 1783085473.2145138,
+    "seen": 1790878370.0959306,
+    "ast_hash": "992ad10ff56f66c7fc811dbd8f540384",
+    "semantic_hash": "992ad10ff56f66c7fc811dbd8f540384"
+  },
+  "core/data_manager.py": {
+    "mtime": 1789725574.0476687,
+    "seen": 1790878370.0959327,
+    "ast_hash": "b14f1e2f4d48d316024b161a833c9aba",
+    "semantic_hash": "b14f1e2f4d48d316024b161a833c9aba"
+  },
+  "core/serial_reader.py": {
+    "mtime": 1783523998.9444988,
+    "seen": 1790878370.0959346,
+    "ast_hash": "978f4f5d54521b8d34316b23890369ad",
+    "semantic_hash": "978f4f5d54521b8d34316b23890369ad"
+  },
+  "core/state_manager.py": {
+    "mtime": 1783102701.7591848,
+    "seen": 1790878370.0959363,
+    "ast_hash": "7ce4f913554a483289e51d25e13918c3",
+    "semantic_hash": "7ce4f913554a483289e51d25e13918c3"
+  },
+  "data/paired_devices/A0-85-E3-E1-D5-1D.json": {
+    "mtime": 1783524745.3040974,
+    "seen": 1790878370.0959382,
+    "ast_hash": "a9199c95d009bb02e57b74f43d8a7b97",
+    "semantic_hash": "a9199c95d009bb02e57b74f43d8a7b97"
+  },
+  "data/saved_setups/Sinusoids Generator 1x2 BLE.json": {
+    "mtime": 1790878544.4484992,
+    "seen": 1790878576.4544854,
+    "ast_hash": "9d750b8c184e83078a014e7f96938144",
+    "semantic_hash": "9d750b8c184e83078a014e7f96938144"
+  },
+  "gui/control_panel.py": {
+    "mtime": 1790878472.7022746,
+    "seen": 1790878576.4544873,
+    "ast_hash": "a5b9439d74af25c33aa81873d294a6b1",
+    "semantic_hash": "a5b9439d74af25c33aa81873d294a6b1"
+  },
+  "gui/plot_2d_manager.py": {
+    "mtime": 1783245384.5409214,
+    "seen": 1790878370.0959432,
+    "ast_hash": "fd8b06c7b50cefdadd6ce55a322036c1",
+    "semantic_hash": "fd8b06c7b50cefdadd6ce55a322036c1"
+  },
+  "gui/plot_state_machine.py": {
+    "mtime": 1783246479.1121979,
+    "seen": 1790878370.095945,
+    "ast_hash": "4def3735a34cf32ee8b0cf2f820dd672",
+    "semantic_hash": "4def3735a34cf32ee8b0cf2f820dd672"
+  },
+  "gui/ui_callbacks.py": {
+    "mtime": 1790878509.391061,
+    "seen": 1790878576.4549088,
+    "ast_hash": "89b3dbc239a6d92008f74ef232098e4b",
+    "semantic_hash": "89b3dbc239a6d92008f74ef232098e4b"
+  },
+  "gui/ui_state.py": {
+    "mtime": 1783523272.145879,
+    "seen": 1790878370.095948,
+    "ast_hash": "5a277df5d27ef3e66a87e1b4e190d398",
+    "semantic_hash": "5a277df5d27ef3e66a87e1b4e190d398"
+  },
+  "main.py": {
+    "mtime": 1789669246.9277797,
+    "seen": 1790878370.0959501,
+    "ast_hash": "818fe13883ec49119f1c4e1a4076592a",
+    "semantic_hash": "818fe13883ec49119f1c4e1a4076592a"
+  },
+  "README.md": {
+    "mtime": 1783525940.4432354,
+    "seen": 1790878228.1340349,
+    "ast_hash": "2ab4d525debbb3ca20d7b96f75f07a3b",
+    "semantic_hash": ""
+  },
+  "graphify-out/converted/program_state_and_evts_fead5dad.md": {
+    "mtime": 1790878227.0131993,
+    "seen": 1790878228.1340363,
+    "ast_hash": "b17845b0228c5070038c8f51b2506c62",
+    "semantic_hash": ""
+  },
+  "requirements.txt": {
+    "mtime": 1783311591.7931578,
+    "seen": 1790878228.1340373,
+    "ast_hash": "4e830b9493f0fd3f8425a8606b384343",
+    "semantic_hash": ""
+  }
+}

@@ -8,6 +8,8 @@ tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#layers", "#fr
 references:
   - "[[Firmware Structure]]"
   - "[[System Architecture v01]]"
+  - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
+  - "[[0017-bmp180TwoStepI2cTransactionAndBaroDaqArchitecture]]"
 ---
 
 # Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout
@@ -29,9 +31,9 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 | Layer 5: Application Layer (`src/app/`, `src/main.cpp`)     |
 +-------------------------------------------------------------+
 | Layer 4: Flight Core & Algorithms                           |
-|          (`src/core/control/`, `src/core/estimators/`,      |
+|          (`src/core/sensor/`, `src/core/control/`,          |
 |           `src/core/math/`, `src/core/telemetry/`,          |
-|           `src/core/daq/`)                                  |
+|           `src/core/blackbox/`, `src/core/interface/`)      |
 +-------------------------------------------------------------+
 | Layer 3: Middleware & Inter-Task IPC Layer                  |
 |          (`src/middleware/`)                                |
@@ -57,11 +59,12 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 
 ### Layer 4: Flight Core & Algorithms Layer
 - **Directory**: `src/core/`
-  - `src/core/daq/`: Data Acquisition (DAQ) task runners (`daq_tasks.cpp`, `daq_tasks.h`) for high-frequency sensor sampling loops.
+  - `src/core/sensor/`: Sensor Data Acquisition (DAQ) task runners (`daq_tasks.cpp`, `daq_tasks.h`) and calibration routines.
   - `src/core/control/`: Cascaded PID rate/angle controllers, motor mixer.
-  - `src/core/estimators/`: Complementary / Kalman filters for orientation & altitude estimation.
-  - `src/core/math/`: Fast fixed-point / vector / quaternion mathematics libraries.
-  - `src/core/telemetry/`: Telemetry transport and data packaging tasks.
+  - `src/core/math/`: Linear algebra matrix engine (`matrix.h`), discrete filters (`lpf.h`, `filter_tasks.cpp/.h`), and estimators (`estimator_tasks.cpp/.h`).
+  - `src/core/telemetry/`: Telemetry data streaming and OTA update tasks (`ble_telem_tasks.cpp/.h`, `ble_ota_tasks.cpp/.h`).
+  - `src/core/blackbox/`: High-frequency flight data logging and MicroSD storage (`sd_logger_task.cpp/.h`).
+  - `src/core/interface/`: LED status indication and button interface tasks.
 
 ### Layer 3: Middleware & Centralized Inter-Task IPC Layer
 - **Directory**: `src/middleware/`
@@ -74,7 +77,7 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
   - `src/drivers/imu/`: MPU6050, HMC5883L drivers under active development.
   - `src/drivers/baro/`: BMP180 driver under active development. BMP280 and MS5611 are dummy implementations reserved for future sensor development.
   - `src/drivers/rc_rx/`: FS-iA6B IBUS/PPM receiver drivers.
-  - **Task Scoping Constraint**: All FreeRTOS task declarations inside `src/drivers/` are strictly forbidden; all task runners belong exclusively to Layer 4 (`src/core/daq/`, `src/core/control/`, `src/core/estimators/`, `src/core/telemetry/`) or Layer 5 (`src/app/`).
+  - **Task Scoping Constraint**: All FreeRTOS task declarations inside `src/drivers/` are strictly forbidden; all task runners belong exclusively to Layer 4 (`src/core/sensor/`, `src/core/control/`, `src/core/math/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or Layer 5 (`src/app/`).
 
 ### Layer 1: Platform HAL & Hardware Target Drivers Layer
 - **Directory**: `src/platforms/`
@@ -100,4 +103,4 @@ In the future, 3 primary technical documents will be developed simultaneously al
 3. **Zero Dynamic Allocation**: No `malloc()`, `free()`, `new`, or `delete` within the core 500 Hz flight loop.
 4. **Explicit Physical Units**: Standard SI units specified in code comments (`float accel; // m/s^2`, `float gyro; // rad/s`).
 5. **Naming Conventions**: `snake_case` for variables & functions, `PascalCase` for classes & structs, `ALL_CAPS_SNAKE` for constants & enums.
-6. **FreeRTOS Task Scoping**: All FreeRTOS tasks MUST be declared and defined strictly within `core/` (e.g., `src/core/daq/`, `src/core/control/`, `src/core/estimators/`, `src/core/telemetry/`) or `app/` (`src/app/`) layers. FreeRTOS task declarations are strictly prohibited inside `drivers/` or lower layers. `daq/` stands for Data Acquisition (`src/core/daq/`), housing high-frequency sensor sampling task runners (`daq_tasks.cpp`, `daq_tasks.h`).
+6. **FreeRTOS Task Scoping**: All FreeRTOS tasks MUST be declared and defined strictly within `core/` (organized into 6 unified functional domains: `src/core/sensor/`, `src/core/control/`, `src/core/math/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or `app/` (`src/app/`) layers. FreeRTOS task declarations are strictly prohibited inside `drivers/` or lower layers. `sensor/` houses high-frequency sensor sampling task runners (`daq_tasks.cpp`, `daq_tasks.h`) and calibration routines [Note 0016].

@@ -5,7 +5,7 @@
 	(uuid "5ef9835f-9784-4760-b509-6732c7d681d2")
 	(paper "A3")
 	(title_block
-		(title "Modus Project: Flight Controller")
+		(title "OISP Project: Flight Controller")
 		(rev "v01")
 		(company "Metrology Lab HCMUT")
 		(comment 1 "Verifier: Nguyen Quy Hao Nhien")

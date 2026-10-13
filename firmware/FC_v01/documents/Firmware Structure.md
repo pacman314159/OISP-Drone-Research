@@ -35,9 +35,9 @@ The codebase is organized into **5 decoupled structural layers**:
 | Layer 5: Application Layer (`src/app/`, `src/main.cpp`)     |
 +-------------------------------------------------------------+
 | Layer 4: Flight Core & Algorithms                           |
-|          (`src/core/control/`, `src/core/estimators/`,      |
+|          (`src/core/sensor/`, `src/core/control/`,          |
 |           `src/core/math/`, `src/core/telemetry/`,          |
-|           `src/core/daq/`)                                  |
+|           `src/core/blackbox/`, `src/core/interface/`)      |
 +-------------------------------------------------------------+
 | Layer 3: Middleware & Inter-Task IPC Layer                  |
 |          (`src/middleware/`)                                |
@@ -61,11 +61,12 @@ The codebase is organized into **5 decoupled structural layers**:
 
 #### Layer 4: Flight Core & Algorithms Layer
 - **Directory**: [`src/core/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core)
-  - `src/core/daq/`: High-frequency sensor Data Acquisition (DAQ) task runners ([`daq_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/daq/daq_tasks.cpp), [`daq_tasks.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/daq/daq_tasks.h)).
-  - `src/core/control/`: Cascaded PID rate and attitude angle controllers, motor mixer.
-  - `src/core/estimators/`: Orientation (AHRS) and altitude estimation (Complementary & Kalman filters).
-  - `src/core/math/`: Linear algebra matrix engine ([`matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h)), unit conversions ([`conversions.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/conversions.h)), quaternions, and fast vector math.
-  - `src/core/telemetry/`: High-level telemetry packaging and protocol formatting.
+  - `src/core/sensor/`: Unified sensor Data Acquisition (DAQ) sampling loops and sensor calibration routines ([`daq_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/daq_tasks.cpp), [`daq_tasks.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/daq_tasks.h)).
+  - `src/core/control/`: Cascaded PID rate and attitude angle controllers, motor mixer ([`control_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/control/control_tasks.cpp)).
+  - `src/core/math/`: Linear algebra matrix engine ([`matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h)), 1st-order discrete low-pass filter algorithms ([`lpf.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/lpf.h), [`filter_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/filter_tasks.cpp)), and state estimators ([`estimator_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimator_tasks.cpp)).
+  - `src/core/telemetry/`: Telemetry streaming protocols and wireless OTA update management ([`ble_telem_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_telem_tasks.cpp), [`ble_ota_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_ota_tasks.cpp)).
+  - `src/core/blackbox/`: High-frequency flight data storage and SD card snapshot logger ([`sd_logger_task.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.cpp), [`sd_logger_task.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.h)).
+  - `src/core/interface/`: Human-machine and status indication abstractions (reserved for user buttons and status LEDs).
 
 #### Layer 3: Middleware & Centralized Inter-Task IPC Layer
 - **Directory**: [`src/middleware/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/middleware)
@@ -96,15 +97,14 @@ Hardcoding magic numbers for priorities, stack sizes, or frequencies is strictly
 enum TaskPriorities : uint8_t {
   TASK_PRIORITY_LOW      = 1, // Telemetry, Housekeeping, Logging
   TASK_PRIORITY_MED      = 2, // Barometer (50 Hz), Magnetometer (75 Hz) DAQ
-  TASK_PRIORITY_HIGH     = 3, // Attitude & Rate Controller, Motor Output
+  TASK_PRIORITY_HIGH     = 3, // Rate Controller, Motor Output
   TASK_PRIORITY_REALTIME = 4  // IMU DAQ Loop (500 Hz)
 };
 
 enum TaskFrequencies : uint16_t {
   TASK_ACCEL_GYRO_DAQ_FREQ_HZ  = 500,
-  TASK_ATTITUDE_FREQ_HZ = 250,
-  TASK_MAG_DAQ_FREQ_HZ   = 75,
-  TASK_BARO_DAQ_FREQ_HZ  = 50
+  TASK_MAG_DAQ_FREQ_HZ         = 75,
+  TASK_BARO_DAQ_FREQ_HZ        = 50
 };
 ```
 
@@ -208,3 +208,20 @@ To maintain high readability and clean git diffs across developers, all C++ code
 | `[0004]` | Multi-Type SIMD Hardware Acceleration & ESP-DSP Integration | Section 5 (Multi-Type SIMD, Matrix, ESP-DSP) |
 | `[0006]` | Centralized Task Parameter Enums, Mandatory TaskIDs & Direct Driver Pointer Argument Passing | Section 3 (Task Config & TaskIDs) |
 | `[0007]` | SEGGER SystemView Trace Instrumentation, OpenOCD Dual-Core Setup & RTOS Loop Profiling Conventions | Section 3 (Timing & Tracing Guardrails) |
+| `[0008]` | Layer 4 LPF Filter & Calibration Task Architecture | Section 3 (Filters & Core Tasks) |
+| `[0009]` | Distinct BLE GATT Characteristic UUID Isolation per Telemetry & OTA Stream Decision | Section 4 (BLE Telemetry Architecture) |
+| `[0010]` | BLE Minimum Packet Frequency and Dual-Trigger Flush Architecture | Section 4 (Telemetry Timing & Flushes) |
+| `[0011]` | Variable BLE Telemetry Packet Parsing and Zero-Handshake Design | Section 4 (FCDatMon Telemetry Protocol) |
+| `[0012]` | WS2812 RGB LED External Hardware Isolation and Centralized Mutex Encapsulation Rule | Section 2 (Hardware Composition) & Section 4 (IPC Mutexes) |
+| `[0013]` | Unified HAL_SPI Abstraction, 100 Hz Snapshot Logging & Multi-Rate MicroSD Storage | Section 1 (HAL), Section 2 (Storage), Section 3 (Logging Task) |
+| `[0015]` | BLE OTA Lifecycle Architecture, Resource Stewardship & Host Stack Decoupling | Section 3 (OTA Task Config), Section 4 (BLE Architecture) |
+| `[0016]` | Layer 4 Core Directory Compaction, Submodule Consolidation & Task Renaming Specification | Section 2 (Layer 4 Architecture) & Section 3 (Task Organization) |
+| `[0017]` | BMP180 Non-Blocking Two-Phase I2C DAQ Architecture, Pipelined Conversion & Vertical Velocity Fusion Specification | Section 3 (Baro DAQ Task) & Section 4 (IPC) |
+| `[0018]` | MicroSD Flight Logging Architecture, POSIX Metadata Sync, User Button Shutdown & Binary Log Specification | Section 2 (Storage), Section 3 (Logging Task), Section 4 (Shutdown ISR) |
+| `[0019]` | Universal Flight Data Analyzer Architecture, Binary Telemetry 4-Byte Struct Alignment & Offline Multi-Rate Signal Processing Pipeline | Section 2 (Blackbox Protocol & Tooling), Section 3 (Log Formats) |
+| `[0020]` | Finite State Machine (FSM) Backbone, Pre-Flight Sensor Checks & Active Calibration Architecture Specification | Section 2 (Layer 5 App Domain), Section 3 (Task Config & FSM), Section 4 (Preflight Checks & Safety Gating) |
+| `[0021]` | BLE Telemetry Dispatcher Consolidation, Subscription-Aware Gating & FCDatMon Stride Specification | Section 2 (Layer 4 Telemetry), Section 3 (Task Config & BLE Dispatcher), Section 4 (GATT Streaming Protocol) |
+| `[0022]` | Unified Pressure Ring Buffer, Filtered Sensor Variable Consolidation & Phantom Attitude Task Removal | Section 3 (Task Enums & Phantom Task Removal), Section 4 (IPC Ring Buffers & Baro Unification) |
+| `[0023]` | FSM-Centric Sensor Calibration Orchestration and RGB LED Status Architecture Specification | Section 2 (Layer 5 App Domain), Section 3 (FSM), Section 4 (LED & Calib IPC) |
+| `[0024]` | Internal Flash NVS Storage HAL, FlashStorageDriver & Diagonal Soft-Iron SIMD Calibration Persistence Specification | Section 1 (HAL Flash), Section 2 (FlashStorageDriver), Section 4 (IPC calib_data) |
+

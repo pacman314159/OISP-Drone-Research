@@ -25,6 +25,11 @@ namespace hal_simd {
     dsps_sub_f32(a, b, out, static_cast<int>(count), 1, 1, 1);
   }
 
+  void mul(const float* a, const float* b, float* out, size_t count){
+    if(a == nullptr || b == nullptr || out == nullptr || count == 0) return;
+    dsps_mul_f32(a, b, out, static_cast<int>(count), 1, 1, 1);
+  }
+
   void scale(const float* in, float scalar, float* out, size_t count){
     if(in == nullptr || out == nullptr || count == 0) return;
     dsps_mulc_f32(in, out, static_cast<int>(count), scalar, 1, 1);
@@ -84,6 +89,11 @@ namespace hal_simd {
     dsps_sub_s16(a, b, out, static_cast<int>(count), 1, 1, 1, 0);
   }
 
+  void mul(const int16_t* a, const int16_t* b, int16_t* out, size_t count){
+    if(a == nullptr || b == nullptr || out == nullptr || count == 0) return;
+    for(size_t i = 0; i < count; ++i) out[i] = static_cast<int16_t>(a[i] * b[i]);
+  }
+
   void scale(const int16_t* in, int16_t scalar, int16_t* out, size_t count){
     if(in == nullptr || out == nullptr || count == 0) return;
     dsps_mulc_s16(in, out, static_cast<int>(count), scalar, 1, 1);
@@ -108,6 +118,11 @@ namespace hal_simd {
   void sub(const int8_t* a, const int8_t* b, int8_t* out, size_t count){
     if(a == nullptr || b == nullptr || out == nullptr || count == 0) return;
     dsps_sub_s8(a, b, out, static_cast<int>(count), 1, 1, 1, 0);
+  }
+
+  void mul(const int8_t* a, const int8_t* b, int8_t* out, size_t count){
+    if(a == nullptr || b == nullptr || out == nullptr || count == 0) return;
+    for(size_t i = 0; i < count; ++i) out[i] = static_cast<int8_t>(a[i] * b[i]);
   }
 
   void scale(const int8_t* in, int8_t scalar, int8_t* out, size_t count){

@@ -1,71 +1,70 @@
-# Graph Report - FC_v01  (2026-09-30)
+# Graph Report - FC_v01  (2026-10-13)
 
 ## Corpus Check
-- 389 files · ~220,981 words
+- 436 files · ~473,549 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 127 file(s) not represented in the graph (top: .S 92, .defaults 15, (none) 11)
 
 ## Summary
-- 1404 nodes · 3071 edges · 148 communities (62 shown, 86 thin omitted)
-- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 303 edges (avg confidence: 0.85)
+- 1988 nodes · 4087 edges · 201 communities (97 shown, 104 thin omitted)
+- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 419 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4ce19fda`
+- Built from commit: `4984f9f4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- esp_log.h
-- dsps_cplx_gen_init.c
+- Magnetometer Full Rotated Ellipsoid Calibration via SIMD-Accelerated Symmetric Gradient Descent
+- SYSVIEW_END
 - Mat
 - dsps_fird_init_s16.c
 - ESP-DSP Library Overview
 - MPU6050
 - Image3DMatrix
 - ESP32_I2C_ASYNC
+- fsm.cpp
 - test_mat_sub_f32.cpp
-- dsps_addc.h
-- ekf_imu13states
+- config.h
+- ekf
 - HMC5883L
-- dsp_err.h
+- SDCardDriver
 - Attitude Outer Loop Task (100Hz)
 - kalman_filter_demo.cpp
-- ekf
+- flash.cpp
+- B. Sensor Packet Payloads (Little-Endian, `<`)
 - ekf.cpp
-- dsps_view
-- Vec3
-- dsp_common.h
-- app_main
+- WS2812
+- Matrix
 - init_display.c
 - How to use example
-- math
+- cstdint
 - ekf_imu13states.cpp
 - Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout
 - Rect
-- ShowIIRfilter
-- HAL_I2C
-- config.h
+- string
 - dsps_biquad_gen_f32.c
-- 3d_kalman_demo.cpp
+- CalibReportMsg
+- math
+- dsps_view
 - CPU Logo Converted 3D Matrix Image
-- dsps_dct_f32.c
-- RingBuffer
+- calib.cpp
+- SensorCalibrationData
 - How to use example
-- stdint
 - onConnect
-- test_dsps_memcpy_memset.c
+- ESP32_I2C
+- ekf_imu13states
 - How to use example
-- m_test_data_s
-- main/main.c
-- azure_board_apps/apps/3d_graphics/main/3d_graphics_demo.cpp
-- ble_driver.cpp
+- ipc.h
+- dsp_err.h
+- BleTelemetryChannel
+- ESP32_SPI
 - 5-Layer Decoupled Architecture
 - How to use example
 - How to use example
 - How to use example
-- dsps_biquad_f32_ansi
-- dsps_sqrt_f32_ansi.c
+- 2. Core Architectural Decisions
 - How to use the example
 - ESP-DSP Library Component Specification
 - dsps_h_gen
@@ -83,19 +82,18 @@
 - dspi_dotprod_f32_ansi
 - dspi_dotprod_off_f32_ansi
 - How to use example
-- dsps_fft4r.h
 - Standardized RTOS Timing Analysis Rules
 - ESP-DSP Component Registration
 - Layer 1 Zero-Fallback Rule
 - app_main
 - examples/README.md
-- dsps_corr_f32_ansi.c
+- test_dsps_memcpy_memset.c
 - dsps_dotprod_s16_ansi.c
 - dsps_dp_s8_ansi.c
 - dsps_dotprod_f32_ansi.c
 - dsps_dotprode_f32_ansi.c
-- dsps_fird_s16_ansi.c
-- dsps_fird_f32_ansi.c
+- ble_packet.h
+- audio_amp_main.c
 - dsps_biquad_sf32_ansi.c
 - dsps_add_s16_ansi.c
 - dsps_add_s8_ansi.c
@@ -119,40 +117,87 @@
 - Dual-Core Flight Loop Steady-State Benchmarks
 - ESP-DSP Changelog Document
 - EKF Noise Covariance Matrices (Q and R)
+- BMP180
+- main.cpp
+- Bmp180Calib
+- bmp180.cpp
+- test_dsps_conv_f32_ansi.c
 - Tustin Bilinear 1st-Order Low-Pass Filter
-- dsps_fft2r_sc16_ansi.c
-- dsps_conv.h
-- dsps_fft2r_fc32_ansi.c
+- 2. Core Architectural Decisions
+- RingBuffer
 - m5stack_core_s3/apps/3d_graphics/main/3d_graphics_demo.cpp
-- audio_amp_main.c
-- dsps_fft4r_fc32_ansi.c
-- HAL_I2C_ASYNC
-- LowPassFilter1stOrder
+- azure_board_apps/apps/3d_graphics/main/3d_graphics_demo.cpp
+- m_test_data_s
+- HAL_SPI
+- Zettel 0021: BLE Telemetry Dispatcher Consolidation, Subscription-Aware Gating & FCDatMon Stride Specification
+- ble_driver.cpp
+- LogFileHeader
+- 2. Core Architectural Decisions
+- dsps_corr_f32_ansi.c
+- main/main.c
+- 3. Core Architectural Decisions & Specifications
+- Vec3
+- dsps_dct_f32.c
+- dsps_biquad_f32_ansi
+- NimBLECharacteristic
+- dsps_sqrt_f32_ansi.c
+- 3d_kalman_demo.cpp
+- 2. Context & Root Cause Analysis
+- dsps_fft2r_sc16_ansi.c
 - C_sub_check
+- Zettel 0009: Distinct BLE GATT Characteristic UUID Isolation per Telemetry & OTA Stream Decision
+- dsps_fird_s16_ansi.c
+- dsps_fird_f32_ansi.c
+- dsps_addc_f32_ansi.c
+- dspm_add_f32_ansi.c
+- dspm_addc_f32_ansi.c
+- dspm_mulc_f32_ansi.c
+- 4. Core Architectural Decisions
+- dspm_sub_f32_ansi.c
+- FlashStorageDriver
+- PktImuRaw
+- dsps_resampler_ph.c
+- test_fft2r.c
+- 3. Core Architectural Decisions
+- PktAttQuat
+- PktBaroFilt
+- PktBaroRaw
+- HAL_Flash
+- Zettel 0020: Finite State Machine (FSM) Backbone, Pre-Flight Sensor Checks & Active Calibration Architecture Specification
+- main
+- FlashRecordHeader
+- dspm_mult_mxn_1xm_int8_ansi.c
+- ShowIIRfilter
+- PktImuFilt
+- aes3_tie_log.c
+- PktAttEuler
+- PktMagFilt
+- dspi_conv_f32_ansi
+- dspm_mult_f32_ansi.c
 
 ## God Nodes (most connected - your core abstractions)
 1. `Mat` - 98 edges
-2. `MPU6050` - 29 edges
+2. `MPU6050` - 31 edges
 3. `ekf` - 26 edges
-4. `ekf_imu13states` - 21 edges
-5. `HMC5883L` - 19 edges
-6. `test_assert_check_area_mat_mat()` - 18 edges
-7. `dsp_is_power_of_two()` - 17 edges
-8. `getROI` - 17 edges
-9. `Image3DMatrix` - 16 edges
-10. `Get` - 15 edges
+4. `Vec3` - 23 edges
+5. `BMP180` - 23 edges
+6. `Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout` - 23 edges
+7. `ekf_imu13states` - 21 edges
+8. `HMC5883L` - 21 edges
+9. `SDCardDriver` - 21 edges
+10. `Zettel 0002: System 4 Priority Levels & Target-Agnostic HAL Decision` - 20 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `EKF Process & UpdateRefMeasurement Recursion` --semantically_similar_to--> `EKF Roll & Pitch Task (100Hz)`  [INFERRED] [semantically similar]
   managed_components/espressif__esp-dsp/modules/kalman/ekf_imu13states/docs/README.md → documents/RTOS Architecture.pdf
-- `FreeRTOS Task Scoping Architecture Rule` --semantically_similar_to--> `Zettel 0002: System 4 Priority Levels & Target-Agnostic HAL Decision`  [INFERRED] [semantically similar]
-  .agents/AGENTS.md → documents/notes/0002-taskEnumsAndHalAbstractionDecision.md
-- `Centralized Task Parameters Rule` --semantically_similar_to--> `Zettel 0006: Centralized Task Parameter Enums & Direct Driver Passing`  [INFERRED] [semantically similar]
-  .agents/AGENTS.md → documents/notes/0006-taskCreationConfigEnumsAndTaskArgsPassingDecision.md
-- `Strict 1:1 Task-to-Characteristic Isolation` --references--> `ble_vec3_raw_trans_task()`  [INFERRED]
-  documents/notes/0009-distinctBleGattCharacteristicUuidIsolation.md → src/core/telemetry/telem_tasks.cpp
-- `Dual-Trigger Flushing Mechanism` --references--> `ble_vec3_raw_trans_task()`  [INFERRED]
-  documents/notes/0010-bleMinimumPacketFrequencyAndDualTriggerFlush.md → src/core/telemetry/telem_tasks.cpp
+- `3. Impact & Architectural Constraints` --references--> `sd_logger_task()`  [INFERRED]
+  documents/notes/0013-sdCardSpiStorageAndFlightLoggingArchitecture.md → src/core/blackbox/sd_logger_task.cpp
+- `A. FatFS 0-Byte Log File Phenomenon & POSIX Synchronization (`fsync`)` --references--> `sd_logger_task()`  [INFERRED]
+  documents/notes/0018-sdCardLoggingRestorationAndUserButtonShutdown.md → src/core/blackbox/sd_logger_task.cpp
+- `B. Mount Failures & Boot Memory Protection (Zero Stack Waste on Absent Card)` --references--> `sd_logger_task()`  [INFERRED]
+  documents/notes/0018-sdCardLoggingRestorationAndUserButtonShutdown.md → src/core/blackbox/sd_logger_task.cpp
+- `D. Hardware USER Button 3-Second Hold & Graceful Shutdown` --references--> `sd_logger_task()`  [INFERRED]
+  documents/notes/0018-sdCardLoggingRestorationAndUserButtonShutdown.md → src/core/blackbox/sd_logger_task.cpp
 
 ## Import Cycles
 - None detected.
@@ -171,23 +216,23 @@
 - **SystemView Real-Time Profiling and Anti-Choking Framework** — documents_notes_0007_systemviewtracingandrtostiminganalysisconventions_anti_choking_config, documents_notes_0007_systemviewtracingandrtostiminganalysisconventions_openocd_trace_capture_syntax, documents_notes_0007_systemviewtracingandrtostiminganalysisconventions_rtos_timing_definitions, _agents_agents_jtag_anti_choking_guardrails [INFERRED 0.95]
 - **Centralized FreeRTOS Task Configuration Architecture** — documents_notes_0001_taskconfigmiddlewareisrdecision_centralized_task_config_decision, documents_notes_0002_taskenumsandhalabstractiondecision_four_level_rtos_priority, documents_notes_0006_taskcreationconfigenumsandtaskargspassingdecision_mandatory_task_ids, _agents_agents_centralized_task_config_rule [INFERRED 0.95]
 
-## Communities (148 total, 86 thin omitted)
+## Communities (201 total, 104 thin omitted)
 
-### Community 0 - "esp_log.h"
-Cohesion: 0.06
-Nodes (25): dsps_conv_f32_ref(), dsps_firmr_f32_ansi(), "ekf_imu13states functionality gyro and magn", "ekf_imu13states functionality gyro only", "dspm_add_f32_ae32 benchmark", "dspm_add_f32_ae32 functionality", "dspm_add_f32_ansi benchmark", "dspm_add_f32_ansi functionality" (+17 more)
+### Community 0 - "Magnetometer Full Rotated Ellipsoid Calibration via SIMD-Accelerated Symmetric Gradient Descent"
+Cohesion: 0.10
+Nodes (20): 1. Executive Summary & Problem Context, 2.1 The Geometric Model, 2.2 Objective Function (Mean Squared Error), 2.3 Multivariate Chain Rule Framework, 2.4 Gradient with respect to Hard-Iron Offset $\mathbf{v}_0$, 2.5 Gradient with respect to Symmetric Matrix $\mathbf{W}$, 2. Mathematical Model & Derivation, 3.1 Matrices & Dimensions (+12 more)
 
-### Community 1 - "dsps_cplx_gen_init.c"
-Cohesion: 0.16
-Nodes (9): dsps_cplx_gen_ansi(), cplx_gen_free(), dsps_cplx_gen_freq_get(), dsps_cplx_gen_freq_set(), dsps_cplx_gen_init(), dsps_cplx_gen_phase_get(), dsps_cplx_gen_phase_set(), dsps_cplx_gen_set() (+1 more)
+### Community 1 - "SYSVIEW_END"
+Cohesion: 0.14
+Nodes (18): 3. Impact & Architectural Constraints, Rule 3: Task Spawning & Passive Halting Lifecycle, ellipsoid_fit_get_params(), ellipsoid_fit_init(), ellipsoid_fit_step(), ellipsoid_optimizer_get_params(), ellipsoid_optimizer_init(), ellipsoid_optimizer_step() (+10 more)
 
 ### Community 2 - "Mat"
 Cohesion: 0.05
-Nodes (48): Mat, abs_tol, adjoint, allocate, augment, bandSolve, block, clear (+40 more)
+Nodes (50): Mat, abs_tol, adjoint, allocate, augment, bandSolve, block, clear (+42 more)
 
 ### Community 3 - "dsps_fird_init_s16.c"
-Cohesion: 0.05
-Nodes (18): dsps_16_array_rev(), dsps_fird_init_s16(), dsps_fird_s16_aexx_free(), dsps_firmr_init_s16(), dsps_fir_f32_ansi(), dsps_fir_f32_free(), dsps_fir_init_f32(), dsps_firmr_init_f32() (+10 more)
+Cohesion: 0.06
+Nodes (16): dsps_16_array_rev(), dsps_fird_init_s16(), dsps_fird_s16_aexx_free(), dsps_firmr_init_s16(), dsps_fir_f32_ansi(), dsps_fir_f32_free(), dsps_fir_init_f32(), dsps_firmr_init_f32() (+8 more)
 
 ### Community 4 - "ESP-DSP Library Overview"
 Cohesion: 0.05
@@ -198,56 +243,60 @@ Cohesion: 0.07
 Nodes (23): MPU6050, _accel_raw_x, _accel_raw_y, _accel_raw_z, _accel_sens, _dev_addr, enable_bypass, enable_sleep (+15 more)
 
 ### Community 6 - "Image3DMatrix"
-Cohesion: 0.08
-Nodes (6): convert_img(), create_matrix(), fromat_comas_spaces(), Image3DMatrix, main(), ouptput_files_gen()
+Cohesion: 0.05
+Nodes (9): convert_img(), create_matrix(), fromat_comas_spaces(), Image3DMatrix, main(), ouptput_files_gen(), BleOtaUploader, find_firmware_binary() (+1 more)
 
 ### Community 7 - "ESP32_I2C_ASYNC"
-Cohesion: 0.09
-Nodes (21): ESP32_I2C_ASYNC, ESP32_I2C_ASYNC::ESP32_I2C_ASYNC(), _frequency_hz, init, _initialized, _port, read_reg_async, read_reg_multi_async (+13 more)
+Cohesion: 0.17
+Nodes (12): ESP32_I2C_ASYNC, ESP32_I2C_ASYNC::ESP32_I2C_ASYNC(), _frequency_hz, init, _initialized, _port, read_reg_async, read_reg_multi_async (+4 more)
+
+### Community 8 - "fsm.cpp"
+Cohesion: 0.11
+Nodes (32): 3. Core Architectural Decisions, Rule 1: Layer 5 Application Domain Scoping (`src/app/fsm.h`, `src/app/fsm.cpp`), Rule 2: Bitmask Events (`EVT_` Prefix) & Deterministic Transit Rules, Rule 3: Active Calibration State (`CALIB`) Invocation, Rule 4: Stationary Detection & Passive Calibration Verification (`PREFLIGHT`), Rule 5: Zero-Jitter Self-Gating Transition Engine (`evaluate_state_transitions`), Rule 6: Layer 3 Button ISR Architecture & Decoupled Downward IPC Event Flow, check_match_policy() (+24 more)
 
 ### Community 9 - "test_mat_sub_f32.cpp"
 Cohesion: 0.20
 Nodes (26): Copy, Get, getROI, inverse, pinv, test_assert_check_area_mat_mat(), test_assert_equal_mat_mat(), "Mat class matrix subset" (+18 more)
 
-### Community 11 - "ekf_imu13states"
-Cohesion: 0.12
-Nodes (15): image_3d_matrix_kalman_s, ekf13, matrix_len, image_3d_matrix_s, matrix_len, ekf_imu13states, accel0, Init (+7 more)
+### Community 11 - "ekf"
+Cohesion: 0.10
+Nodes (21): ekf::RungeKutta(), ekf, CovariancePrediction, dFdq, dFdq_inv, eul2rotm, HP, Init (+13 more)
 
 ### Community 12 - "HMC5883L"
-Cohesion: 0.11
-Nodes (16): HMC5883L, _dev_addr, get_all_data, get_all_data_raw, HMC5883L::HMC5883L(), init, _inv_mag_sens, _mag_raw_x (+8 more)
-
-### Community 13 - "dsp_err.h"
 Cohesion: 0.09
-Nodes (4): dspm_add_f32_ansi(), dspm_addc_f32_ansi(), dspm_mulc_f32_ansi(), dspm_sub_f32_ansi()
+Nodes (19): 1. Prime Directive: WS2812 is an External Hardware Peripheral, 2. Mandatory Mutex Encapsulation Rule, Zettel 0012: WS2812 External Hardware Treatment & Mutex Encapsulation Rule, HMC5883L, _dev_addr, get_all_data, get_all_data_raw, HMC5883L::HMC5883L() (+11 more)
+
+### Community 13 - "SDCardDriver"
+Cohesion: 0.13
+Nodes (19): append_packet(), sd_logger_task(), SDCardDriver, _bytes_written, _cd_pin, close, _cs_pin, _file (+11 more)
 
 ### Community 15 - "Attitude Outer Loop Task (100Hz)"
 Cohesion: 0.12
 Nodes (19): Accel Gyro Calib & Filter Task (250Hz), Accel Gyro DAQ Task (500Hz), Altitude & Vz Estimator Task (100Hz), Attitude Inner Loop Task (250Hz, 4 Pri), Attitude Outer Loop Task (100Hz), Barometer Calib & Filter Task, Barometer DAQ Task, EKF Roll & Pitch Task (100Hz) (+11 more)
 
 ### Community 16 - "kalman_filter_demo.cpp"
-Cohesion: 0.16
-Nodes (14): app_fbm320_init(), app_mag3110_init(), app_main(), app_ssd1306_init(), display_3d_image(), draw_3d_image(), get_initial_pressure(), get_pressure_task() (+6 more)
+Cohesion: 0.17
+Nodes (15): app_fbm320_init(), app_mag3110_init(), app_main(), app_ssd1306_init(), display_3d_image(), draw_3d_image(), get_initial_pressure(), get_pressure_task() (+7 more)
 
-### Community 17 - "ekf"
-Cohesion: 0.10
-Nodes (21): ekf, CovariancePrediction, dFdq, dFdq_inv, eul2rotm, HP, Init, Km (+13 more)
+### Community 17 - "flash.cpp"
+Cohesion: 0.20
+Nodes (8): ESP32_Flash, erase_key, erase_namespace, init, _initialized, _partition_name, read_blob, write_blob
 
-### Community 18 - "ekf.cpp"
-Cohesion: 0.10
-Nodes (20): ekf::dFdq(), ekf::dFdq_inv(), ekf::eul2rotm(), ekf::qProduct(), ekf::quat2eul(), ekf::quat2rotm(), ekf::rotm2eul(), ekf::rotm2quat() (+12 more)
+### Community 20 - "B. Sensor Packet Payloads (Little-Endian, `<`)"
+Cohesion: 0.17
+Nodes (12): 1. `PKT_TYPE_IMU_RAW` (`0x01`) — 29 Bytes Total (32B with natural 4B alignment, see `[Note 0019]`), 2. `PKT_TYPE_IMU_FILT` (`0x02`) — 29 Bytes Total (32B with natural 4B alignment), 3. MicroSD Binary Log Format Specification (`LOG_XXXX.BIN`), 3. `PKT_TYPE_MAG_RAW` (`0x03`) — 17 Bytes Total (20B with natural 4B alignment), 4. `PKT_TYPE_MAG_FILT` (`0x04`) — 17 Bytes Total (20B with natural 4B alignment), 5. `PKT_TYPE_BARO_RAW` (`0x05`) — 9 Bytes Total (12B with natural 4B alignment), 6. `PKT_TYPE_BARO_FILT` (`0x06`) — 9 Bytes Total (12B with natural 4B alignment), 7. `PKT_TYPE_ATT_QUAT` (`0x07`) — 21 Bytes Total (24B with natural 4B alignment) (+4 more)
 
-### Community 20 - "dsps_view"
-Cohesion: 0.21
-Nodes (8): app_main(), process_and_show(), app_main(), dsps_tone_gen_f32(), dsps_view(), dsps_view_s16(), dsps_view_spectrum(), dsps_wind_hann_f32()
+### Community 21 - "ekf.cpp"
+Cohesion: 0.11
+Nodes (18): ekf::dFdq(), ekf::dFdq_inv(), ekf::eul2rotm(), ekf::qProduct(), ekf::quat2eul(), ekf::quat2rotm(), ekf::rotm2eul(), ekf::rotm2quat() (+10 more)
 
-### Community 21 - "Vec3"
-Cohesion: 0.21
-Nodes (7): inverse3x3(), Matrix, operator+(), Vec3, BleVec3Packet, data, timestamp
+### Community 22 - "WS2812"
+Cohesion: 0.06
+Nodes (35): status_led_task(), Color, b, g, r, get_palette_color(), WS2812, brightness (+27 more)
 
-### Community 23 - "app_main"
-Cohesion: 0.18
-Nodes (5): app_main(), process_and_show(), dsps_wind_blackman_nuttall_f32(), dsps_wind_flat_top_f32(), dsps_wind_nuttall_f32()
+### Community 23 - "Matrix"
+Cohesion: 0.26
+Nodes (8): dot(), hadamard(), inverse3x3(), Matrix, norm(), norm_sq(), normalize(), operator+()
 
 ### Community 24 - "init_display.c"
 Cohesion: 0.21
@@ -257,81 +306,89 @@ Nodes (9): bsp_display_lcd_init(), bsp_enable_feature(), bsp_i2c_init(), bsp_spi
 Cohesion: 0.29
 Nodes (6): Basic Math Example, Build and flash, Configure the project, Example output, Hardware required, How to use example
 
-### Community 26 - "math"
-Cohesion: 0.20
-Nodes (4): main(), test_fft2r(), main(), test_mmult()
+### Community 26 - "cstdint"
+Cohesion: 0.11
+Nodes (11): HAL_I2C_ASYNC, init, read_reg_async, read_reg_multi_async, write_reg_async, write_reg_multi_async, HAL_I2C, read_reg (+3 more)
 
 ### Community 27 - "ekf_imu13states.cpp"
-Cohesion: 0.13
-Nodes (18): app_main(), app_main(), ekf::CovariancePrediction(), ekf_imu13states::Init(), ekf_imu13states::LinearizeFG(), ekf_imu13states::StateXdot(), ekf_imu13states::Test(), ekf_imu13states::TestFull() (+10 more)
+Cohesion: 0.23
+Nodes (10): app_main(), ekf::CovariancePrediction(), ekf_imu13states::Init(), ekf_imu13states::LinearizeFG(), ekf_imu13states::TestFull(), ekf_imu13states::UpdateRefMeasurement(), ekf_imu13states::UpdateRefMeasurementMagn(), qProduct (+2 more)
 
 ### Community 28 - "Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout"
-Cohesion: 0.17
-Nodes (18): FC_v01 Firmware Architecture Specification, Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout, Zettel 0001: Centralized Task Config, Middleware ISR Callbacks & RMT PPM Decoding Decision, Zettel 0002: System 4 Priority Levels & Target-Agnostic HAL Decision, Zettel 0003: Layer 1 SIMD HAL Architecture & Zero-Fallback Rule, Zettel 0004: Multi-Type SIMD Acceleration & ESP-DSP Build Integration, Zettel 0006: Centralized Task Parameter Enums & Direct Driver Passing, Zettel 0007: SystemView Instrumentation & RTOS Profiling Conventions (+10 more)
+Cohesion: 0.09
+Nodes (42): FC_v01 Firmware Architecture Specification, Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout, Zettel 0001: Centralized Task Config, Middleware ISR Callbacks & RMT PPM Decoding Decision, Zettel 0002: System 4 Priority Levels & Target-Agnostic HAL Decision, Zettel 0003: Layer 1 SIMD HAL Architecture & Zero-Fallback Rule, Zettel 0004: Multi-Type SIMD Acceleration & ESP-DSP Build Integration, Zettel 0006: Centralized Task Parameter Enums & Direct Driver Passing, Zettel 0007: SystemView Instrumentation & RTOS Profiling Conventions (+34 more)
 
 ### Community 29 - "Rect"
-Cohesion: 0.25
-Nodes (8): Rect, areaRect, height, resizeRect, width, y, Mat::Get(), Mat::getROI()
-
-### Community 30 - "ShowIIRfilter"
-Cohesion: 0.40
-Nodes (3): app_main(), ShowIIRfilter(), dsps_d_gen_f32()
-
-### Community 31 - "HAL_I2C"
 Cohesion: 0.14
-Nodes (11): app_start(), ble_driver_init(), app_main(), init_ipc(), sysview_init_markers(), HAL_I2C, init, read_reg (+3 more)
+Nodes (14): app_main(), ekf_imu13states::StateXdot(), SkewSym4x4, Rect, areaRect, height, resizeRect, width (+6 more)
 
-### Community 33 - "dsps_biquad_gen_f32.c"
+### Community 30 - "string"
+Cohesion: 0.11
+Nodes (9): "ekf_imu13states functionality gyro and magn", "ekf_imu13states functionality gyro only", "Mat class ", "Mat class basic operations", "Mat class check solve ", "Mat class operators", "mat.cpp functionality", "dspm_mult_ex_f32_ansi benchmark" (+1 more)
+
+### Community 31 - "dsps_biquad_gen_f32.c"
 Cohesion: 0.26
 Nodes (12): audio_process_task(), buttons_process_task(), dsps_biquad_gen_allpass180_f32(), dsps_biquad_gen_allpass360_f32(), dsps_biquad_gen_bpf0db_f32(), dsps_biquad_gen_bpf_f32(), dsps_biquad_gen_highShelf_f32(), dsps_biquad_gen_hpf_f32() (+4 more)
 
-### Community 34 - "3d_kalman_demo.cpp"
-Cohesion: 0.29
-Nodes (9): app_init(), app_main(), init_3d_matrix_struct(), read_bmi270_data(), read_bmi270_reg(), read_bmm150_data(), write_bmi270_data(), write_bmi270_reg() (+1 more)
+### Community 32 - "CalibReportMsg"
+Cohesion: 0.14
+Nodes (12): 1. Metadata & Scope, 2. Problem Statement & Architecture Requirements, 3. Core Architectural Decisions, Rule 1: RGB LED Command Queue & Standalone Color Palette, Rule 2: Inter-Process Communication & Healthcheck Protocol, Zettel 0023: FSM-Centric Sensor Calibration Orchestration and RGB LED Status Architecture Specification, CalibReportMsg, current_step (+4 more)
+
+### Community 33 - "math"
+Cohesion: 0.07
+Nodes (6): dsps_dctiv_f32(), dsps_dstiv_f32(), dsps_bit_rev_lookup_fc32_ae32(), dsps_cplx2real_fc32_ae32_(), dsps_firmr_s16_ansi(), dsps_firmr_f32_ansi()
+
+### Community 34 - "dsps_view"
+Cohesion: 0.21
+Nodes (8): app_main(), process_and_show(), app_main(), dsps_tone_gen_f32(), dsps_view(), dsps_view_s16(), dsps_view_spectrum(), dsps_wind_hann_f32()
 
 ### Community 35 - "CPU Logo Converted 3D Matrix Image"
 Cohesion: 0.33
 Nodes (6): CPU Logo Converted 3D Matrix Image, Monochrome CPU Microcontroller Dot-Matrix Representation, CPU Logo Inverted Color Monochromatic Preview (64x64), Inverted Monochromatic Dot-Matrix Display Buffer, 2D Chip Graphic Input for 3D Matrix Transformation, CPU Microcontroller 2D Logo Source Image (PNG)
 
-### Community 36 - "dsps_dct_f32.c"
-Cohesion: 0.19
-Nodes (6): dsps_dct_f32(), dsps_dct_f32_ref(), dsps_dct_inv_f32(), dsps_dct_inverce_f32_ref(), dsps_dctiv_f32(), dsps_dstiv_f32()
+### Community 36 - "calib.cpp"
+Cohesion: 0.11
+Nodes (20): Rule 6: Flight Loop Isolation & Boot/Calibration Lifecycle, app_start(), fsm_init(), user_button_init(), accel_gyro_lpf_task(), mag_lpf_task(), LowPassFilter1stOrder, b (+12 more)
 
-### Community 37 - "RingBuffer"
-Cohesion: 0.24
-Nodes (3): RingBuffer, _buffer, _head
+### Community 37 - "SensorCalibrationData"
+Cohesion: 0.25
+Nodes (8): SensorCalibrationData, accel_bias, accel_scale, gyro_bias, is_valid, mag_bias, mag_field_ref, mag_soft_iron
 
 ### Community 38 - "How to use example"
 Cohesion: 0.29
 Nodes (6): 2D convolution Example, Build and flash, Configure the project, Example output, Hardware required, How to use example
 
-### Community 39 - "stdint"
-Cohesion: 0.13
-Nodes (4): dsps_fft2r_rev_tables_init_fc32(), dsps_fft2r_deinit_fc32(), dsps_fft4r_rev_tables_init_fc32(), dsps_fft4r_deinit_fc32()
-
 ### Community 40 - "onConnect"
-Cohesion: 0.38
-Nodes (4): set_ble_connected(), FcBleServerCallbacks, onConnect, onDisconnect
+Cohesion: 0.32
+Nodes (5): is_ble_ota_active(), set_ble_connected(), FcBleServerCallbacks, onConnect, onDisconnect
+
+### Community 41 - "ESP32_I2C"
+Cohesion: 0.17
+Nodes (9): ESP32_I2C, ESP32_I2C::ESP32_I2C(), init, read_reg, read_reg_multi, _scl_pin, _sda_pin, write_reg (+1 more)
+
+### Community 42 - "ekf_imu13states"
+Cohesion: 0.11
+Nodes (17): image_3d_matrix_kalman_s, ekf13, matrix_len, image_3d_matrix_s, matrix_len, ekf_imu13states::Test(), ekf_imu13states, accel0 (+9 more)
 
 ### Community 43 - "How to use example"
 Cohesion: 0.29
 Nodes (6): Build and flash, Configure the project, Dot Product Calculation Example, Example output, Hardware required, How to use example
 
-### Community 44 - "m_test_data_s"
-Cohesion: 0.20
-Nodes (10): m_test_data_s, A_start_col, A_start_row, B_start_col, B_start_row, C_start_col, C_start_row, k (+2 more)
+### Community 44 - "ipc.h"
+Cohesion: 0.15
+Nodes (7): FlashStorageDriver, LedCommand, color, pattern, OtaDataChunk, data, length
 
-### Community 45 - "main/main.c"
-Cohesion: 0.31
-Nodes (4): convert_to_rgb(), image_display_task(), spectrum2d_picture(), spectrum2d_picture_init()
+### Community 45 - "dsp_err.h"
+Cohesion: 0.08
+Nodes (11): "dspm_add_f32_ae32 benchmark", "dspm_add_f32_ae32 functionality", "dspm_add_f32_ansi benchmark", "dspm_add_f32_ansi functionality", "dspm_addc_f32_ansi benchmark", "dspm_mult_ex_f32_aexx benchmark", "dspm_mult_ex_f32_aexx functionality", "dspm_mulc_f32_ansi benchmark" (+3 more)
 
-### Community 46 - "azure_board_apps/apps/3d_graphics/main/3d_graphics_demo.cpp"
-Cohesion: 0.17
-Nodes (14): app_main(), app_ssd1306_init(), dispaly_esp_text(), display_3d_image(), draw_3d_image_task(), init_3d_matrix_struct(), init_perspective_matrix(), print_matrix() (+6 more)
+### Community 46 - "BleTelemetryChannel"
+Cohesion: 0.18
+Nodes (7): BleTelemetryChannel, _last_ingested_ts, _last_send_tick, _mask_bit, _payload_buf, _payload_count, process()
 
-### Community 47 - "ble_driver.cpp"
-Cohesion: 0.24
-Nodes (15): Strict 1:1 Task-to-Characteristic Isolation, Dual-Trigger Flushing Mechanism, accel_gyro_daq_task(), mag_daq_task(), accel_gyro_lpf_task(), mag_lpf_task(), lpf_apply(), lpf_init() (+7 more)
+### Community 47 - "ESP32_SPI"
+Cohesion: 0.12
+Nodes (16): ESP32_SPI, ESP32_SPI::ESP32_SPI(), get_free_bytes, get_total_bytes, init, _initialized, is_card_inserted, is_fatfs_mounted (+8 more)
 
 ### Community 48 - "5-Layer Decoupled Architecture"
 Cohesion: 0.25
@@ -349,9 +406,9 @@ Nodes (6): Build and flash, Configure the project, Example output, FFT Example, 
 Cohesion: 0.29
 Nodes (6): Build and flash, Configure the project, Example output, FFT Window Example, Hardware required, How to use example
 
-### Community 52 - "dsps_biquad_f32_ansi"
-Cohesion: 0.33
-Nodes (3): dsps_biquad_f32_ansi(), main(), test_iir_biquad()
+### Community 52 - "2. Core Architectural Decisions"
+Cohesion: 0.14
+Nodes (16): 1. Metadata & Context, 2. Core Architectural Decisions, 3. Empirical Benchmarks & Hardware Observations (2026-10-06), Rule 1: 10-Second Boot-Up Security Window & Dynamic Memory Reclamation, Rule 2: Layer 4 Task Identity & Zettel 0006 Rule 3 Preservation, Rule 3: NimBLE Host Task Decoupling & Stack Protection, Rule 4: Client-Side ATT MTU Adaptation & Error Unblocking, Rule 5: Environment Simplification & Local Project Compilation (+8 more)
 
 ### Community 54 - "How to use the example"
 Cohesion: 0.29
@@ -386,60 +443,188 @@ Cohesion: 0.67
 Nodes (3): FC_v01 CMake Project, ESP-DSP Multi-Type SIMD Integration, ESP-DSP Component Registration
 
 ### Community 75 - "app_main"
-Cohesion: 0.15
-Nodes (6): app_main(), generate_FIR_coefficients(), show_FFT(), dsps_fird_init_f32(), dsps_wind_blackman_f32(), dsps_wind_blackman_harris_f32()
+Cohesion: 0.09
+Nodes (11): app_main(), process_and_show(), app_main(), generate_FIR_coefficients(), show_FFT(), dsps_fird_init_f32(), dsps_wind_blackman_f32(), dsps_wind_blackman_harris_f32() (+3 more)
 
-### Community 139 - "dsps_fft2r_sc16_ansi.c"
-Cohesion: 0.18
-Nodes (13): microphone_read_task(), dsps_bit_rev_sc16_ansi(), dsps_cplx2real_sc16_ansi(), dsps_cplx2reC_sc16(), dsps_fft2r_init_sc16(), dsps_fft2r_sc16_ansi_(), dsps_gen_w_r2_sc16(), xtfixed_bf_1() (+5 more)
-
-### Community 140 - "dsps_conv.h"
-Cohesion: 0.14
-Nodes (3): dspi_conv_f32_ansi(), dsps_ccorr_f32_ansi(), dsps_conv_f32_ansi()
-
-### Community 141 - "dsps_fft2r_fc32_ansi.c"
-Cohesion: 0.37
-Nodes (11): dsp_is_power_of_two(), dsps_bit_rev2r_fc32(), dsps_bit_rev_fc32_ansi(), dsps_bit_rev_lookup_fc32_ansi(), dsps_cplx2reC_fc32_ansi(), dsps_fft2r_fc32_ansi_(), dsps_fft2r_init_fc32(), dsps_gen_bitrev2r_table() (+3 more)
-
-### Community 142 - "m5stack_core_s3/apps/3d_graphics/main/3d_graphics_demo.cpp"
+### Community 82 - "ble_packet.h"
 Cohesion: 0.22
-Nodes (3): app_main(), display_3d_image(), init_3d_matrix_struct()
+Nodes (6): BleAttQuatPacket, q, timestamp, BleBaroPacket, pressure, timestamp
 
-### Community 143 - "audio_amp_main.c"
+### Community 83 - "audio_amp_main.c"
 Cohesion: 0.27
 Nodes (5): audio_read_task(), convert_float2short(), convert_short2float(), digitalLimiter(), dsps_mulc_f32_ansi()
 
-### Community 144 - "dsps_fft4r_fc32_ansi.c"
-Cohesion: 0.42
-Nodes (8): app_main(), dsp_power_of_two(), dsps_bit_rev4r_direct_fc32_ansi(), dsps_bit_rev4r_fc32(), dsps_cplx2real_fc32_ansi_(), dsps_fft4r_fc32_ansi_(), dsps_fft4r_init_fc32(), dsps_gen_bitrev4r_table()
+### Community 125 - "BMP180"
+Cohesion: 0.17
+Nodes (11): baro_daq_task(), BMP180, _b5, calculate_pressure, _calib, _dev_addr, get_conversion_delay_ms, _oss (+3 more)
 
-### Community 145 - "HAL_I2C_ASYNC"
-Cohesion: 0.29
-Nodes (6): HAL_I2C_ASYNC, init, read_reg_async, read_reg_multi_async, write_reg_async, write_reg_multi_async
+### Community 127 - "main.cpp"
+Cohesion: 0.20
+Nodes (5): Rule 3: Layer 3 Inter-Task Mutex Synchronization (`flash_mutex`), app_main(), init_ipc(), sysview_init_markers(), init
 
-### Community 146 - "LowPassFilter1stOrder"
+### Community 128 - "Bmp180Calib"
+Cohesion: 0.17
+Nodes (12): Bmp180Calib, ac1, ac2, ac3, ac4, ac5, ac6, b1 (+4 more)
+
+### Community 130 - "bmp180.cpp"
+Cohesion: 0.27
+Nodes (7): BMP180::BMP180(), calculate_b5, calculate_temperature, init, pressure_to_altitude, read_calibration_data, read_temperature_raw
+
+### Community 131 - "test_dsps_conv_f32_ansi.c"
+Cohesion: 0.18
+Nodes (3): dsps_ccorr_f32_ansi(), dsps_conv_f32_ansi(), dsps_conv_f32_ref()
+
+### Community 139 - "2. Core Architectural Decisions"
+Cohesion: 0.18
+Nodes (11): 1. Metadata & Context, 2. Core Architectural Decisions, 4. Cross-References & Traceability, A. Non-Blocking Two-Phase I2C Transaction Model, B. Pipelined Inter-Loop Conversion (Zero Intra-Loop Yield), C. Oversampling Setting (OSS) & Timing Feasibility, D. Interleaved Low-Frequency Temperature Refresh, E. Elimination of Legacy Driver Deficiencies (+3 more)
+
+### Community 140 - "RingBuffer"
+Cohesion: 0.23
+Nodes (3): RingBuffer, _buffer, _head
+
+### Community 142 - "m5stack_core_s3/apps/3d_graphics/main/3d_graphics_demo.cpp"
+Cohesion: 0.22
+Nodes (4): app_main(), display_3d_image(), draw_3d_image_task(), init_3d_matrix_struct()
+
+### Community 143 - "azure_board_apps/apps/3d_graphics/main/3d_graphics_demo.cpp"
+Cohesion: 0.16
+Nodes (10): app_main(), app_ssd1306_init(), dispaly_esp_text(), display_3d_image(), draw_3d_image_task(), init_3d_matrix_struct(), init_perspective_matrix(), print_matrix() (+2 more)
+
+### Community 147 - "m_test_data_s"
+Cohesion: 0.20
+Nodes (10): m_test_data_s, A_start_col, A_start_row, B_start_col, B_start_row, C_start_col, C_start_row, k (+2 more)
+
+### Community 151 - "HAL_SPI"
+Cohesion: 0.18
+Nodes (10): HAL_SPI, get_free_bytes, get_total_bytes, init, is_card_inserted, is_fatfs_mounted, mount_fatfs, transfer (+2 more)
+
+### Community 152 - "Zettel 0021: BLE Telemetry Dispatcher Consolidation, Subscription-Aware Gating & FCDatMon Stride Specification"
+Cohesion: 0.22
+Nodes (9): 1. Metadata & Scope, 2. Problem Statement & Motivation, 3. Host Monitor Interaction Contract (`FCDatMon`), 5. Architectural Verification & Backward Compatibility, 6. Cross-References & Traceability, Duplicate Packet Structs & Missing SI Units, Multi-Task Over-Engineering & RAM Exhaustion, Unconditional Popping & BLE Stack Saturation (+1 more)
+
+### Community 153 - "ble_driver.cpp"
+Cohesion: 0.30
+Nodes (14): Strict 1:1 Task-to-Characteristic Isolation, get_char_by_mask(), send_ble_accel_filt_notification(), send_ble_accel_raw_notification(), send_ble_att_euler_notification(), send_ble_att_quat_notification(), send_ble_baro_filt_notification(), send_ble_baro_raw_notification() (+6 more)
+
+### Community 154 - "LogFileHeader"
+Cohesion: 0.18
+Nodes (11): LogFileHeader, board_name, boot_timestamp_us, circular_head_sector, limit_policy, magic, max_file_size_bytes, registered_packets_mask (+3 more)
+
+### Community 155 - "2. Core Architectural Decisions"
+Cohesion: 0.22
+Nodes (9): 1. Metadata & Context, 2. Core Architectural Decisions, 3. Impact & Architectural Constraints, Rule 1: Unified `HAL_SPI` Abstraction & Shared Bus Decoupling (Layer 1), Rule 2: Peripheral Driver Object Ownership (`SDCardDriver`, Layer 2), Rule 3: Autonomous 100 Hz Periodic Task & Zero-Overhead Ring Buffer Snapshot Draining (Layer 4), Rule 4: 512-Byte Sector Accumulator & Dual-Trigger Flush, Rule 5: Pure 4-Digit Incremental File Scheme & Self-Describing Binary Header (+1 more)
+
+### Community 158 - "main/main.c"
+Cohesion: 0.53
+Nodes (4): convert_to_rgb(), image_display_task(), spectrum2d_picture(), spectrum2d_picture_init()
+
+### Community 159 - "3. Core Architectural Decisions & Specifications"
+Cohesion: 0.22
+Nodes (9): 1. Metadata & Scope, 2. Problem Statement & Architecture Tensions, 3. Core Architectural Decisions & Specifications, 4. Cross-References & Traceability, Rule 1: Deprecation and Removal of Phantom Attitude Task, Rule 2: Removal of Orphan IPC Primitives (`gyro_telemetry_queue` & Scalar Globals), Rule 3: Harmonized Ring Buffer Naming (`accel`, `gyro`, `mag`), Rule 4: Unification of Barometer Pressure Ring Buffer (+1 more)
+
+### Community 160 - "Vec3"
+Cohesion: 0.24
+Nodes (8): PktMagRaw, mag, timestamp_us, type, Vec3, BleVec3Packet, data, timestamp
+
+### Community 161 - "dsps_dct_f32.c"
+Cohesion: 0.53
+Nodes (4): dsps_dct_f32(), dsps_dct_f32_ref(), dsps_dct_inv_f32(), dsps_dct_inverce_f32_ref()
+
+### Community 162 - "dsps_biquad_f32_ansi"
+Cohesion: 0.33
+Nodes (3): dsps_biquad_f32_ansi(), main(), test_iir_biquad()
+
+### Community 165 - "3d_kalman_demo.cpp"
+Cohesion: 0.30
+Nodes (11): app_init(), app_main(), display_3d_image(), draw_3d_image_task(), init_3d_matrix_struct(), read_bmi270_data(), read_bmi270_reg(), read_bmm150_data() (+3 more)
+
+### Community 166 - "2. Context & Root Cause Analysis"
+Cohesion: 0.15
+Nodes (11): 1. Metadata & Scope, 2. Context & Root Cause Analysis, 4. Traceability & Affected Files, A. FatFS 0-Byte Log File Phenomenon & POSIX Synchronization (`fsync`), B. Mount Failures & Boot Memory Protection (Zero Stack Waste on Absent Card), C. Circular Overwrite Pointer & Odometer Reset, D. Hardware USER Button 3-Second Hold & Graceful Shutdown, Zettel 0018: MicroSD Flight Logging Architecture, POSIX Metadata Sync, User Button Shutdown & Binary Log Specification (+3 more)
+
+### Community 167 - "dsps_fft2r_sc16_ansi.c"
+Cohesion: 0.06
+Nodes (45): microphone_read_task(), app_main(), dsp_is_power_of_two(), dsp_power_of_two(), dsps_bit_rev_sc16_ansi(), dsps_cplx2real_sc16_ansi(), dsps_cplx2reC_sc16(), dsps_fft2r_init_sc16() (+37 more)
+
+### Community 169 - "Zettel 0009: Distinct BLE GATT Characteristic UUID Isolation per Telemetry & OTA Stream Decision"
+Cohesion: 0.67
+Nodes (3): 1. Metadata & Context, 2. Core Architectural Decision, Zettel 0009: Distinct BLE GATT Characteristic UUID Isolation per Telemetry & OTA Stream Decision
+
+### Community 177 - "4. Core Architectural Decisions"
+Cohesion: 0.33
+Nodes (6): 4. Core Architectural Decisions, Rule 1: Single Unified Telemetry Dispatcher Task (`TASK_BLE_TELEM`), Rule 2: Zero Dynamic Allocation & Static BSS Channel Instances, Rule 3: Subscription-Aware Gating (`is_ble_stream_subscribed`), Rule 4: Generic Wire-Compatible Structs with Explicit Physical SI Units, is_ble_stream_subscribed()
+
+### Community 179 - "FlashStorageDriver"
+Cohesion: 0.38
+Nodes (8): FlashStorageDriver, calculate_crc32, erase_namespace, erase_record, init, _initialized, read_record, write_record
+
+### Community 180 - "PktImuRaw"
 Cohesion: 0.40
-Nodes (5): LowPassFilter1stOrder, a, initialized, x_prev, y_prev
+Nodes (5): PktImuRaw, accel, gyro, timestamp_us, type
+
+### Community 184 - "3. Core Architectural Decisions"
+Cohesion: 0.25
+Nodes (8): 1. Metadata & Scope, 2. Problem Statement & Architectural Requirements, 3. Core Architectural Decisions, 4. Traceability & Affected Files, Rule 1: Layer 1 Abstract Interface & Target Decoupling (`HAL_Flash`), Rule 4: Centralized IPC Calibration Struct & Memory Footprint, Rule 5: Hardware SIMD Hadamard Product Vector Acceleration, Zettel 0024: Internal Flash NVS Storage HAL, FlashStorageDriver & Diagonal Soft-Iron SIMD Calibration Persistence Specification
+
+### Community 185 - "PktAttQuat"
+Cohesion: 0.50
+Nodes (4): PktAttQuat, q, timestamp_us, type
+
+### Community 186 - "PktBaroFilt"
+Cohesion: 0.50
+Nodes (4): PktBaroFilt, pressure, timestamp_us, type
+
+### Community 187 - "PktBaroRaw"
+Cohesion: 0.50
+Nodes (4): PktBaroRaw, pressure, timestamp_us, type
+
+### Community 188 - "HAL_Flash"
+Cohesion: 0.29
+Nodes (6): HAL_Flash, erase_key, erase_namespace, init, read_blob, write_blob
+
+### Community 189 - "Zettel 0020: Finite State Machine (FSM) Backbone, Pre-Flight Sensor Checks & Active Calibration Architecture Specification"
+Cohesion: 0.40
+Nodes (6): 1. Metadata & Scope, 2. Problem Statement & Architecture Requirements, 4. Remaining Work & Future Implementation Roadmap, 5. Traceability & Affected Files, Zettel 0020: Finite State Machine (FSM) Backbone, Pre-Flight Sensor Checks & Active Calibration Architecture Specification, fsm_is_armed_allowed()
+
+### Community 191 - "FlashRecordHeader"
+Cohesion: 0.33
+Nodes (6): Rule 2: Layer 2 Peripheral Driver (`FlashStorageDriver`), FlashRecordHeader, crc32, magic, payload_len, schema_ver
+
+### Community 193 - "ShowIIRfilter"
+Cohesion: 0.40
+Nodes (3): app_main(), ShowIIRfilter(), dsps_d_gen_f32()
+
+### Community 194 - "PktImuFilt"
+Cohesion: 0.40
+Nodes (5): PktImuFilt, accel, gyro, timestamp_us, type
+
+### Community 196 - "PktAttEuler"
+Cohesion: 0.50
+Nodes (4): PktAttEuler, euler, timestamp_us, type
+
+### Community 197 - "PktMagFilt"
+Cohesion: 0.50
+Nodes (4): PktMagFilt, mag, timestamp_us, type
 
 ## Knowledge Gaps
-- **213 isolated node(s):** `matrix_len`, `matrix_len`, `ekf13`, `Process`, `Init` (+208 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 481 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **86 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **433 isolated node(s):** `matrix_len`, `matrix_len`, `ekf13`, `Process`, `Init` (+428 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 759 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **104 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Mat` connect `Mat` to `esp_log.h`, `config.h`, `test_mat_sub_f32.cpp`, `ekf_imu13states`, `m5stack_core_s3/apps/3d_graphics/main/3d_graphics_demo.cpp`, `azure_board_apps/apps/3d_graphics/main/3d_graphics_demo.cpp`, `kalman_filter_demo.cpp`, `ekf`, `ekf.cpp`, `ekf_imu13states.cpp`, `Rect`?**
-  _High betweenness centrality (0.102) - this node is a cross-community bridge._
-- **Why does `Strict 1:1 Task-to-Characteristic Isolation` connect `ble_driver.cpp` to `Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
-- **Why does `2. Core Architectural Decision` connect `Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout` to `ble_driver.cpp`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `Mat` connect `Mat` to `math`, `3d_kalman_demo.cpp`, `esp_dsp.h`, `test_mat_sub_f32.cpp`, `ekf_imu13states`, `ekf`, `m5stack_core_s3/apps/3d_graphics/main/3d_graphics_demo.cpp`, `azure_board_apps/apps/3d_graphics/main/3d_graphics_demo.cpp`, `kalman_filter_demo.cpp`, `ekf.cpp`, `ekf_imu13states.cpp`, `Rect`, `string`?**
+  _High betweenness centrality (0.062) - this node is a cross-community bridge._
+- **Why does `LogFileHeader` connect `LogFileHeader` to `cstdint`, `2. Core Architectural Decisions`, `B. Sensor Packet Payloads (Little-Endian, `<`)`, `Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout`?**
+  _High betweenness centrality (0.038) - this node is a cross-community bridge._
+- **Why does `HMC5883L` connect `HMC5883L` to `cstdint`, `2. Core Architectural Decisions`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **What connects `matrix_len`, `matrix_len`, `ekf13` to the rest of the system?**
-  _213 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `esp_log.h` be split into smaller, more focused modules?**
-  _Cohesion score 0.06082597635792309 - nodes in this community are weakly interconnected._
+  _433 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Magnetometer Full Rotated Ellipsoid Calibration via SIMD-Accelerated Symmetric Gradient Descent` be split into smaller, more focused modules?**
+  _Cohesion score 0.1 - nodes in this community are weakly interconnected._
+- **Should `SYSVIEW_END` be split into smaller, more focused modules?**
+  _Cohesion score 0.14245014245014245 - nodes in this community are weakly interconnected._
 - **Should `Mat` be split into smaller, more focused modules?**
-  _Cohesion score 0.04644808743169399 - nodes in this community are weakly interconnected._
-- **Should `dsps_fird_init_s16.c` be split into smaller, more focused modules?**
-  _Cohesion score 0.052525252525252523 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04505888376856119 - nodes in this community are weakly interconnected._

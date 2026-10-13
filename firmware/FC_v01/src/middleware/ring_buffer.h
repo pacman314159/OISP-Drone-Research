@@ -13,13 +13,13 @@ class RingBuffer {
   static_assert(N > 0, "RingBuffer size must be greater than zero!");
 
 public:
-  RingBuffer() : _head(0), _count(0){}
+  RingBuffer() : _head(N - 1), _count(0){}
 
   void push(const T& sample){
     SYS_ENTER_CRITICAL();
-    _buffer[_head] = sample;
     _head++;
     if(_head >= N) _head = 0;
+    _buffer[_head] = sample;
     if(_count < N) _count++;
     SYS_EXIT_CRITICAL();
   }
@@ -47,7 +47,7 @@ public:
 
     copy_window_internal(out_window, count_copy, _head);
 
-    _head = 0;
+    _head = N - 1;
     _count = 0;
     SYS_EXIT_CRITICAL();
     return count_copy;
@@ -56,6 +56,14 @@ public:
   inline T front() const {
     SYS_ENTER_CRITICAL();
     T sample = _buffer[_head];
+    SYS_EXIT_CRITICAL();
+    return sample;
+  }
+
+  inline T back() const {
+    SYS_ENTER_CRITICAL();
+    size_t tail = (_count == 0) ? _head : ((_head + N - _count + 1) % N);
+    T sample = _buffer[tail];
     SYS_EXIT_CRITICAL();
     return sample;
   }
@@ -76,7 +84,7 @@ public:
 
   void clear(){
     SYS_ENTER_CRITICAL();
-    _head = 0;
+    _head = N - 1;
     _count = 0;
     SYS_EXIT_CRITICAL();
   }
@@ -86,10 +94,11 @@ private:
     if(count_copy < N)
       memcpy(out_window, _buffer, count_copy * sizeof(T));
     else{
-      size_t right_len = N - head_copy;
-      memcpy(out_window, &_buffer[head_copy], right_len * sizeof(T));
-      if(head_copy > 0)
-        memcpy(&out_window[right_len], &_buffer[0], head_copy * sizeof(T));
+      size_t tail = (head_copy + 1 >= N) ? 0 : (head_copy + 1);
+      size_t right_len = N - tail;
+      memcpy(out_window, &_buffer[tail], right_len * sizeof(T));
+      if(tail > 0)
+        memcpy(&out_window[right_len], &_buffer[0], tail * sizeof(T));
     }
   }
 

@@ -181,7 +181,6 @@ def _protocol_changed_callback(sender, app_data, user_data):
         dpg.hide_item("group_ble")
         dpg.hide_item("input_target")
         dpg.show_item("group_payload_settings")
-        dpg.hide_item("input_batch_size")
         dpg.hide_item("text_payload_unsupported")
         ports = get_com_ports()
         dpg.configure_item("combo_target_port", items=ports)
@@ -193,7 +192,6 @@ def _protocol_changed_callback(sender, app_data, user_data):
         dpg.show_item("group_ble")
         dpg.hide_item("input_target")
         dpg.show_item("group_payload_settings")
-        dpg.show_item("input_batch_size")
         dpg.hide_item("text_payload_unsupported")
         update_ui_state(state.UIState.INIT)
         _update_expected_format_callback()
@@ -328,9 +326,9 @@ def _pair_ble_callback(sender, app_data, user_data):
         
     timestamp_mode = dpg.get_value("combo_timestamp")
     timestamp_unit = dpg.get_value("combo_timestamp_unit")
-    batch_size = dpg.get_value("input_batch_size")
+    num_series = sum(len(config.get('series', [])) for config in state.PLOT_CACHE.values())
 
-    state.CURRENT_READER = BLEReader(mac, service_uuid, char_uuid, on_disconnect=_on_disconnect, on_connect_success=_on_success, on_connect_error=_on_error, timestamp_mode=timestamp_mode, timestamp_unit=timestamp_unit, batch_size=batch_size, log_frequency=state.LOG_FREQUENCY, freq_window_size=state.FREQUENCY_WINDOW_SIZE, on_freq_log=_on_freq_log)
+    state.CURRENT_READER = BLEReader(mac, service_uuid, char_uuid, on_disconnect=_on_disconnect, on_connect_success=_on_success, on_connect_error=_on_error, timestamp_mode=timestamp_mode, timestamp_unit=timestamp_unit, num_series=num_series, log_frequency=state.LOG_FREQUENCY, freq_window_size=state.FREQUENCY_WINDOW_SIZE, on_freq_log=_on_freq_log)
     state.CURRENT_READER.start()
 
 def _unpair_ble_callback(sender, app_data, user_data):
@@ -374,7 +372,7 @@ def _connect_callback(sender, app_data, user_data):
                     state.CURRENT_READER.log_file = open(log_file_path, "a")
             state.CURRENT_READER.timestamp_mode = dpg.get_value("combo_timestamp")
             state.CURRENT_READER.timestamp_unit = dpg.get_value("combo_timestamp_unit")
-            state.CURRENT_READER.batch_size = dpg.get_value("input_batch_size")
+            state.CURRENT_READER.num_series = sum(len(config.get('series', [])) for config in state.PLOT_CACHE.values())
             state.CURRENT_READER.resume()
             for i in state.PLOT_CACHE.keys(): state.PLOT_CACHE[i]["trigger_y_snap"] = True
             update_ui_state(state.UIState.STREAMING)
@@ -452,6 +450,7 @@ def _apply_layout_callback(sender=None, app_data=None, user_data=None):
                 "series": [{ "name": "Y-Axis", "unit": "ul", "width": 2.0, "color": _get_hex_color() }]
             }
             state.PLOT_CHASE_ACTIVE[i] = True
+            setattr(state, f"MANUAL_WINDOW_{i}", state.DEFAULT_TIME_WINDOW_MS)
             
     _rebuild_plot_ui()
     update_plots(layout, state.PLOT_CACHE)
@@ -656,7 +655,6 @@ def _manage_setup_callback(sender, app_data, user_data):
             "plots": state.PLOT_CACHE, "ble_target": dpg.get_value("input_ble_target"),
             "ble_service": dpg.get_value("input_ble_service"), "ble_char": dpg.get_value("input_ble_char"),
             "timestamp_mode": dpg.get_value("combo_timestamp"), "timestamp_unit": dpg.get_value("combo_timestamp_unit"),
-            "batch_size": dpg.get_value("input_batch_size"),
             "log_frequency": state.LOG_FREQUENCY,
             "freq_window_size": state.FREQUENCY_WINDOW_SIZE
         }
@@ -689,7 +687,6 @@ def _manage_setup_callback(sender, app_data, user_data):
             if "ble_char" in setup_data: dpg.set_value("input_ble_char", setup_data["ble_char"])
             if "timestamp_mode" in setup_data: dpg.set_value("combo_timestamp", setup_data["timestamp_mode"])
             if "timestamp_unit" in setup_data: dpg.set_value("combo_timestamp_unit", setup_data["timestamp_unit"])
-            if "batch_size" in setup_data: dpg.set_value("input_batch_size", setup_data["batch_size"])
             
             if "log_frequency" in setup_data:
                 state.LOG_FREQUENCY = setup_data["log_frequency"]
@@ -704,7 +701,6 @@ def _manage_setup_callback(sender, app_data, user_data):
                 state.PLOT_CHASE_ACTIVE[int(k)] = True
             
             _rebuild_plot_ui()
-            dpg.set_value("input_batch_size", setup_data.get("batch_size", 1))
             _apply_layout_callback()
             _update_expected_format_callback()
             _log_to_console(f"[*] Loaded config from '{setup_name}.json'")

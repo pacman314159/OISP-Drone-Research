@@ -1,0 +1,82 @@
+[INFO] Initialized next Run ID from img/: 0011
+
+================================================================================
+  FLIGHT LOG SCAN REPORT: LOG_0022.BIN
+  Target Board:     esp32-s3-fc-v02-n8r8
+  Session ID:       LOG_0022
+  Boot Timestamp:   888488 us (0.888 s)
+  Limit Policy:     STOP_ON_SIZE
+  Max File Size:    50.0 MB
+================================================================================
+  Tracked Data Streams in Log:
+    [OK] Accelerometer & Gyroscope RAW   : 16,510 samples (~33.02 s @ ~500 Hz)
+    [ ] Accelerometer & Gyroscope FILT  : Not logged
+    [OK] Magnetometer RAW                :  3,302 samples (~33.01 s @ ~100 Hz)
+    [ ] Magnetometer FILT               : Not logged
+    [ ] Barometer RAW                   : Not logged
+    [ ] Barometer FILT                  : Not logged
+    [ ] Attitude Euler Angles           : Not logged
+    [ ] Attitude Quaternions            : Not logged
+================================================================================
+
+
+[INFO] Commencing Analysis with Run ID: 0011 (Trimming: First 10.0% and Last 10.0%)
+[INFO] All output images will be saved in: D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img
+
+
+>> Processing Accelerometer: 13208 samples analyzed (trimmed 1651 to 14859 of 16510)
+
+==========================================================================================
+  STATISTICAL REPORT: Accelerometer RAW (Session LOG_0022)
+==========================================================================================
+ Channel            | Samples | Mean        | StDev       | Range       | Fs (Hz)  | Peak Freq 
+-------------------+---------+-------------+-------------+-------------+----------+-----------
+ Accel X            | 13208   | +0.1753 g   | 0.3063 g    | 3.9999      | 500.0    | 0.2 Hz    
+ Accel Y            | 13208   | -0.0575 g   | 0.2293 g    | 3.9999      | 500.0    | 0.0 Hz    
+ Accel Z            | 13208   | +0.8135 g   | 0.5276 g    | 3.9999      | 500.0    | 0.0 Hz    
+==========================================================================================
+
+  [OK] Saved: 0011-HIST-Accel_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-HIST-Accel_raw.png
+  [OK] Saved: 0011-FFT-Accel_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-FFT-Accel_raw.png
+  [OK] Saved: 0011-TIME-Accel_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-TIME-Accel_raw.png
+
+>> Processing Gyroscope: 13208 samples analyzed (trimmed 1651 to 14859 of 16510)
+
+==========================================================================================
+  STATISTICAL REPORT: Gyroscope RAW (Session LOG_0022)
+==========================================================================================
+ Channel            | Samples | Mean        | StDev       | Range       | Fs (Hz)  | Peak Freq 
+-------------------+---------+-------------+-------------+-------------+----------+-----------
+ Gyro X             | 13208   | +0.8453 deg/s | 61.4383 deg/s | 500.2672    | 500.0    | 0.5 Hz    
+ Gyro Y             | 13208   | +3.7724 deg/s | 62.6107 deg/s | 500.2672    | 500.0    | 0.2 Hz    
+ Gyro Z             | 13208   | -1.7594 deg/s | 40.4278 deg/s | 500.2672    | 500.0    | 0.2 Hz    
+==========================================================================================
+
+  [OK] Saved: 0011-HIST-Gyro_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-HIST-Gyro_raw.png
+  [OK] Saved: 0011-FFT-Gyro_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-FFT-Gyro_raw.png
+  [OK] Saved: 0011-TIME-Gyro_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-TIME-Gyro_raw.png
+
+>> Processing Magnetometer: 2642 samples analyzed (trimmed 330 to 2972 of 3302)
+
+==========================================================================================
+  STATISTICAL REPORT: Magnetometer RAW (Session LOG_0022)
+==========================================================================================
+ Channel            | Samples | Mean        | StDev       | Range       | Fs (Hz)  | Peak Freq 
+-------------------+---------+-------------+-------------+-------------+----------+-----------
+ Mag X              | 2642    | +0.3478 Gauss | 0.1037 Gauss | 0.5651      | 100.0    | 0.0 Hz    
+ Mag Y              | 2642    | -0.1680 Gauss | 0.1138 Gauss | 0.5440      | 100.0    | 0.0 Hz    
+ Mag Z              | 2642    | -0.0174 Gauss | 0.0696 Gauss | 0.4376      | 100.0    | 0.2 Hz    
+==========================================================================================
+
+  [OK] Saved: 0011-HIST-Mag_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-HIST-Mag_raw.png
+  [OK] Saved: 0011-FFT-Mag_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-FFT-Mag_raw.png
+  [OK] Saved: 0011-TIME-Mag_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-TIME-Mag_raw.png
+  [OK] Saved: 0011-PROJ-Mag_raw.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0011-PROJ-Mag_raw.png
+[!] No Barometer data found in flight log.
+[!] No Attitude Euler data found in flight log.
+
+==========================================================================================
+  ANALYSIS COMPLETE! Run ID 0011 artifacts saved into: D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img
+  Session Log Output saved to: 0011-LOG.txt in img/ and analyzers/
+==========================================================================================
+

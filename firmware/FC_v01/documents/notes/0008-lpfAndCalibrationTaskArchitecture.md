@@ -11,6 +11,9 @@ references:
   - "[[0002-taskEnumsAndHalAbstractionDecision]]"
   - "[[0003-simdHalArchitectureAndLayeringRule]]"
   - "[[0006-taskCreationConfigEnumsAndTaskArgsPassingDecision]]"
+  - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
+  - "[[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]]"
+  - "[[0022-unifiedPressureRingBufferSensorVariableConsolidationAndAttitudeTaskRemoval]]"
 ---
 
 # Zettel 0008: Layer 4 LPF Filter & Calibration Task Architecture Specification
@@ -27,10 +30,10 @@ references:
 
 ## 2. Core Architectural Decisions
 
-### Rule 1: Layer 4 Submodule Scoping (`src/core/filters/` & `src/core/calib/`)
-- Digital signal processing (DSP) filters and sensor calibration routines belong exclusively to **Layer 4 (Flight Core & Algorithms Layer)**.
-- `src/core/filters/` houses discrete low-pass filter algorithms (`lpf.h`) and task runners (`filter_tasks.h`, `filter_tasks.cpp`).
-- `src/core/calib/` houses sensor bias removal, axis alignment, scaling matrices, and hard/soft-iron magnetometer compensation routines.
+### Rule 1: Layer 4 Submodule Scoping (`src/core/math/` & `src/core/sensor/`)
+- Digital signal processing (DSP) filters and sensor calibration routines belong exclusively to **Layer 4 (Flight Core & Algorithms Layer)** [Note 0016].
+- `src/core/math/` houses discrete low-pass filter algorithms (`lpf.h`), matrix math (`matrix.h`), filter task runners (`filter_tasks.h`, `filter_tasks.cpp`), and state estimators (`estimator_tasks.h`, `estimator_tasks.cpp`).
+- `src/core/sensor/` houses sensor Data Acquisition (DAQ) sampling tasks (`daq_tasks.cpp`, `daq_tasks.h`) and calibration routines (sensor bias removal, axis alignment, scaling matrices, and hard/soft-iron magnetometer compensation routines).
 
 ### Rule 2: Tustin Bilinear 1st-Order Low-Pass Filter State (`LowPassFilter1stOrder`)
 - Filters use discrete 1st-order difference equations derived from s-domain $H(s) = \frac{\omega_c}{s + \omega_c}$ via the Tustin bilinear transform ($s = \frac{2}{T} \cdot \frac{z - 1}{z + 1}$):
@@ -44,9 +47,9 @@ references:
   1. `#if (!ENABLE_SIMD_ACCELERATION)`: Portable C++ scalar calculation loop.
   2. `#else`: Hardware-accelerated 3D vector operations via `hal_simd::add`, `hal_simd::scale`, `hal_simd::sub`.
 
-### Rule 4: IPC Clean Variable Naming & Critical Section Updates
-- Output variables in Layer 3 (`src/middleware/ipc.h`) omit suffix noise and are named `accel`, `gyro`, `mag`, `accel_gyro_timestamp`, `mag_timestamp`.
-- Task updates wrap writes using `SYS_ENTER_CRITICAL()` / `SYS_EXIT_CRITICAL()` to ensure thread-safe atomic reader access across multi-core execution.
+### Rule 4: IPC Clean Variable Naming & Ring Buffer Consolidation
+- Filtered sensor ring buffers in Layer 3 (`src/middleware/ipc.h`) omit suffix noise and are named `accel`, `gyro`, `mag`, along with timestamps `filtered_accel_gyro_timestamp`, `filtered_mag_timestamp`.
+- Downstream tasks read thread-safely directly from ring buffers (`accel.front()` or `accel.get_snapshot()`), eliminating redundant orphan global variables.
 
 ### Rule 5: BLE Characteristic UUID Isolation (Cross-Reference [Note 0009])
 - Every distinct BLE telemetry task streams its payload notifications over its own dedicated GATT Characteristic UUID under `BLE_SERVICE_TELEM_UUID` per architectural decision [Zettel 0009](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/documents/notes/0009-distinctBleGattCharacteristicUuidIsolation.md).
@@ -58,5 +61,6 @@ references:
 2. **Frequency Match**: `accel_gyro_lpf_task` runs at 500 Hz (matching `TASK_ACCEL_GYRO_DAQ_FREQ_HZ`), `mag_lpf_task` runs at 100 Hz.
 3. **Traceability**: All task iterations are instrumented with `SYSVIEW_START(task_id)` and `SYSVIEW_END(task_id)` markers.
 4. **BLE GATT Isolation**: Raw and filtered telemetry streams are isolated across distinct characteristic handles (`p_vec3_raw_char` and `p_vec3_filt_char`).
+5. **FSM & Calibration Integration**: Cross-reference [[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]] for the 100 Hz FSM coordinator, pre-flight stationary detection, and active/passive calibration lifecycle.
 
 

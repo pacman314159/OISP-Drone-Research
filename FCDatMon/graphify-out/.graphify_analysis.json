@@ -1,0 +1,393 @@
+{
+  "communities": {
+    "0": [
+      "core_app_settings",
+      "core_app_settings_load_app_settings",
+      "core_app_settings_save_app_settings",
+      "core_state_manager",
+      "core_state_manager_delete_layout",
+      "core_state_manager_delete_paired_ble_device",
+      "core_state_manager_get_available_layouts",
+      "core_state_manager_get_mac_filename",
+      "core_state_manager_load_layout",
+      "core_state_manager_load_paired_ble_device",
+      "core_state_manager_rationale_10",
+      "core_state_manager_rationale_125",
+      "core_state_manager_rationale_145",
+      "core_state_manager_rationale_21",
+      "core_state_manager_rationale_34",
+      "core_state_manager_rationale_59",
+      "core_state_manager_rationale_70",
+      "core_state_manager_rationale_84",
+      "core_state_manager_rationale_97",
+      "core_state_manager_save_layout",
+      "core_state_manager_set_config_dir",
+      "core_state_manager_set_paired_dir",
+      "gui_ui_callbacks",
+      "gui_ui_callbacks_ble_timeout_changed_callback",
+      "gui_ui_callbacks_buffer_size_changed",
+      "gui_ui_callbacks_clear_console_callback",
+      "gui_ui_callbacks_freq_log_toggled",
+      "gui_ui_callbacks_freq_window_changed",
+      "gui_ui_callbacks_handle_folder_selection",
+      "gui_ui_callbacks_listbox_double_clicked",
+      "gui_ui_callbacks_manage_setup_callback",
+      "gui_ui_callbacks_rationale_604",
+      "gui_ui_callbacks_rationale_631",
+      "json",
+      "os",
+      "random",
+      "re",
+      "serial_tools_list_ports"
+    ],
+    "1": [
+      "core_state_manager_get_paired_ble_devices",
+      "core_state_manager_rationale_103",
+      "core_state_manager_rationale_136",
+      "core_state_manager_save_paired_ble_device",
+      "gui_ui_callbacks_ble_listbox_clicked",
+      "gui_ui_callbacks_clear_callback",
+      "gui_ui_callbacks_connect_callback",
+      "gui_ui_callbacks_connect_callback_on_freq_log",
+      "gui_ui_callbacks_disconnect_callback",
+      "gui_ui_callbacks_eval_pair_btn_state",
+      "gui_ui_callbacks_forget_device_callback",
+      "gui_ui_callbacks_log_to_console",
+      "gui_ui_callbacks_pair_ble_callback",
+      "gui_ui_callbacks_pair_ble_callback_on_disconnect",
+      "gui_ui_callbacks_pair_ble_callback_on_disconnect_task",
+      "gui_ui_callbacks_pair_ble_callback_on_error",
+      "gui_ui_callbacks_pair_ble_callback_on_error_task",
+      "gui_ui_callbacks_pair_ble_callback_on_freq_log",
+      "gui_ui_callbacks_pair_ble_callback_on_success",
+      "gui_ui_callbacks_pair_ble_callback_on_success_task",
+      "gui_ui_callbacks_protocol_changed_callback",
+      "gui_ui_callbacks_rationale_227",
+      "gui_ui_callbacks_rationale_37",
+      "gui_ui_callbacks_rationale_72",
+      "gui_ui_callbacks_scan_ble_callback",
+      "gui_ui_callbacks_scan_ble_callback_on_scan_complete",
+      "gui_ui_callbacks_scan_ble_callback_on_scan_complete_task",
+      "gui_ui_callbacks_unpair_ble_callback",
+      "gui_ui_callbacks_update_ui_state",
+      "uistate"
+    ],
+    "2": [
+      "datetime",
+      "enum",
+      "gui_control_panel",
+      "gui_control_panel_build_console",
+      "gui_control_panel_build_section_additional_settings",
+      "gui_control_panel_build_section_connection",
+      "gui_control_panel_build_section_layout",
+      "gui_control_panel_build_section_payload_settings",
+      "gui_control_panel_build_section_session",
+      "gui_control_panel_create_control_panel",
+      "gui_control_panel_rationale_101",
+      "gui_control_panel_rationale_121",
+      "gui_control_panel_rationale_148",
+      "gui_control_panel_rationale_189",
+      "gui_control_panel_rationale_199",
+      "gui_control_panel_rationale_29",
+      "gui_control_panel_rationale_82",
+      "gui_control_panel_setup_themes",
+      "gui_ui_callbacks_get_com_ports",
+      "gui_ui_callbacks_rationale_57",
+      "gui_ui_callbacks_rescan_ports_callback",
+      "gui_ui_state",
+      "gui_ui_state_uistate"
+    ],
+    "3": [
+      "dearpygui_dearpygui",
+      "gui_plot_2d_manager",
+      "gui_plot_2d_manager_create_plot_window",
+      "gui_plot_2d_manager_hex_to_rgba",
+      "gui_plot_2d_manager_rationale_21",
+      "gui_plot_2d_manager_rationale_40",
+      "gui_plot_2d_manager_rationale_53",
+      "gui_plot_2d_manager_rationale_8",
+      "gui_plot_2d_manager_setup_plot_theme",
+      "gui_plot_2d_manager_update_plots",
+      "main",
+      "main_global_resize_callback",
+      "main_global_scroll_handler",
+      "main_main",
+      "main_rationale_18",
+      "main_rationale_34",
+      "main_rationale_56",
+      "main_rationale_83",
+      "main_rationale_9",
+      "main_resource_path",
+      "main_toggle_panel",
+      "sys"
+    ],
+    "4": [
+      "gui_ui_callbacks_add_series_callback",
+      "gui_ui_callbacks_apply_layout_callback",
+      "gui_ui_callbacks_delete_series_callback",
+      "gui_ui_callbacks_fit_y_callback",
+      "gui_ui_callbacks_fix_y_toggled",
+      "gui_ui_callbacks_get_hex_color",
+      "gui_ui_callbacks_hex_input_changed",
+      "gui_ui_callbacks_hex_to_rgba",
+      "gui_ui_callbacks_layout_changed_callback",
+      "gui_ui_callbacks_palette_color_clicked",
+      "gui_ui_callbacks_plot_config_changed",
+      "gui_ui_callbacks_rationale_120",
+      "gui_ui_callbacks_rationale_26",
+      "gui_ui_callbacks_rationale_33",
+      "gui_ui_callbacks_rationale_515",
+      "gui_ui_callbacks_rationale_534",
+      "gui_ui_callbacks_rationale_544",
+      "gui_ui_callbacks_rebuild_plot_ui",
+      "gui_ui_callbacks_save_ui_to_cache",
+      "gui_ui_callbacks_time_window_callback",
+      "gui_ui_callbacks_toggle_chase_callback",
+      "gui_ui_callbacks_update_expected_format_callback"
+    ],
+    "5": [
+      "asyncio",
+      "bleak",
+      "collections",
+      "core_ble_reader",
+      "core_ble_scanner",
+      "core_ble_scanner_rationale_6",
+      "core_ble_scanner_run_ble_scan",
+      "core_ble_scanner_run_ble_scan_scan_thread",
+      "core_ble_scanner_run_ble_scan_scan_thread_scan",
+      "core_data_manager",
+      "core_serial_reader",
+      "serial",
+      "struct",
+      "threading",
+      "time"
+    ],
+    "6": [
+      "core_ble_reader_blereader",
+      "core_ble_reader_blereader_connect_and_read",
+      "core_ble_reader_blereader_connect_and_read_disconnected_callback",
+      "core_ble_reader_blereader_connect_and_read_notification_handler",
+      "core_ble_reader_blereader_init",
+      "core_ble_reader_blereader_pause",
+      "core_ble_reader_blereader_resume",
+      "core_ble_reader_blereader_run_async_loop",
+      "core_ble_reader_blereader_start",
+      "core_ble_reader_blereader_stop",
+      "core_ble_reader_rationale_11",
+      "core_ble_reader_rationale_49",
+      "core_ble_reader_rationale_81"
+    ],
+    "7": [
+      "core_serial_reader_rationale_34",
+      "core_serial_reader_rationale_64",
+      "core_serial_reader_rationale_70",
+      "core_serial_reader_rationale_76",
+      "core_serial_reader_rationale_8",
+      "core_serial_reader_rationale_92",
+      "core_serial_reader_serialreader",
+      "core_serial_reader_serialreader_init",
+      "core_serial_reader_serialreader_pause",
+      "core_serial_reader_serialreader_read_loop",
+      "core_serial_reader_serialreader_resume",
+      "core_serial_reader_serialreader_start",
+      "core_serial_reader_serialreader_stop"
+    ],
+    "8": [
+      "core_data_manager_rationale_17",
+      "core_data_manager_rationale_33",
+      "core_data_manager_rationale_43",
+      "core_data_manager_rationale_5",
+      "core_data_manager_rationale_52",
+      "core_data_manager_telemetrydatamanager",
+      "core_data_manager_telemetrydatamanager_clear",
+      "core_data_manager_telemetrydatamanager_get_data",
+      "core_data_manager_telemetrydatamanager_init",
+      "core_data_manager_telemetrydatamanager_push_data",
+      "core_data_manager_telemetrydatamanager_resize_buffer"
+    ],
+    "9": [
+      "readme",
+      "readme_building_an_executable",
+      "readme_current_status",
+      "readme_dependencies",
+      "readme_directory_structure",
+      "readme_fcdatmon_flight_controller_data_monitoring_system",
+      "readme_installation_setup",
+      "readme_key_features",
+      "readme_prerequisites",
+      "readme_system_architecture",
+      "readme_usage"
+    ],
+    "10": [
+      "gui_plot_state_machine",
+      "gui_plot_state_machine_get_current_state",
+      "gui_plot_state_machine_get_gesture_allowance",
+      "gui_plot_state_machine_rationale_1",
+      "gui_plot_state_machine_rationale_20"
+    ],
+    "11": [
+      "graphify_out_converted_program_state_and_evts_fead5dad",
+      "graphify_out_converted_program_state_and_evts_fead5dad_sheet_sheet1"
+    ]
+  },
+  "cohesion": {
+    "0": 0.10099573257467995,
+    "1": 0.11954022988505747,
+    "2": 0.11857707509881422,
+    "3": 0.1341991341991342,
+    "4": 0.1471861471861472,
+    "5": 0.2,
+    "6": 0.16666666666666666,
+    "7": 0.15384615384615385,
+    "8": 0.18181818181818182,
+    "9": 0.18181818181818182,
+    "10": 0.4,
+    "11": 1.0
+  },
+  "gods": [
+    {
+      "id": "gui_ui_callbacks_log_to_console",
+      "label": "_log_to_console()",
+      "degree": 20
+    },
+    {
+      "id": "gui_ui_callbacks_update_ui_state",
+      "label": "update_ui_state()",
+      "degree": 15
+    },
+    {
+      "id": "gui_ui_callbacks_rebuild_plot_ui",
+      "label": "_rebuild_plot_ui()",
+      "degree": 13
+    },
+    {
+      "id": "core_app_settings_load_app_settings",
+      "label": "load_app_settings()",
+      "degree": 12
+    },
+    {
+      "id": "gui_ui_callbacks_manage_setup_callback",
+      "label": "_manage_setup_callback()",
+      "degree": 12
+    },
+    {
+      "id": "gui_control_panel_create_control_panel",
+      "label": "create_control_panel()",
+      "degree": 12
+    },
+    {
+      "id": "core_ble_reader_blereader",
+      "label": "BLEReader",
+      "degree": 11
+    },
+    {
+      "id": "core_serial_reader_serialreader",
+      "label": "SerialReader",
+      "degree": 10
+    },
+    {
+      "id": "gui_ui_callbacks_pair_ble_callback",
+      "label": "_pair_ble_callback()",
+      "degree": 10
+    },
+    {
+      "id": "gui_ui_callbacks_apply_layout_callback",
+      "label": "_apply_layout_callback()",
+      "degree": 10
+    }
+  ],
+  "surprises": [
+    {
+      "source": "_pair_ble_callback()",
+      "target": "BLEReader",
+      "source_files": [
+        "gui/ui_callbacks.py",
+        "core/ble_reader.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "_connect_callback()",
+      "target": "SerialReader",
+      "source_files": [
+        "gui/ui_callbacks.py",
+        "core/serial_reader.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "_forget_device_callback()",
+      "target": "delete_paired_ble_device()",
+      "source_files": [
+        "gui/ui_callbacks.py",
+        "core/state_manager.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "_ble_listbox_clicked()",
+      "target": "load_paired_ble_device()",
+      "source_files": [
+        "gui/ui_callbacks.py",
+        "core/state_manager.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "_build_section_additional_settings()",
+      "target": "load_app_settings()",
+      "source_files": [
+        "gui/control_panel.py",
+        "core/app_settings.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `BLEReader` connect `BLEReader` to `ui_callbacks.py`, `_log_to_console`, `ble_reader.py`?",
+      "why": "High betweenness centrality (0.104) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `SerialReader` connect `SerialReader` to `ui_callbacks.py`, `_log_to_console`, `ble_reader.py`?",
+      "why": "High betweenness centrality (0.104) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `TelemetryDataManager` connect `TelemetryDataManager` to `ble_reader.py`?",
+      "why": "High betweenness centrality (0.087) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 9 inferred relationships involving `_rebuild_plot_ui()` (e.g. with `_add_series_callback()` and `_delete_series_callback()`) actually correct?",
+      "why": "`_rebuild_plot_ui()` has 9 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Sheet: Sheet1`, `**📦 Building an Executable**`, `**🚧 Current Status**` to the rest of the system?",
+      "why": "8 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `ui_callbacks.py` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.10099573257467995 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `_log_to_console` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.11954022988505747 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

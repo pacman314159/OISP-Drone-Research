@@ -6,3 +6,8 @@ pcb/**/.history_trim/
 *.bak
 *.lck
 *-backups/
+
+# Credentials
+.agents/credentials.json
+.agents/*token*.json
+.env

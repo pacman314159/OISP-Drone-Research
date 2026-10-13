@@ -60,7 +60,7 @@ xTaskCreatePinnedToCore(
 - The task runner uses `task_id` for internal system identification, telemetry metadata, status reporting, and SystemView event tracing (`SYSVIEW_START(task_id)` / `SYSVIEW_END(task_id)`).
 
 ```cpp
-// Example in Layer 4 Task Runner (src/core/daq/daq_tasks.cpp):
+// Example in Layer 4 Task Runner (src/core/sensor/daq_tasks.cpp):
 void accel_gyro_daq_task(void* arg){
   if(arg == nullptr) return;
 
