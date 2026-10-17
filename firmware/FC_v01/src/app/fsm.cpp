@@ -41,31 +41,31 @@ static PaletteColorId get_sensor_menu_color(uint8_t idx){
 // TRANSITION RULES SPECIFICATION
 // =============================================================================
 static const TransitRule TRANSITION_RULES[] = {
-  // 1. UNINIT -> CALIB (If user held button at boot)
-  {
-    UNINIT,
-    CALIB,
-    EVT_ACTIVE_CALIB_INVOKED,
-    EVT_NONE,
-    MatchPolicy::ANY,
-    EVT_EMERGENCY_SHUTDOWN,
-    MatchPolicy::ANY,
-    "Rule_Uninit_To_Calib"
-  },
-
-  // 2. UNINIT -> PREFLIGHT (Normal boot sequence when no calibration invoked)
+  // 1. UNINIT -> PREFLIGHT (Normal boot sequence: direct to PREFLIGHT)
   {
     UNINIT,
     PREFLIGHT,
     EVT_NONE,
-    EVT_ACTIVE_CALIB_INVOKED,
+    EVT_NONE,
     MatchPolicy::ALWAYS,
     EVT_EMERGENCY_SHUTDOWN,
     MatchPolicy::ANY,
     "Rule_Uninit_To_Preflight"
   },
 
-  // 3. CALIB -> PREFLIGHT (Calibration finished successfully)
+  // 2. PREFLIGHT -> CALIB (User held button or invoked active calibration from PREFLIGHT)
+  {
+    PREFLIGHT,
+    CALIB,
+    EVT_ACTIVE_CALIB_INVOKED,
+    EVT_NONE,
+    MatchPolicy::ANY,
+    EVT_EMERGENCY_SHUTDOWN,
+    MatchPolicy::ANY,
+    "Rule_Preflight_To_Calib"
+  },
+
+  // 3. CALIB -> PREFLIGHT (Calibration finished successfully or aborted)
   {
     CALIB,
     PREFLIGHT,
@@ -77,19 +77,34 @@ static const TransitRule TRANSITION_RULES[] = {
     "Rule_Calib_To_Preflight"
   },
 
-  // 4. PREFLIGHT -> READY (Stationary + Passive calib passed; no calib fail blocker)
+  // 4. PREFLIGHT -> READY (All 6 Mandatory Safety Gates Passed; No Fail Blockers)
   {
     PREFLIGHT,
     READY,
-    EVT_STATIONARY_MET | EVT_PASSIVE_CALIB_PASS,
+    EVT_SENSOR_STREAM_OK | EVT_STATIONARY_MET | EVT_PASSIVE_CALIB_PASS |
+    EVT_TILT_CHECK_PASS | EVT_BATTERY_VOLTAGE_OK | EVT_RC_SIGNAL_OK,
     EVT_NONE,
     MatchPolicy::ALL,
-    EVT_EMERGENCY_SHUTDOWN | EVT_PASSIVE_CALIB_FAIL,
+    EVT_EMERGENCY_SHUTDOWN | EVT_SENSOR_STREAM_FAIL | EVT_STATIONARY_FAIL |
+    EVT_PASSIVE_CALIB_FAIL | EVT_TILT_CHECK_FAIL | EVT_BATTERY_LOW | EVT_RC_SIGNAL_FAIL,
     MatchPolicy::ANY,
     "Rule_Preflight_To_Ready"
   },
 
-  // 5. READY -> FLIGHT (Arming / Takeoff command - future expansion)
+  // 5. PREFLIGHT -> DEVELOPMENT (Any Mandatory Safety Gate Failed)
+  {
+    PREFLIGHT,
+    DEVELOPMENT,
+    EVT_SENSOR_STREAM_FAIL | EVT_STATIONARY_FAIL | EVT_PASSIVE_CALIB_FAIL |
+    EVT_TILT_CHECK_FAIL | EVT_BATTERY_LOW | EVT_RC_SIGNAL_FAIL,
+    EVT_NONE,
+    MatchPolicy::ANY,
+    EVT_NONE,
+    MatchPolicy::NEVER,
+    "Rule_Preflight_To_Development"
+  },
+
+  // 6. READY -> FLIGHT (Arming / Takeoff command - future expansion)
   {
     READY,
     FLIGHT,
@@ -101,7 +116,7 @@ static const TransitRule TRANSITION_RULES[] = {
     "Rule_Ready_To_Flight"
   },
 
-  // 6. FLIGHT -> POSTFLIGHT (Temporary bypass around LANDING: 3s button hold terminates flight)
+  // 7. FLIGHT -> POSTFLIGHT (Temporary bypass around LANDING: 3s button hold terminates flight)
   {
     FLIGHT,
     POSTFLIGHT,
@@ -111,6 +126,18 @@ static const TransitRule TRANSITION_RULES[] = {
     EVT_EMERGENCY_SHUTDOWN,
     MatchPolicy::ANY,
     "Rule_Flight_To_Postflight"
+  },
+
+  // 8. DEVELOPMENT -> POSTFLIGHT (3-second user button long hold in DEVELOPMENT state triggers safe shutdown / SD flush)
+  {
+    DEVELOPMENT,
+    POSTFLIGHT,
+    EVT_BTN_LONG_HOLD,
+    EVT_NONE,
+    MatchPolicy::ANY,
+    EVT_EMERGENCY_SHUTDOWN,
+    MatchPolicy::ANY,
+    "Rule_Development_To_Postflight"
   }
 };
 
@@ -164,25 +191,23 @@ static void evaluate_state_transitions(){
   s_events_dirty = false;
 }
 
-// Visual error latch: blink RGB LED to indicate passive calibration out-of-tolerance
-static void indicate_passive_calib_error(uint32_t loop_count){
-  static bool s_alert_latched = false;
-  if(!s_alert_latched){
-    s_alert_latched = true;
-    LedCommand cmd = {LED_PATTERN_BLINK_SLOW, PALETTE_AMBER};
-    xQueueSend(led_cmd_queue, &cmd, 0);
-  }
-}
 
 // =============================================================================
 // MODULAR PRE-FLIGHT CHECK FUNCTIONS
 // =============================================================================
 
-// Check 1: Evaluates motion variance from raw IMU shared resources in ipc.h over 1.5s window
-static bool check_stationary_condition(){
+// Check 2: Evaluates motion variance from raw IMU shared resources in ipc.h over 1.5s window
+bool check_stationary_condition(){
+  if((s_current_events & EVT_STATIONARY_FAIL) != 0) return false;
+  if((s_current_events & EVT_STATIONARY_MET) != 0) return true;
+
   static Vec3<float> last_raw_accel{0.0f, 0.0f, 0.0f};
   static Vec3<float> last_raw_gyro{0.0f, 0.0f, 0.0f};
   static uint32_t stationary_start_ms = 0;
+  static uint32_t check_start_ms = 0;
+
+  uint32_t current_time_ms = millis();
+  if(check_start_ms == 0) check_start_ms = current_time_ms;
 
   Vec3<float> current_raw_accel = accel_raw.front();
   Vec3<float> current_raw_gyro  = gyro_raw.front();
@@ -200,26 +225,31 @@ static bool check_stationary_condition(){
                           (fabs(delta_accel.y) < STATIONARY_ACCEL_VAR_MSS) &&
                           (fabs(delta_accel.z) < STATIONARY_ACCEL_VAR_MSS);
 
-  uint32_t current_time_ms = millis();
   if(gyro_motion_low && accel_motion_low){
     if(stationary_start_ms == 0)
       stationary_start_ms = current_time_ms;
     else if((current_time_ms - stationary_start_ms) >= STATIONARY_TIME_REQUIRED_MS){
-      if((s_current_events & EVT_STATIONARY_MET) == 0){
-        fsm_set_event(EVT_STATIONARY_MET);
-        Serial.println("[FSM] Stationary condition met!");
-      }
+      fsm_set_event(EVT_STATIONARY_MET);
+      fsm_clear_event(EVT_STATIONARY_FAIL);
+      Serial.println("[FSM] [GATE 2/6] Stationary condition check PASSED!");
       return true;
     }
   }else{
     stationary_start_ms = 0;
     fsm_clear_event(EVT_STATIONARY_MET);
+
+    if((current_time_ms - check_start_ms) >= PREFLIGHT_STATIONARY_TIMEOUT_MS){
+      fsm_set_event(EVT_STATIONARY_FAIL);
+      Serial.printf("[FSM] [GATE 2/6] Stationary condition check FAILED! (Motion detected or settling timed out after %u ms).\n",
+                    PREFLIGHT_STATIONARY_TIMEOUT_MS);
+      return false;
+    }
   }
   return false;
 }
 
-// Check 2: Evaluates resting bias from filtered sensor streams in ipc.h (awaiting calibration)
-static bool check_passive_sensor_calibration(){
+// Check 3: Evaluates resting bias from filtered sensor streams in ipc.h (awaiting calibration)
+bool check_passive_sensor_calibration(){
   // If passive calibration already failed, return false immediately
   if((s_current_events & EVT_PASSIVE_CALIB_FAIL) != 0) return false;
 
@@ -247,35 +277,264 @@ static bool check_passive_sensor_calibration(){
   if(gyro_bias_ok && accel_bias_ok && mag_norm_ok){
     fsm_set_event(EVT_PASSIVE_CALIB_PASS);
     fsm_clear_event(EVT_PASSIVE_CALIB_FAIL);
-    Serial.println("[FSM] Passive calibration check PASSED!");
+    Serial.println("[FSM] [GATE 3/6] Passive calibration check PASSED!");
     return true;
   }else{
     fsm_set_event(EVT_PASSIVE_CALIB_FAIL);
-    Serial.printf("[FSM] Passive calibration FAILED! (gyro_ok:%d, accel_dev:%.2fm/s^2, mag_norm:%.2f)\n",
+    Serial.printf("[FSM] [GATE 3/6] Passive calibration check FAILED! (gyro_ok:%d, accel_dev:%.2fm/s^2, mag_norm:%.2f)\n",
                   gyro_bias_ok, accel_dev_mss, mag_norm);
     return false;
   }
 }
 
-// Check 3 (Future): Platform Tilt Check (< 10 deg incline)
-static bool check_platform_tilt(){
-  // [FUTURE CHECK] Calculate roll/pitch from accel and set EVT_TILT_CHECK_PASS/FAIL
+// Check 4: Platform Tilt Check (Incline <= 10 deg)
+bool check_platform_tilt(){
+  if((s_current_events & EVT_TILT_CHECK_FAIL) != 0) return false;
+  if((s_current_events & EVT_TILT_CHECK_PASS) != 0) return true;
+
+  if(accel.empty()) return false;
+  Vec3<float> a = accel.front();
+  float a_norm = a.norm();
+  if(!std::isfinite(a_norm) || a_norm < 0.5f || a_norm > 2.0f){
+    fsm_set_event(EVT_TILT_CHECK_FAIL);
+    fsm_clear_event(EVT_TILT_CHECK_PASS);
+    Serial.printf("[FSM] [GATE 4/6] Platform tilt check FAILED! Invalid accel norm: %.2f g\n", a_norm);
+    return false;
+  }
+
+  // Calculate tilt angle theta relative to gravity Z-axis: cos(theta) = az / |a|
+  float cos_tilt = a.z / a_norm;
+  if(cos_tilt > 1.0f) cos_tilt = 1.0f;
+  if(cos_tilt < -1.0f) cos_tilt = -1.0f;
+  float tilt_deg = acosf(cos_tilt) * (180.0f / 3.14159265f);
+
+  if(tilt_deg <= PREFLIGHT_MAX_TILT_DEG){
+    fsm_set_event(EVT_TILT_CHECK_PASS);
+    fsm_clear_event(EVT_TILT_CHECK_FAIL);
+    Serial.printf("[FSM] [GATE 4/6] Platform tilt check PASSED! (Incline: %.1f deg <= %.1f deg)\n",
+                  tilt_deg, PREFLIGHT_MAX_TILT_DEG);
+    return true;
+  }else{
+    fsm_set_event(EVT_TILT_CHECK_FAIL);
+    fsm_clear_event(EVT_TILT_CHECK_PASS);
+    Serial.printf("[FSM] [GATE 4/6] Platform tilt check FAILED! (Incline: %.1f deg > %.1f deg)\n",
+                  tilt_deg, PREFLIGHT_MAX_TILT_DEG);
+    return false;
+  }
+}
+
+// Check 1: Sensor Data Stream & Hardware Bus Health Check
+bool sensor_data_stream_check(){
+  // If sensor stream healthcheck already permanently failed, return false immediately
+  if((s_current_events & EVT_SENSOR_STREAM_FAIL) != 0) return false;
+
+  static uint32_t stream_check_start_ms = 0;
+  static uint32_t healthy_start_ms = 0;
+
+  uint32_t now_ms = millis();
+  if(stream_check_start_ms == 0) stream_check_start_ms = now_ms;
+
+  // 1. Buffer Occupancy Verification: Ensure all DAQ and preprocessor tasks have published data
+  bool imu_raw_has_data  = !accel_raw.empty() && !gyro_raw.empty() && !raw_accel_gyro_timestamp.empty();
+  bool mag_raw_has_data  = !mag_raw.empty() && !raw_mag_timestamp.empty();
+  bool baro_raw_has_data = !pressure.empty() && !pressure_timestamp.empty();
+  bool imu_filt_has_data = !accel.empty() && !gyro.empty() && !filtered_accel_gyro_timestamp.empty();
+  bool mag_filt_has_data = !mag.empty() && !filtered_mag_timestamp.empty();
+
+  bool has_data = imu_raw_has_data && mag_raw_has_data && baro_raw_has_data &&
+                  imu_filt_has_data && mag_filt_has_data;
+
+  uint32_t now_us = static_cast<uint32_t>(micros());
+
+  // 2. Stream Latency & Freshness Verification (Microsecond resolution)
+  bool imu_raw_fresh  = false;
+  bool imu_filt_fresh = false;
+  bool mag_raw_fresh  = false;
+  bool mag_filt_fresh = false;
+  bool baro_raw_fresh = false;
+
+  if(imu_raw_has_data)
+    imu_raw_fresh = ((now_us - raw_accel_gyro_timestamp.front()) < SENSOR_STREAM_IMU_TIMEOUT_US);
+  if(imu_filt_has_data)
+    imu_filt_fresh = ((now_us - filtered_accel_gyro_timestamp.front()) < SENSOR_STREAM_IMU_TIMEOUT_US);
+  if(mag_raw_has_data)
+    mag_raw_fresh = ((now_us - raw_mag_timestamp.front()) < SENSOR_STREAM_MAG_TIMEOUT_US);
+  if(mag_filt_has_data)
+    mag_filt_fresh = ((now_us - filtered_mag_timestamp.front()) < SENSOR_STREAM_MAG_TIMEOUT_US);
+  if(baro_raw_has_data)
+    baro_raw_fresh = ((now_us - pressure_timestamp.front()) < SENSOR_STREAM_BARO_TIMEOUT_US);
+
+  bool fresh = imu_raw_fresh && imu_filt_fresh && mag_raw_fresh && mag_filt_fresh && baro_raw_fresh;
+
+  // 3. Numerical Integrity & Physical Range Verification
+  bool imu_valid  = false;
+  bool mag_valid  = false;
+  bool baro_valid = false;
+
+  Vec3<float> a_sample{0.0f, 0.0f, 0.0f};
+  Vec3<float> g_sample{0.0f, 0.0f, 0.0f};
+  Vec3<float> m_sample{0.0f, 0.0f, 0.0f};
+  float       p_sample = 0.0f;
+
+  if(imu_raw_has_data){
+    a_sample = accel_raw.front();
+    g_sample = gyro_raw.front();
+    float a_norm = a_sample.norm();
+    float g_norm = g_sample.norm();
+    imu_valid = std::isfinite(a_sample.x) && std::isfinite(a_sample.y) && std::isfinite(a_sample.z) &&
+                std::isfinite(g_sample.x) && std::isfinite(g_sample.y) && std::isfinite(g_sample.z) &&
+                (a_norm > 0.1f && a_norm < 3.0f) && (g_norm < 200.0f);
+  }
+
+  if(mag_raw_has_data){
+    m_sample = mag_raw.front();
+    float m_norm = m_sample.norm();
+    mag_valid = std::isfinite(m_sample.x) && std::isfinite(m_sample.y) && std::isfinite(m_sample.z) &&
+                (m_norm > 0.05f && m_norm < 5.0f);
+  }
+
+  if(baro_raw_has_data){
+    p_sample = pressure.front();
+    baro_valid = std::isfinite(p_sample) &&
+                 (p_sample >= SENSOR_STREAM_BARO_MIN_PA && p_sample <= SENSOR_STREAM_BARO_MAX_PA);
+  }
+
+  bool valid = imu_valid && mag_valid && baro_valid;
+
+  bool stream_healthy = has_data && fresh && valid;
+
+  if(stream_healthy){
+    if(healthy_start_ms == 0)
+      healthy_start_ms = now_ms;
+    else if((now_ms - healthy_start_ms) >= SENSOR_STREAM_HEALTHY_TIME_MS){
+      if((s_current_events & EVT_SENSOR_STREAM_OK) == 0){
+        fsm_set_event(EVT_SENSOR_STREAM_OK);
+        fsm_clear_event(EVT_SENSOR_STREAM_FAIL);
+        Serial.println("[FSM] [GATE 1/6] Sensor data stream check PASSED! All streams active & healthy.");
+      }
+      return true;
+    }
+  }else{
+    healthy_start_ms = 0;
+
+    // If stream was previously OK and suddenly dropped:
+    if((s_current_events & EVT_SENSOR_STREAM_OK) != 0){
+      fsm_clear_event(EVT_SENSOR_STREAM_OK);
+      fsm_set_event(EVT_SENSOR_STREAM_FAIL);
+      Serial.println("[FSM] [GATE 1/6] Sensor data stream DROPPED while in PREFLIGHT!");
+      return false;
+    }
+
+    // Startup timeout check: If sensors failed to produce healthy streams within grace period
+    if((now_ms - stream_check_start_ms) >= SENSOR_STREAM_STARTUP_TIMEOUT_MS){
+      fsm_set_event(EVT_SENSOR_STREAM_FAIL);
+      Serial.println("[FSM] [GATE 1/6] Sensor data stream check TIMED OUT / FAILED!");
+      if(!has_data){
+        Serial.printf("      Missing data: IMU_raw:%d, MAG_raw:%d, BARO_raw:%d, IMU_filt:%d, MAG_filt:%d\n",
+                      imu_raw_has_data, mag_raw_has_data, baro_raw_has_data, imu_filt_has_data, mag_filt_has_data);
+      }
+      if(!fresh){
+        Serial.printf("      Stale streams: IMU_raw:%d, IMU_filt:%d, MAG_raw:%d, MAG_filt:%d, BARO_raw:%d\n",
+                      imu_raw_fresh, imu_filt_fresh, mag_raw_fresh, mag_filt_fresh, baro_raw_fresh);
+      }
+      if(!valid){
+        Serial.printf("      Invalid ranges: IMU:%d, MAG:%d, BARO:%d (a:%.2f, m:%.2f, p:%.1f)\n",
+                      imu_valid, mag_valid, baro_valid, a_sample.norm(), m_sample.norm(), p_sample);
+      }
+      return false;
+    }
+  }
+
+  return ((s_current_events & EVT_SENSOR_STREAM_OK) != 0);
+}
+
+// Check 5: Power Module Visibility & Initial Voltage Health Check
+bool check_power_initial_condition(){
+  if((s_current_events & EVT_BATTERY_LOW) != 0) return false;
+  if((s_current_events & EVT_BATTERY_VOLTAGE_OK) != 0) return true;
+
+  static uint32_t power_check_start_ms = 0;
+  uint32_t now_ms = millis();
+  if(power_check_start_ms == 0) power_check_start_ms = now_ms;
+
+  if(power_data.empty()){
+    if((now_ms - power_check_start_ms) >= SENSOR_STREAM_STARTUP_TIMEOUT_MS){
+      fsm_set_event(EVT_BATTERY_LOW);
+      fsm_clear_event(EVT_BATTERY_VOLTAGE_OK);
+      Serial.println("[FSM] [GATE 5/6] Battery check TIMED OUT / FAILED! (No power module or battery detected). Transitioning to DEVELOPMENT.");
+      return false;
+    }
+    return false;
+  }
+
+  PowerMeasurement p = power_data.front();
+  float v_mv = p.voltage_mv;
+
+  // Numerical validity check
+  if(!std::isfinite(v_mv) || v_mv < 1000.0f || v_mv > 36000.0f ||
+     !std::isfinite(p.current_ma) || !std::isfinite(p.power_mw)){
+    fsm_set_event(EVT_BATTERY_LOW);
+    fsm_clear_event(EVT_BATTERY_VOLTAGE_OK);
+    Serial.printf("[FSM] [GATE 5/6] Power module initial check FAILED! Invalid reading: %.1f mV. Transitioning to DEVELOPMENT.\n", v_mv);
+    return false;
+  }
+
+  // Auto-detect cell count & calculate per-cell voltage
+  int32_t cell_count = static_cast<int32_t>(roundf(v_mv / 3800.0f));
+  if(cell_count < 1) cell_count = 1;
+  if(cell_count > 8) cell_count = 8;
+  float cell_v_mv = v_mv / static_cast<float>(cell_count);
+
+  if(cell_v_mv < BATTERY_CELL_MIN_VOLTAGE_MV){
+    fsm_set_event(EVT_BATTERY_LOW);
+    fsm_clear_event(EVT_BATTERY_VOLTAGE_OK);
+    Serial.printf("[FSM] [GATE 5/6] Battery initial check FAILED! Pack: %.1f mV (%.1f mV/cell on %dS < %.1f mV/cell). Transitioning to DEVELOPMENT.\n",
+                  v_mv, cell_v_mv, static_cast<int>(cell_count), BATTERY_CELL_MIN_VOLTAGE_MV);
+    return false;
+  }
+
+  fsm_set_event(EVT_BATTERY_VOLTAGE_OK);
+  fsm_clear_event(EVT_BATTERY_LOW);
+  Serial.printf("[FSM] [GATE 5/6] Power module & battery initial check PASSED! Pack: %.1f mV (%.1f mV/cell on %dS)\n",
+                v_mv, cell_v_mv, static_cast<int>(cell_count));
   return true;
 }
 
-// Check 4 (Future): Sensor Stream Check (I2C/SPI transaction rate and errors)
-static bool check_sensor_stream_health(){
-  // [FUTURE CHECK] Check bus error counters and timestamps for fresh data
+// Check 6: RC Controller Link & Failsafe Check
+bool check_rc_controller_signal(){
+  if((s_current_events & EVT_RC_SIGNAL_FAIL) != 0) return false;
+  if((s_current_events & EVT_RC_SIGNAL_OK) != 0) return true;
+
+  static uint32_t rc_check_start_ms = 0;
+  uint32_t now_ms = millis();
+  if(rc_check_start_ms == 0) rc_check_start_ms = now_ms;
+
+  if(rc_data.empty()){
+    if((now_ms - rc_check_start_ms) >= SENSOR_STREAM_STARTUP_TIMEOUT_MS){
+      fsm_set_event(EVT_RC_SIGNAL_FAIL);
+      fsm_clear_event(EVT_RC_SIGNAL_OK);
+      Serial.println("[FSM] [GATE 6/6] RC receiver signal check TIMED OUT / FAILED! (No RC stream detected). Transitioning to DEVELOPMENT.");
+      return false;
+    }
+    return false;
+  }
+
+  const RcChannels& ch = rc_data.front();
+  if(ch.failsafe){
+    fsm_set_event(EVT_RC_SIGNAL_FAIL);
+    fsm_clear_event(EVT_RC_SIGNAL_OK);
+    Serial.println("[FSM] [GATE 6/6] RC receiver signal check FAILED! (Failsafe active). Transitioning to DEVELOPMENT.");
+    return false;
+  }
+
+  fsm_set_event(EVT_RC_SIGNAL_OK);
+  fsm_clear_event(EVT_RC_SIGNAL_FAIL);
+  Serial.printf("[FSM] [GATE 6/6] RC receiver signal check PASSED! (Signal locked, active channels: %u)\n",
+                ch.channel_count);
   return true;
 }
 
-// Check 5 (Future): RC Controller Link Check
-static bool check_rc_controller_signal(){
-  // [FUTURE CHECK] Validate receiver frames and failsafe flags
-  return true;
-}
-
-// Check 6 (Future): Storage Check (SD card mount status and capacity)
+// Check 7 (Future): Storage Check (SD card mount status and capacity)
 static bool check_storage_health(){
   // [FUTURE CHECK] Verify SD card sector capacity and mount status
   return true;
@@ -364,6 +623,10 @@ static void handle_state_calib(uint32_t loop_count){
           if(loop_count % 100 == 0)
             Serial.printf("[FSM_CALIB] Healthcheck: sensor %d, step %d, progress %d%%\n",
                           rpt.target, rpt.current_step, rpt.progress_pct);
+        }else if(rpt.status == CALIB_STATUS_COMPUTING){
+          Serial.printf("[FSM_CALIB] Sensor %d computing optimization. Setting fast blink LED...\n", rpt.target);
+          LedCommand comp_cmd = {LED_PATTERN_BLINK_FAST, get_sensor_menu_color(s_sensor_menu_idx)};
+          xQueueSend(led_cmd_queue, &comp_cmd, 0);
         }else if(rpt.status == CALIB_STATUS_COMPLETED){
           Serial.println("[FSM_CALIB] Task reported completion! Destroying worker task...");
           if(s_active_calib_handle != nullptr){
@@ -434,21 +697,42 @@ static void handle_state_calib(uint32_t loop_count){
   }
 }
 
-static void handle_state_preflight(uint32_t loop_count){
-  // If passive calibration already failed, permanently latch visual alert pattern
-  if((s_current_events & EVT_PASSIVE_CALIB_FAIL) != 0){
-    indicate_passive_calib_error(loop_count);
+static void handle_state_preflight(){
+  // [SAFETY MOTOR LOCKOUT] Ensure all motor PWM outputs are disabled (PWM = 0)
+  // hal_motor_disable_all(); // Motor driver PWM = 0 lockout
+
+  // Check if user requested active sensor calibration (held at boot or pressed in preflight)
+  if((s_current_events & (EVT_BTN_LONG_HOLD | EVT_ACTIVE_CALIB_INVOKED)) != 0 || user_button_is_pressed()){
+    Serial.println("[FSM] User button pressed in PREFLIGHT: Triggering active calibration mode...");
+    fsm_set_event(EVT_ACTIVE_CALIB_INVOKED);
+    evaluate_state_transitions();
     return;
   }
 
-  // Run modular preflight check pipeline reading from ipc.h shared resources.
-  // Sequential early-exit: If any check fails, immediately skip remaining checks.
-  if(!check_stationary_condition()) return;
-  if(!check_passive_sensor_calibration()) return;
-  if(!check_platform_tilt()) return;
-  if(!check_sensor_stream_health()) return;
-  if(!check_rc_controller_signal()) return;
-  if(!check_storage_health()) return;
+  // Evaluate 6 mandatory pre-flight safety gates
+  sensor_data_stream_check();
+  check_stationary_condition();
+  check_passive_sensor_calibration();
+  check_platform_tilt();
+  check_power_initial_condition();
+  check_rc_controller_signal();
+
+  evaluate_state_transitions();
+}
+
+static void handle_state_development(){
+  // [SAFETY MOTOR LOCKOUT] Ensure all motor PWM outputs remain disabled (PWM = 0)
+  // hal_motor_disable_all(); // Motor driver PWM = 0 lockout
+
+  static bool s_dev_entry_logged = false;
+  if(!s_dev_entry_logged){
+    s_dev_entry_logged = true;
+    Serial.println("[FSM] ENTERED DEVELOPMENT STATE! Pre-flight check failed. Diagnostic & inspection mode active.");
+    LedCommand dev_cmd = {LED_PATTERN_BLINK_SLOW, PALETTE_ORANGE};
+    xQueueSend(led_cmd_queue, &dev_cmd, 0);
+    // Clear any prior stale button clicks on initial entry into DEVELOPMENT
+    fsm_clear_event(EVT_BTN_SHORT_CLICK | EVT_BTN_LONG_HOLD);
+  }
 
   evaluate_state_transitions();
 }
@@ -529,13 +813,6 @@ void fsm_task(void* arg){
   TickType_t last_wake_time = xTaskGetTickCount();
   uint32_t loop_count = 0;
 
-  // Step 1: Sample USER_BTN directly on startup to detect active calibration invoke
-  vTaskDelay(pdMS_TO_TICKS(50)); // Settle GPIO debounce
-  if(user_button_is_pressed()){
-    Serial.println("[FSM] USER_BTN held at boot! Triggering EVT_ACTIVE_CALIB_INVOKED");
-    fsm_set_event(EVT_ACTIVE_CALIB_INVOKED);
-  }
-
   while(true){
     // Non-blocking drain of any emergency direct task notification
     if(ulTaskNotifyTake(pdTRUE, 0) > 0)
@@ -557,12 +834,12 @@ void fsm_task(void* arg){
     switch(s_current_state){
       case UNINIT:      handle_state_uninit();                  break;
       case CALIB:       handle_state_calib(loop_count);         break;
-      case PREFLIGHT:   handle_state_preflight(loop_count);     break;
+      case PREFLIGHT:   handle_state_preflight();               break;
       case READY:       handle_state_ready();                   break;
       case TAKEOFF:                                             break;
       case FLIGHT:      handle_state_flight();                  break;
-      //[NOTE] Temporary Ignored/bypassed: 
-      case LANDING:                                             break;
+      case DEVELOPMENT: handle_state_development();             break;
+      case LANDING:                                             break; //[NOTE] Temporary Ignored/bypassed: 
       case POSTFLIGHT:  handle_state_postflight();              break;
       case LEVELOUT:                                            break;
       case CRASHED:                                             break;

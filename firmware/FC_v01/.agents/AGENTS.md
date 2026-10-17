@@ -6,9 +6,12 @@
 - **Constants & Enums**: `ALL_CAPS_SNAKE` (e.g., `MAX_MOTOR_COUNT`, `TASK_PRIORITY_HIGH`)
 - **Header Files**: `.hpp` for C++, `.h` for C/HAL interfaces.
 
-## 2. Embedded Real-Time Constraints
+## 2. Embedded Real-Time Constraints & Architecture
 - **Zero Dynamic Allocation**: No `malloc()`, `free()`, `new`, or `delete` inside flight loops.
 - **Explicit Units**: All physical variables must explicitly state units via comments at declaration or documentation (e.g., `int16_t gyro; // LSB`, `float accel; // m/s^2`, `float temp; // degree C`).
+- **Core IMU Loop Frequency**: 500 Hz (Strict zero dynamic memory allocation during flight loop).
+- **FreeRTOS Task Scoping**: All FreeRTOS tasks must be declared exclusively inside `core/` (organized into 6 functional domains: `src/core/sensor/`, `src/core/control/`, `src/core/math/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or `app/` layers. Tasks must NEVER be declared in `drivers/` or lower layers.
+- **Centralized Task Parameters**: Task names (`TASK_*_NAME`), task IDs (`enum TaskIDs`), stack sizes (`enum TaskSizesBytes`), priority levels (`enum TaskPriorities`), core affinity (`enum TaskCores`), and frequencies (`enum TaskFrequenciesHz`) MUST be declared centrally inside `include/config.h`. Each task runner in Layer 4 (`src/core/`) obtains its assigned `task_id` directly from `include/config.h` and receives driver instance pointers via `void* arg`.
 
 ## 3. Indentation
 - **Indentation level**: 1 level corresponds with 2 spaces (1 tab)
@@ -41,3 +44,4 @@
 - **Jitter Definition**: Jitter is strictly defined as the standard deviation of the averaged full-loop period.
 - **Strict Units**: All timing statistics must be reported in **microseconds ($\mu\text{s}$)** and frequencies in **Hertz ($\text{Hz}$)** without mixing units.
 - **Trace Tail Wrap-Around Sanitization**: Due to a known OpenOCD dual-core wrap-around race condition (Espressif Issue #10604 / IDFGH-9216), trace analyzer scripts must automatically strip the disconnected wrap-around tail if consecutive timestamps jump by $> 1\text{ s}$ or exceed $10^8\ \mu\text{s}$ in millisecond-scale sessions, preserving only the valid contiguous execution window.
+- **SystemView JTAG Tracing Anti-Choking**: `CONFIG_SYSVIEW_BUF_WAIT_TMO=0` and `CONFIG_APPTRACE_SV_BUF_WAIT_TMO=0` must be enforced to prevent CPU stalls. High-frequency ISR and Timer events must be disabled in `sdkconfig.defaults`. Tasks using `vTaskDelayUntil` must include an anti-windup overrun guard (`if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;`).

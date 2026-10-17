@@ -7,6 +7,7 @@ class HAL_I2C {
 public:
   virtual ~HAL_I2C() = default;
   virtual bool init(uint32_t frequency_hz = 400000) = 0;
+  virtual bool probe(uint8_t dev_addr) = 0;
   virtual bool write_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data) = 0;
   virtual bool write_reg_multi(uint8_t dev_addr, uint8_t reg_addr, uint8_t* buf, size_t len) = 0;
   virtual bool read_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t* out_data) = 0;

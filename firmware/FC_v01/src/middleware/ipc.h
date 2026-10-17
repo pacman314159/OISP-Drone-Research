@@ -6,8 +6,8 @@
 #include "middleware/ring_buffer.h"
 #include "drivers/telemetry/ble_ota_packet.h"
 #include "core/math/matrix.h"
-
 #include "drivers/led/ws2812.h"
+#include "drivers/rc_rx/fs_ia6b.h"
 
 // =============================================================================
 // LAYER 3 MIDDLEWARE
@@ -19,6 +19,7 @@ extern SemaphoreHandle_t i2c1_mutex;
 extern SemaphoreHandle_t status_led_mutex;
 extern SemaphoreHandle_t spi_bus_mutex;
 extern SemaphoreHandle_t flash_mutex;
+extern SemaphoreHandle_t ekf_state_mutex;
 extern TaskHandle_t app_task_handles[TASK_COUNT];
 extern QueueHandle_t ota_data_queue;
 extern OtaStartPayload ota_start_payload;
@@ -76,8 +77,8 @@ class FlashStorageDriver;
 
 struct SensorCalibrationData {
   Vec3<float>         gyro_bias{0.0f, 0.0f, 0.0f};   // Gyroscope zero-rate bias offsets (deg/s)
-  Vec3<float>         accel_bias{0.0f, 0.0f, 0.0f};  // Accelerometer zero-g bias offsets (m/s^2)
-  Vec3<float>         accel_scale{1.0f, 1.0f, 1.0f}; // Accelerometer 6-point sensitivity scaling
+  Vec3<float>         accel_bias{0.0f, 0.0f, 0.0f};  // Accelerometer zero-g bias offset v0 (g)
+  Vec3<float>         accel_scale{1.0f, 1.0f, 1.0f}; // Accelerometer 3-axis sensitivity scaling s (g^-1)
   Vec3<float>         mag_bias{0.0f, 0.0f, 0.0f};    // Magnetometer hard-iron bias offset v0 (Gauss)
   Matrix<float, 3, 3> mag_soft_iron{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}; // Magnetometer soft-iron matrix W * B0
   float               mag_field_ref{1.0f};           // Geomagnetic reference field B0 (Gauss)
@@ -103,22 +104,40 @@ struct OtaDataChunk {
 };
 
 // Thread-Safe Inter-Task Ring Buffers
-extern RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> accel_raw;
-extern RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> gyro_raw;
-extern RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> mag_raw;
-extern RingBuffer<float, IMU_RAW_RING_BUF_SIZE>       pressure;
+extern RingBuffer<Vec3<float>, RING_BUF_SIZE> accel_raw;
+extern RingBuffer<Vec3<float>, RING_BUF_SIZE> gyro_raw;
+extern RingBuffer<Vec3<float>, RING_BUF_SIZE> mag_raw;
+extern RingBuffer<float, RING_BUF_SIZE>       pressure;
+
+// Power & Battery Measurement Data Structure (Millis Scale)
+struct PowerMeasurement {
+  float voltage_mv; // Bus voltage in millivolts (mV)
+  float current_ma; // Current in milliamps (mA)
+  float power_mw;   // Power in milliwatts (mW)
+  float energy_mah; // Accumulated energy in milliamp-hours (mAh)
+};
+
+extern RingBuffer<PowerMeasurement, RING_BUF_SIZE> power_data;
 
 // Thread-Safe Timestamp & Filtered Inter-Task Ring Buffers
-extern RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_accel_gyro_timestamp;
-extern RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_mag_timestamp;
-extern RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    pressure_timestamp;
+extern RingBuffer<uint32_t, RING_BUF_SIZE>    raw_accel_gyro_timestamp;
+extern RingBuffer<uint32_t, RING_BUF_SIZE>    raw_mag_timestamp;
+extern RingBuffer<uint32_t, RING_BUF_SIZE>    pressure_timestamp;
+extern RingBuffer<uint32_t, RING_BUF_SIZE>    power_timestamp;
 
-extern RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> accel;
-extern RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> gyro;
-extern RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> mag;
+extern RingBuffer<Vec3<float>, RING_BUF_SIZE> accel;
+extern RingBuffer<Vec3<float>, RING_BUF_SIZE> gyro;
+extern RingBuffer<Vec3<float>, RING_BUF_SIZE> mag;
 
-extern RingBuffer<uint32_t, IMU_FILT_RING_BUF_SIZE>    filtered_accel_gyro_timestamp;
-extern RingBuffer<uint32_t, IMU_FILT_RING_BUF_SIZE>    filtered_mag_timestamp;
+extern RingBuffer<uint32_t, RING_BUF_SIZE>    filtered_accel_gyro_timestamp;
+extern RingBuffer<uint32_t, RING_BUF_SIZE>    filtered_mag_timestamp;
+
+extern RingBuffer<RcChannels, RING_BUF_SIZE>  rc_data;
+extern RingBuffer<uint32_t, RING_BUF_SIZE>    rc_timestamp;
+
+extern RingBuffer<Vec4, RING_BUF_SIZE>        att_quat;      // Unit quaternion [q0, q1, q2, q3]
+extern RingBuffer<Vec3<float>, RING_BUF_SIZE> att_euler;     // Euler angles [roll, pitch, yaw] (deg)
+extern RingBuffer<uint32_t, RING_BUF_SIZE>    att_timestamp; // Microseconds (us)
 
 
 // Layer 3 Middleware Callbacks for NimBLE Server Events ([Note 0001])

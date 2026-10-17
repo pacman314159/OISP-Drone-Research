@@ -16,6 +16,7 @@ enum SystemState : uint16_t {
   FLIGHT,
   LANDING,    // [TEMPORARY NOTE] Currently bypassed; direct FLIGHT -> POSTFLIGHT transition on 3s hold
   POSTFLIGHT,
+  DEVELOPMENT,
 
   // Failure / Emergency flight states
   LEVELOUT,
@@ -38,6 +39,7 @@ enum SystemEventMasks : uint32_t {
 
   // Pre-Flight Check 1: Stationary Detection
   EVT_STATIONARY_MET            = (1 << 5),  // Gyro & accel variance within bounds for required duration
+  EVT_STATIONARY_FAIL           = (1 << 16), // Stationary settling timed out or excessive motion
 
   // Pre-Flight Check 2: Passive Sensor Calibration Check
   EVT_PASSIVE_CALIB_PASS        = (1 << 6),  // Stationary sensor offsets within tolerance
@@ -48,8 +50,8 @@ enum SystemEventMasks : uint32_t {
   EVT_TILT_CHECK_PASS           = (1 << 8),
   EVT_TILT_CHECK_FAIL           = (1 << 9),
 
-  // [FUTURE CHECK] Pre-Flight Check 4: Sensor Stream & Hardware Bus Health
-  // Checks I2C/SPI bus transaction integrity and fresh raw data streaming rates
+  // Pre-Flight Check 4: Sensor Data Stream & Hardware Bus Health
+  // Checks fresh raw and filtered sensor data streaming rates and numerical validity
   EVT_SENSOR_STREAM_OK          = (1 << 10),
   EVT_SENSOR_STREAM_FAIL        = (1 << 11),
 
@@ -63,8 +65,12 @@ enum SystemEventMasks : uint32_t {
   EVT_STORAGE_OK                = (1 << 14),
   EVT_STORAGE_FAIL              = (1 << 15),
 
+  // Pre-Flight Check: Battery Voltage & Power Health
+  EVT_BATTERY_VOLTAGE_OK        = (1 << 17),
+  EVT_BATTERY_LOW               = (1 << 18),
+
   // Emergency / Fail-Safe Events
-  EVT_EMERGENCY_SHUTDOWN        = (1 << 16)
+  EVT_EMERGENCY_SHUTDOWN        = (1 << 19)
 };
 
 // =============================================================================
@@ -105,3 +111,9 @@ void fsm_set_event(uint32_t event_mask);
 void fsm_clear_event(uint32_t event_mask);
 void fsm_trigger_emergency();
 bool fsm_is_armed_allowed();
+bool sensor_data_stream_check();
+bool check_stationary_condition();
+bool check_passive_sensor_calibration();
+bool check_platform_tilt();
+bool check_power_initial_condition();
+bool check_rc_controller_signal();

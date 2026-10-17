@@ -56,6 +56,24 @@ struct __attribute__((packed)) PktAttEuler {
   Vec3<float> euler;
 };
 
+struct __attribute__((packed)) PktPower {
+  uint8_t  type;
+  uint32_t timestamp_us;
+  uint8_t  _pad[3];
+  float    voltage_mv;
+  float    current_ma;
+  float    power_mw;
+  float    energy_mah;
+};
+
+struct __attribute__((packed)) PktRc {
+  uint8_t  type;
+  uint32_t timestamp_us;
+  uint8_t  _pad[3];
+  float    channels[6];
+};
+static_assert(sizeof(PktRc) == 32, "PktRc layout must be strictly 32 bytes aligned");
+
 struct ChannelTracker {
   uint32_t last_ts    = 0;
   bool     has_logged = false;
@@ -88,6 +106,30 @@ void sd_logger_task(void* arg){
   if(arg == nullptr) return;
 
   SDCardDriver* sd_driver = static_cast<SDCardDriver*>(arg);
+
+  if constexpr(ACTIVE_SD_LOG_PACKETS_MASK != LOG_MASK_NONE){
+    if(xSemaphoreTake(spi_bus_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTRUE){
+      if(sd_driver->init()){
+        char filename[32];
+        uint16_t session_id = 0;
+        if(sd_driver->open_next_log_file(filename, sizeof(filename), session_id)){
+          LogFileHeader header = {};
+          memcpy(header.magic, "FCLG", 4);
+          header.session_id              = session_id;
+          strncpy(header.board_name, BOARD_IDENTIFIER, sizeof(header.board_name) - 1);
+          header.boot_timestamp_us       = static_cast<uint32_t>(micros());
+          header.registered_packets_mask = ACTIVE_SD_LOG_PACKETS_MASK;
+          header.limit_policy            = static_cast<uint8_t>(LOG_LIMIT_POLICY);
+          header.max_file_size_bytes     = LOG_MAX_FILE_SIZE_BYTES;
+          header.circular_head_sector    = 1;
+          sd_driver->write_header(header);
+          Serial.printf("[SD_LOGGER] Log file opened successfully: %s (Session #%u)\n", filename, session_id);
+        }
+      }
+      xSemaphoreGive(spi_bus_mutex);
+    }
+  }
+
   if(!sd_driver->is_open()){
     Serial.println("[SD_LOGGER] SD card not mounted or log file failed to open. Task suspending.");
     vTaskSuspend(nullptr);
@@ -112,6 +154,10 @@ void sd_logger_task(void* arg){
   ChannelTracker trk_mag_filt;
   ChannelTracker trk_baro_raw;
   ChannelTracker trk_baro_filt;
+  ChannelTracker trk_power;
+  ChannelTracker trk_rc;
+  ChannelTracker trk_att_quat;
+  ChannelTracker trk_att_euler;
 
   while(true){
     TickType_t now = xTaskGetTickCount();
@@ -140,9 +186,9 @@ void sd_logger_task(void* arg){
     SYSVIEW_START(task_id);
 
     if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_IMU_RAW) != 0){
-      uint32_t ts_snap[IMU_RAW_RING_BUF_SIZE];
-      Vec3<float> gyro_snap[IMU_RAW_RING_BUF_SIZE];
-      Vec3<float> accel_snap[IMU_RAW_RING_BUF_SIZE];
+      uint32_t ts_snap[RING_BUF_SIZE];
+      Vec3<float> gyro_snap[RING_BUF_SIZE];
+      Vec3<float> accel_snap[RING_BUF_SIZE];
 
       size_t count = raw_accel_gyro_timestamp.get_snapshot(ts_snap);
       size_t gyro_count = gyro_raw.get_snapshot(gyro_snap);
@@ -164,9 +210,9 @@ void sd_logger_task(void* arg){
     }
 
     if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_IMU_FILT) != 0){
-      uint32_t ts_snap[IMU_FILT_RING_BUF_SIZE];
-      Vec3<float> gyro_snap[IMU_FILT_RING_BUF_SIZE];
-      Vec3<float> accel_snap[IMU_FILT_RING_BUF_SIZE];
+      uint32_t ts_snap[RING_BUF_SIZE];
+      Vec3<float> gyro_snap[RING_BUF_SIZE];
+      Vec3<float> accel_snap[RING_BUF_SIZE];
 
       size_t count = filtered_accel_gyro_timestamp.get_snapshot(ts_snap);
       size_t gyro_count = gyro.get_snapshot(gyro_snap);
@@ -188,8 +234,8 @@ void sd_logger_task(void* arg){
     }
 
     if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_MAG_RAW) != 0){
-      uint32_t ts_snap[IMU_RAW_RING_BUF_SIZE];
-      Vec3<float> mag_raw_snap[IMU_RAW_RING_BUF_SIZE];
+      uint32_t ts_snap[RING_BUF_SIZE];
+      Vec3<float> mag_raw_snap[RING_BUF_SIZE];
 
       size_t count = raw_mag_timestamp.get_snapshot(ts_snap);
       size_t raw_count = mag_raw.get_snapshot(mag_raw_snap);
@@ -208,8 +254,8 @@ void sd_logger_task(void* arg){
     }
 
     if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_MAG_FILT) != 0){
-      uint32_t ts_snap[IMU_FILT_RING_BUF_SIZE];
-      Vec3<float> mag_filt_snap[IMU_FILT_RING_BUF_SIZE];
+      uint32_t ts_snap[RING_BUF_SIZE];
+      Vec3<float> mag_filt_snap[RING_BUF_SIZE];
 
       size_t count = filtered_mag_timestamp.get_snapshot(ts_snap);
       size_t filt_count = mag.get_snapshot(mag_filt_snap);
@@ -228,8 +274,8 @@ void sd_logger_task(void* arg){
     }
 
     if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_BARO_RAW) != 0){
-      uint32_t ts_snap[IMU_RAW_RING_BUF_SIZE];
-      float baro_raw_snap[IMU_RAW_RING_BUF_SIZE];
+      uint32_t ts_snap[RING_BUF_SIZE];
+      float baro_raw_snap[RING_BUF_SIZE];
 
       size_t count = pressure_timestamp.get_snapshot(ts_snap);
       size_t raw_count = pressure.get_snapshot(baro_raw_snap);
@@ -248,8 +294,8 @@ void sd_logger_task(void* arg){
     }
 
     if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_BARO_FILT) != 0){
-      uint32_t ts_snap[IMU_FILT_RING_BUF_SIZE];
-      float baro_filt_snap[IMU_FILT_RING_BUF_SIZE];
+      uint32_t ts_snap[RING_BUF_SIZE];
+      float baro_filt_snap[RING_BUF_SIZE];
 
       size_t count = pressure_timestamp.get_snapshot(ts_snap);
       size_t filt_count = pressure.get_snapshot(baro_filt_snap);
@@ -263,6 +309,98 @@ void sd_logger_task(void* arg){
           pkt.timestamp_us = curr_ts;
           pkt.pressure     = baro_filt_snap[i];
           append_packet(&pkt, sizeof(PktBaroFilt), sector_buf, buf_index, sd_driver, last_flush_tick);
+        }
+      }
+    }
+
+    if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_POWER) != 0){
+      uint32_t ts_snap[RING_BUF_SIZE];
+      PowerMeasurement power_snap[RING_BUF_SIZE];
+
+      size_t count = power_timestamp.get_snapshot(ts_snap);
+      size_t raw_count = power_data.get_snapshot(power_snap);
+      if(raw_count < count) count = raw_count;
+
+      for(size_t i = 0; i < count; ++i){
+        uint32_t curr_ts = ts_snap[i];
+        if(trk_power.should_log(curr_ts)){
+          PktPower pkt;
+          pkt.type         = PKT_TYPE_POWER;
+          pkt.timestamp_us = curr_ts;
+          pkt._pad[0] = 0; pkt._pad[1] = 0; pkt._pad[2] = 0;
+          pkt.voltage_mv   = power_snap[i].voltage_mv;
+          pkt.current_ma   = power_snap[i].current_ma;
+          pkt.power_mw     = power_snap[i].power_mw;
+          pkt.energy_mah   = power_snap[i].energy_mah;
+          append_packet(&pkt, sizeof(PktPower), sector_buf, buf_index, sd_driver, last_flush_tick);
+        }
+      }
+    }
+
+    if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_RC) != 0){
+      uint32_t ts_snap[RING_BUF_SIZE];
+      RcChannels rc_snap[RING_BUF_SIZE];
+
+      size_t count = rc_timestamp.get_snapshot(ts_snap);
+      size_t raw_count = rc_data.get_snapshot(rc_snap);
+      if(raw_count < count) count = raw_count;
+
+      for(size_t i = 0; i < count; ++i){
+        uint32_t curr_ts = ts_snap[i];
+        if(trk_rc.should_log(curr_ts)){
+          PktRc pkt;
+          pkt.type         = PKT_TYPE_RC;
+          pkt.timestamp_us = curr_ts;
+          pkt._pad[0] = 0; pkt._pad[1] = 0; pkt._pad[2] = 0;
+          for(uint8_t ch_idx = 0; ch_idx < 6; ++ch_idx){
+            pkt.channels[ch_idx] = (ch_idx < rc_snap[i].channel_count)
+              ? static_cast<float>(rc_snap[i].channels[ch_idx])
+              : 1500.0f;
+          }
+          append_packet(&pkt, sizeof(PktRc), sector_buf, buf_index, sd_driver, last_flush_tick);
+        }
+      }
+    }
+
+    if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_ATT_QUAT) != 0){
+      uint32_t ts_snap[RING_BUF_SIZE];
+      Vec4 quat_snap[RING_BUF_SIZE];
+
+      size_t count = att_timestamp.get_snapshot(ts_snap);
+      size_t quat_count = att_quat.get_snapshot(quat_snap);
+      if(quat_count < count) count = quat_count;
+
+      for(size_t i = 0; i < count; ++i){
+        uint32_t curr_ts = ts_snap[i];
+        if(trk_att_quat.should_log(curr_ts)){
+          PktAttQuat pkt;
+          pkt.type         = PKT_TYPE_ATT_QUAT;
+          pkt.timestamp_us = curr_ts;
+          pkt.q[0]         = quat_snap[i][0];
+          pkt.q[1]         = quat_snap[i][1];
+          pkt.q[2]         = quat_snap[i][2];
+          pkt.q[3]         = quat_snap[i][3];
+          append_packet(&pkt, sizeof(PktAttQuat), sector_buf, buf_index, sd_driver, last_flush_tick);
+        }
+      }
+    }
+
+    if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_ATT_EULER) != 0){
+      uint32_t ts_snap[RING_BUF_SIZE];
+      Vec3<float> euler_snap[RING_BUF_SIZE];
+
+      size_t count = att_timestamp.get_snapshot(ts_snap);
+      size_t euler_count = att_euler.get_snapshot(euler_snap);
+      if(euler_count < count) count = euler_count;
+
+      for(size_t i = 0; i < count; ++i){
+        uint32_t curr_ts = ts_snap[i];
+        if(trk_att_euler.should_log(curr_ts)){
+          PktAttEuler pkt;
+          pkt.type         = PKT_TYPE_ATT_EULER;
+          pkt.timestamp_us = curr_ts;
+          pkt.euler        = euler_snap[i];
+          append_packet(&pkt, sizeof(PktAttEuler), sector_buf, buf_index, sd_driver, last_flush_tick);
         }
       }
     }

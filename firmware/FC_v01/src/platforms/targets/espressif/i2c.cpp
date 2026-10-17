@@ -9,6 +9,11 @@ bool ESP32_I2C::init(uint32_t frequency_hz){
   return ok;
 }
 
+bool ESP32_I2C::probe(uint8_t dev_addr){
+  _wire.beginTransmission(dev_addr);
+  return (_wire.endTransmission() == 0);
+}
+
 bool ESP32_I2C::write_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t data){
   return write_reg_multi(dev_addr, reg_addr, &data, 1);
 }

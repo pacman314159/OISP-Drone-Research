@@ -14,6 +14,7 @@ references:
   - "[[0010-bleMinimumPacketFrequencyAndDualTriggerFlush]]"
   - "[[0012-ws2812HardwareIsolationAndMutexEncapsulationRule]]"
   - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
+  - "[[0032-rcReceiverCommandBlackboxSdCardLoggingArchitecture]]"
 ---
 
 # Zettel 0013: Unified HAL_SPI Abstraction, 100 Hz Snapshot Logging & Multi-Rate MicroSD Storage

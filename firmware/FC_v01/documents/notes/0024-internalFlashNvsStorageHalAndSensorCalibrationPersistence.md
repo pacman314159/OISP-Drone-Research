@@ -16,6 +16,8 @@ references:
   - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
   - "[[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]]"
   - "[[0023-fsmCentricCalibrationOrchestrationAndRgbLedArchitecture]]"
+  - "[[0025-rotEllipsoidMagCalibSimdAdamEkfUnitSphereStackLifecycle]]"
+  - "[[0026-sixPointAccelCalibSimdEllipsoidFitFsmLedArchitecture]]"
 ---
 
 # Zettel 0024: Internal Flash NVS Storage HAL, FlashStorageDriver & Diagonal Soft-Iron SIMD Calibration Persistence Specification
@@ -108,7 +110,7 @@ High-reliability flight controller operation requires persistent zero-rate gyros
   $$\vec{g}_{cal} = \vec{g}_{raw} - \vec{b}_g$$
 
 ### Rule 6: Flight Loop Isolation & Boot/Calibration Lifecycle
-- In-flight filter loops (`accel_gyro_lpf_task`, `mag_lpf_task`) strictly read calibrated parameters from fast SRAM via `calib_apply_*`, incurring zero flash latency.
+- In-flight preprocessing loops (`accel_gyro_preprocess_task`, `mag_preprocess_task`) strictly read calibrated parameters from fast SRAM via `calib_apply_*`, incurring zero flash latency.
 - Flash writes occur exclusively when grounded:
   1. User triggers active calibration (`CALIB` state via user button held at boot).
   2. **Pre-Sampling Hands-Off Settling Period (`CALIB_SETTLING_DELAY_MS = 2000`)**: To prevent user button-release touch vibrations from corrupting zero-rate bias measurements, `task_calib_gyro` immediately triggers a fast amber flash burst (`LED_PATTERN_BLINK_FAST`, `PALETTE_AMBER`) and delays for $2.0\,\text{s}$.
@@ -127,6 +129,7 @@ High-reliability flight controller operation requires persistent zero-rate gyros
 - Peripheral Driver: `src/drivers/storage/flash_storage_driver.h`, `src/drivers/storage/flash_storage_driver.cpp`
 - Middleware IPC: `src/middleware/ipc.h`, `src/middleware/ipc.cpp`
 - Calibration Core: `src/core/sensor/calib.h`, `src/core/sensor/calib.cpp`
-- Task Runners: `src/core/sensor/calib_tasks.cpp`, `src/core/math/filter_tasks.cpp`
+- Task Runners: `src/core/sensor/calib_tasks.cpp`, `src/core/sensor/sensor_preprocess_tasks.cpp`
+- Active Calibration Specs: `[[0025-rotEllipsoidMagCalibSimdAdamEkfUnitSphereStackLifecycle]]`, `[[0026-sixPointAccelCalibSimdEllipsoidFitFsmLedArchitecture]]`
 - Application Entry: `src/app/app.cpp`, `src/app/fsm.cpp`
 - Partition Table: `partitions.csv`

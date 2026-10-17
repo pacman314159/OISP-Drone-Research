@@ -16,3 +16,20 @@ public:
   bool write_symbols(const PulseSymbol* symbols, size_t count) override;
   bool wait_tx_done(uint32_t timeout_ms = 10) override;
 };
+
+class ESP32_PulseRX : public HAL_PulseRX {
+private:
+  rmt_channel_t   channel{RMT_CHANNEL_4};
+  bool            initialized{false};
+  RingbufHandle_t rb_handle{nullptr};
+  uint32_t        resolution_hz{1000000}; // 1 MHz (1 tick = 1 us)
+
+public:
+  ESP32_PulseRX() = default;
+  ~ESP32_PulseRX() override;
+
+  bool init(int gpio_pin, uint32_t clock_resolution_hz = 1000000, uint32_t idle_threshold_us = 3000) override;
+  size_t read_pulses(uint32_t* pulse_durations_us, size_t max_pulses, uint32_t timeout_ms = 25) override;
+  void start() override;
+  void stop() override;
+};

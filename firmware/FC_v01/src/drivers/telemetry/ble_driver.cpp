@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <NimBLEDevice.h>
+#include <esp_log.h>
 #include "config.h"
 #include "middleware/ipc.h"
 #include "drivers/telemetry/ble_driver.h"
@@ -15,6 +16,8 @@ static NimBLECharacteristic* p_baro_raw_char   = nullptr;
 static NimBLECharacteristic* p_baro_filt_char  = nullptr;
 static NimBLECharacteristic* p_att_quat_char   = nullptr;
 static NimBLECharacteristic* p_att_euler_char  = nullptr;
+static NimBLECharacteristic* p_power_char      = nullptr;
+static NimBLECharacteristic* p_rc_channels_char = nullptr;
 static NimBLECharacteristic* p_ota_control_char = nullptr;
 static NimBLECharacteristic* p_ota_data_char    = nullptr;
 static bool ble_connected                       = false;
@@ -109,6 +112,8 @@ static OtaControlCallbacks ota_control_callbacks;
 static OtaDataCallbacks ota_data_callbacks;
 
 bool ble_driver_init(){
+  esp_log_level_set("NimBLE", ESP_LOG_WARN);
+
   NimBLEDevice::init(BLE_DEVICE_NAME);
   NimBLEDevice::setMTU(BLE_MTU_SIZE);
 
@@ -148,6 +153,12 @@ bool ble_driver_init(){
   if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_ATT_EULER) != 0)
     p_att_euler_char = pTelemetryService->createCharacteristic(BLE_CHAR_ATT_EULER_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
 
+  if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_POWER) != 0)
+    p_power_char = pTelemetryService->createCharacteristic(BLE_CHAR_POWER_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+
+  if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_RC_CHANNELS) != 0)
+    p_rc_channels_char = pTelemetryService->createCharacteristic(BLE_CHAR_RC_CHANNELS_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+
   pTelemetryService->start();
 
   // Initialize OTA GATT Service & Characteristics
@@ -179,17 +190,19 @@ bool ble_driver_init(){
 
 static NimBLECharacteristic* get_char_by_mask(uint16_t mask_bit){
   switch(mask_bit){
-    case BLE_TELEM_MASK_GYRO_RAW:   return p_gyro_raw_char;
-    case BLE_TELEM_MASK_GYRO_FILT:  return p_gyro_filt_char;
-    case BLE_TELEM_MASK_ACCEL_RAW:  return p_accel_raw_char;
-    case BLE_TELEM_MASK_ACCEL_FILT: return p_accel_filt_char;
-    case BLE_TELEM_MASK_MAG_RAW:    return p_mag_raw_char;
-    case BLE_TELEM_MASK_MAG_FILT:   return p_mag_filt_char;
-    case BLE_TELEM_MASK_BARO_RAW:   return p_baro_raw_char;
-    case BLE_TELEM_MASK_BARO_FILT:  return p_baro_filt_char;
-    case BLE_TELEM_MASK_ATT_QUAT:   return p_att_quat_char;
-    case BLE_TELEM_MASK_ATT_EULER:  return p_att_euler_char;
-    default:                        return nullptr;
+    case BLE_TELEM_MASK_GYRO_RAW:    return p_gyro_raw_char;
+    case BLE_TELEM_MASK_GYRO_FILT:   return p_gyro_filt_char;
+    case BLE_TELEM_MASK_ACCEL_RAW:   return p_accel_raw_char;
+    case BLE_TELEM_MASK_ACCEL_FILT:  return p_accel_filt_char;
+    case BLE_TELEM_MASK_MAG_RAW:     return p_mag_raw_char;
+    case BLE_TELEM_MASK_MAG_FILT:    return p_mag_filt_char;
+    case BLE_TELEM_MASK_BARO_RAW:    return p_baro_raw_char;
+    case BLE_TELEM_MASK_BARO_FILT:   return p_baro_filt_char;
+    case BLE_TELEM_MASK_ATT_QUAT:    return p_att_quat_char;
+    case BLE_TELEM_MASK_ATT_EULER:   return p_att_euler_char;
+    case BLE_TELEM_MASK_POWER:       return p_power_char;
+    case BLE_TELEM_MASK_RC_CHANNELS: return p_rc_channels_char;
+    default:                         return nullptr;
   }
 }
 
@@ -211,46 +224,6 @@ bool is_ble_stream_subscribed(uint16_t mask_bit){
 bool send_ble_stream_notification(uint16_t mask_bit, const uint8_t* data, size_t len){
   NimBLECharacteristic* p_char = get_char_by_mask(mask_bit);
   return send_char_notification(p_char, data, len);
-}
-
-bool send_ble_gyro_raw_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_gyro_raw_char, data, len);
-}
-
-bool send_ble_gyro_filt_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_gyro_filt_char, data, len);
-}
-
-bool send_ble_accel_raw_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_accel_raw_char, data, len);
-}
-
-bool send_ble_accel_filt_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_accel_filt_char, data, len);
-}
-
-bool send_ble_mag_raw_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_mag_raw_char, data, len);
-}
-
-bool send_ble_mag_filt_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_mag_filt_char, data, len);
-}
-
-bool send_ble_baro_raw_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_baro_raw_char, data, len);
-}
-
-bool send_ble_baro_filt_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_baro_filt_char, data, len);
-}
-
-bool send_ble_att_quat_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_att_quat_char, data, len);
-}
-
-bool send_ble_att_euler_notification(const uint8_t* data, size_t len){
-  return send_char_notification(p_att_euler_char, data, len);
 }
 
 bool send_ble_ota_response(const uint8_t* data, size_t len){

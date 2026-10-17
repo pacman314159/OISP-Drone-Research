@@ -19,3 +19,14 @@ public:
 
 // Global Target Pulse Accessor (Pure HAL interface, defined per platform target build)
 HAL_PulseTX& get_pulse_tx0();
+
+class HAL_PulseRX {
+public:
+  virtual ~HAL_PulseRX() = default;
+  virtual bool init(int gpio_pin, uint32_t clock_resolution_hz = 1000000, uint32_t idle_threshold_us = 3000) = 0;
+  virtual size_t read_pulses(uint32_t* pulse_durations_us, size_t max_pulses, uint32_t timeout_ms = 25) = 0;
+  virtual void start() = 0;
+  virtual void stop() = 0;
+};
+
+HAL_PulseRX& get_pulse_rx0();

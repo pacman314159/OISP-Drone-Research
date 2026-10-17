@@ -1,0 +1,55 @@
+{
+    "protocol": "BLE",
+    "target": "9DOF_IMU",
+    "baudrate": "115200",
+    "layout": "1x2",
+    "plots": {
+        "1": {
+            "title": "Battery Voltage",
+            "fix_y": false,
+            "y_min": "0",
+            "y_max": "15000",
+            "series": [
+                {
+                    "name": "Pack Voltage",
+                    "unit": "mV",
+                    "width": "2.0",
+                    "color": "#C70039"
+                }
+            ]
+        },
+        "2": {
+            "title": "Current Consumption",
+            "fix_y": false,
+            "y_min": "0",
+            "y_max": "20000",
+            "series": [
+                {
+                    "name": "Current",
+                    "unit": "mA",
+                    "width": "2.0",
+                    "color": "#4363D8"
+                },
+                {
+                    "name": "Power",
+                    "unit": "mW",
+                    "width": "2.0",
+                    "color": "#F58231"
+                },
+                {
+                    "name": "Energy",
+                    "unit": "mAh",
+                    "width": "2.0",
+                    "color": "#3CB44B"
+                }
+            ]
+        }
+    },
+    "ble_target": "FC_v02 (44:B1:76:AE:92:32)",
+    "ble_service": "7c9a41b2-e2d7-4d9e-99f6-1e35a90d81f2",
+    "ble_char": "3e5a7b1c-9d2f-4e8a-0b3c-6f1a8d2e4c5b",
+    "timestamp_mode": "TX",
+    "timestamp_unit": "microseconds",
+    "log_frequency": false,
+    "freq_window_size": 500
+}

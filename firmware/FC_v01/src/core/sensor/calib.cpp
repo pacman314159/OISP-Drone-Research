@@ -1,9 +1,4 @@
 #include "core/sensor/calib.h"
-#include <cstring>
-#include <cstdio>
-#include "middleware/ipc.h"
-#include "config.h"
-#include "platforms/hal/hal_simd.h"
 
 static constexpr const char* CALIB_NAMESPACE = "sensor_calib";
 static constexpr const char* CALIB_KEY       = "calib_data";

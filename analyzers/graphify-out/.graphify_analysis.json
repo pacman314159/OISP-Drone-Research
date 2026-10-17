@@ -1,0 +1,208 @@
+{
+  "communities": {
+    "0": [
+      "ellipsoid_fit",
+      "ellipsoid_fit_fit_rotated_ellipsoid",
+      "ellipsoid_fit_py_any",
+      "ellipsoid_fit_py_ndarray",
+      "ellipsoid_fit_rationale_2",
+      "ellipsoid_fit_rationale_35",
+      "matplotlib",
+      "pathlib",
+      "struct",
+      "typing",
+      "universal_flight_analyzer",
+      "universal_flight_analyzer_display_menu",
+      "universal_flight_analyzer_plot_mag_calib_projections",
+      "universal_flight_analyzer_plot_mag_calib_rmse",
+      "universal_flight_analyzer_process_mag_calibration",
+      "universal_flight_analyzer_rationale_2"
+    ],
+    "1": [
+      "path",
+      "universal_flight_analyzer_determine_next_run_id",
+      "universal_flight_analyzer_find_default_log_file",
+      "universal_flight_analyzer_get_img_dir",
+      "universal_flight_analyzer_get_log_dir",
+      "universal_flight_analyzer_get_script_dir",
+      "universal_flight_analyzer_main",
+      "universal_flight_analyzer_parse_binary_log",
+      "universal_flight_analyzer_parse_user_choices",
+      "universal_flight_analyzer_print_scan_report",
+      "universal_flight_analyzer_print_scan_report_describe_stream",
+      "universal_flight_analyzer_rationale_100",
+      "universal_flight_analyzer_rationale_130",
+      "universal_flight_analyzer_rationale_149",
+      "universal_flight_analyzer_rationale_1706",
+      "universal_flight_analyzer_select_file_via_explorer"
+    ],
+    "2": [
+      "argparse",
+      "numpy",
+      "pandas",
+      "re",
+      "sys",
+      "sysview_core0_analyzer",
+      "sysview_core0_analyzer_analyze_sysview_csv",
+      "sysview_core0_analyzer_parse_duration_us",
+      "sysview_core0_analyzer_rationale_2",
+      "sysview_dual_core_analyzer",
+      "sysview_dual_core_analyzer_rationale_2"
+    ],
+    "3": [
+      "sysview_dual_core_analyzer_analyze_dual_core_sysview",
+      "sysview_dual_core_analyzer_analyze_dual_core_sysview_analyze_isrs",
+      "sysview_dual_core_analyzer_analyze_dual_core_sysview_clean_trace_tail",
+      "sysview_dual_core_analyzer_main",
+      "sysview_dual_core_analyzer_parse_duration_us",
+      "sysview_dual_core_analyzer_plot_dual_core_task_histograms",
+      "sysview_dual_core_analyzer_rationale_29",
+      "sysview_dual_core_analyzer_rationale_698",
+      "sysview_dual_core_analyzer_rationale_94"
+    ],
+    "4": [
+      "universal_flight_analyzer_flightlogdata",
+      "universal_flight_analyzer_flightlogdata_init",
+      "universal_flight_analyzer_plot_fft_3axis",
+      "universal_flight_analyzer_plot_histogram_3axis",
+      "universal_flight_analyzer_plot_mag_plane_projections",
+      "universal_flight_analyzer_plot_time_series_3axis",
+      "universal_flight_analyzer_process_accelerometer",
+      "universal_flight_analyzer_process_gyroscope",
+      "universal_flight_analyzer_process_magnetometer"
+    ],
+    "5": [
+      "ndarray",
+      "universal_flight_analyzer_plot_baro_fft",
+      "universal_flight_analyzer_plot_baro_histogram",
+      "universal_flight_analyzer_plot_baro_time_series",
+      "universal_flight_analyzer_process_barometer",
+      "universal_flight_analyzer_rationale_385",
+      "universal_flight_analyzer_trim_data_stream"
+    ],
+    "6": [
+      "figure",
+      "universal_flight_analyzer_plot_power_histogram",
+      "universal_flight_analyzer_plot_power_time_series",
+      "universal_flight_analyzer_process_power",
+      "universal_flight_analyzer_rationale_491",
+      "universal_flight_analyzer_save_figure"
+    ],
+    "7": [
+      "universal_flight_analyzer_rationale_182",
+      "universal_flight_analyzer_teelogger",
+      "universal_flight_analyzer_teelogger_close",
+      "universal_flight_analyzer_teelogger_flush",
+      "universal_flight_analyzer_teelogger_init",
+      "universal_flight_analyzer_teelogger_write"
+    ],
+    "8": [
+      "any",
+      "universal_flight_analyzer_calculate_stream_stats",
+      "universal_flight_analyzer_plot_attitude_time_series",
+      "universal_flight_analyzer_print_stats_table",
+      "universal_flight_analyzer_process_attitude"
+    ],
+    "9": [
+      "matplotlib_patches",
+      "matplotlib_pyplot",
+      "os",
+      "plot_slice_view",
+      "plot_slice_view_rationale_2"
+    ],
+    "10": [
+      "sysview_dual_core_analyzer_extract_metadata",
+      "sysview_dual_core_analyzer_rationale_46"
+    ],
+    "11": [
+      "universal_flight_analyzer_py_any"
+    ],
+    "12": [
+      "universal_flight_analyzer_py_ndarray"
+    ]
+  },
+  "cohesion": {
+    "0": 0.16666666666666666,
+    "1": 0.20833333333333334,
+    "2": 0.2727272727272727,
+    "3": 0.2777777777777778,
+    "4": 0.3888888888888889,
+    "5": 0.42857142857142855,
+    "6": 0.4,
+    "7": 0.3333333333333333,
+    "8": 0.5,
+    "9": 0.4,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0
+  },
+  "gods": [
+    {
+      "id": "universal_flight_analyzer_main",
+      "label": "main()",
+      "degree": 18
+    },
+    {
+      "id": "universal_flight_analyzer_save_figure",
+      "label": "save_figure()",
+      "degree": 16
+    },
+    {
+      "id": "universal_flight_analyzer_process_magnetometer",
+      "label": "process_magnetometer()",
+      "degree": 12
+    },
+    {
+      "id": "universal_flight_analyzer_flightlogdata",
+      "label": "FlightLogData",
+      "degree": 10
+    },
+    {
+      "id": "universal_flight_analyzer_process_accelerometer",
+      "label": "process_accelerometer()",
+      "degree": 10
+    },
+    {
+      "id": "universal_flight_analyzer_process_gyroscope",
+      "label": "process_gyroscope()",
+      "degree": 10
+    },
+    {
+      "id": "universal_flight_analyzer_process_barometer",
+      "label": "process_barometer()",
+      "degree": 10
+    },
+    {
+      "id": "universal_flight_analyzer_trim_data_stream",
+      "label": "trim_data_stream()",
+      "degree": 9
+    },
+    {
+      "id": "universal_flight_analyzer_calculate_stream_stats",
+      "label": "calculate_stream_stats()",
+      "degree": 9
+    },
+    {
+      "id": "universal_flight_analyzer_process_power",
+      "label": "process_power()",
+      "degree": 9
+    }
+  ],
+  "surprises": [
+    {
+      "source": "process_mag_calibration()",
+      "target": "fit_rotated_ellipsoid()",
+      "source_files": [
+        "universal_flight_analyzer.py",
+        "ellipsoid_fit.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

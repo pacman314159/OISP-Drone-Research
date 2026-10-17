@@ -13,6 +13,8 @@ references:
   - "[[0007-systemViewTracingAndRTOSTimingAnalysisConventions]]"
   - "[[0008-lpfAndCalibrationTaskArchitecture]]"
   - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
+  - "[[0022-unifiedPressureRingBufferSensorVariableConsolidationAndAttitudeTaskRemoval]]"
+  - "[[0029-unificationOfInterTaskRingBufferSizeConstant]]"
 ---
 
 # Zettel 0017: BMP180 Non-Blocking Two-Phase I2C DAQ Architecture, Pipelined Conversion & Vertical Velocity Fusion Specification
@@ -82,7 +84,7 @@ Per `[Note 0009]` and `[Note 0010]`, raw barometric pressure data is streamed ov
 1. **Zero Bus Starvation**: Driver code in Layer 2 NEVER includes `ipc.h` or calls `xSemaphoreTake()`; mutex bounding is managed strictly by task runners in Layer 4 (`daq_tasks.cpp`).
 2. **Pipelined Loop Contract**: Periodic loop execution period $T_s$ must strictly exceed sensor conversion time $t_{conv}$.
 3. **SystemView Trace Uniformity**: `SYSVIEW_START` and `SYSVIEW_END` encompass the full iteration execution, maintaining uniform microsecond duration without embedded sleep intervals.
-4. **IPC Data Flow**: Data is injected atomically into `RingBuffer<float, IMU_RAW_RING_BUF_SIZE> pressure` and `RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE> pressure_timestamp`.
+4. **IPC Data Flow**: Data is injected atomically into `RingBuffer<float, RING_BUF_SIZE> pressure` and `RingBuffer<uint32_t, RING_BUF_SIZE> pressure_timestamp`.
 5. **GATT Characteristic Isolation**: Raw barometric streaming is decoupled onto its dedicated UUID handle without multiplexing overhead.
 
 ---
@@ -99,3 +101,4 @@ Per `[Note 0009]` and `[Note 0010]`, raw barometric pressure data is streamed ov
 - [[0011-variableBleTelemetryParsingAndZeroHandshakeDesign]]: Binary telemetry packet encoding.
 - [[0016-coreDirectoryCompactionAndDomainConsolidation]]: Sensor DAQ consolidation in `src/core/sensor/`.
 - [[0022-unifiedPressureRingBufferSensorVariableConsolidationAndAttitudeTaskRemoval]]: Unification of barometer pressure into a single ring buffer without discrete LPF.
+- [[0029-unificationOfInterTaskRingBufferSizeConstant]]: Unification of IMU_RAW_RING_BUF_SIZE and IMU_FILT_RING_BUF_SIZE into RING_BUF_SIZE.

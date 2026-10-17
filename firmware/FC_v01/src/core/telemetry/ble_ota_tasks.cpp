@@ -10,7 +10,9 @@
 #include "app/app.h"
 
 void ble_ota_task(void* arg){
+  (void)arg;
   const uint32_t task_id = TASK_BLE_OTA_ID;
+  (void)task_id;
   Serial.printf("[BLE_OTA] Task started. Listening for OTA trigger (%u ms window)...\n", OTA_BOOT_WINDOW_TIMEOUT_MS);
 
   uint32_t notified = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(OTA_BOOT_WINDOW_TIMEOUT_MS));

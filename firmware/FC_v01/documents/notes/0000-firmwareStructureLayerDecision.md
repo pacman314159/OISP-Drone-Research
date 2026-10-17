@@ -59,9 +59,9 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 
 ### Layer 4: Flight Core & Algorithms Layer
 - **Directory**: `src/core/`
-  - `src/core/sensor/`: Sensor Data Acquisition (DAQ) task runners (`daq_tasks.cpp`, `daq_tasks.h`) and calibration routines.
+  - `src/core/sensor/`: Sensor Data Acquisition (DAQ) task runners (`daq_tasks.cpp/.h`), sensor preprocessing task runners (`sensor_preprocess_tasks.cpp/.h`), and calibration routines (`calib.cpp/.h`, `calib_tasks.cpp/.h`).
   - `src/core/control/`: Cascaded PID rate/angle controllers, motor mixer.
-  - `src/core/math/`: Linear algebra matrix engine (`matrix.h`), discrete filters (`lpf.h`, `filter_tasks.cpp/.h`), and estimators (`estimator_tasks.cpp/.h`).
+  - `src/core/math/`: Linear algebra matrix engine (`matrix.h`), discrete filters (`lpf.h`), 3D ellipsoid fitting (`ellipsoid_fit.cpp/.h`), and estimators (`estimator_tasks.cpp/.h`).
   - `src/core/telemetry/`: Telemetry data streaming and OTA update tasks (`ble_telem_tasks.cpp/.h`, `ble_ota_tasks.cpp/.h`).
   - `src/core/blackbox/`: High-frequency flight data logging and MicroSD storage (`sd_logger_task.cpp/.h`).
   - `src/core/interface/`: LED status indication and button interface tasks.

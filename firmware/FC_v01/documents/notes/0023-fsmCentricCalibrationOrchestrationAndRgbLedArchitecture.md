@@ -13,6 +13,9 @@ references:
   - "[[0012-ws2812HardwareIsolationAndMutexEncapsulationRule]]"
   - "[[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]]"
   - "[[0024-internalFlashNvsStorageHalAndSensorCalibrationPersistence]]"
+  - "[[0025-rotEllipsoidMagCalibSimdAdamEkfUnitSphereStackLifecycle]]"
+  - "[[0026-sixPointAccelCalibSimdEllipsoidFitFsmLedArchitecture]]"
+  - "[[0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture]]"
 ---
 
 # Zettel 0023: FSM-Centric Sensor Calibration Orchestration and RGB LED Status Architecture Specification
@@ -73,3 +76,11 @@ In previous iterations, RGB LED feedback was scattered across ad-hoc modules (di
   - FSM detects message, calls `vTaskDelete(s_active_calib_handle)`, clears the handle, and displays solid Green (`LED_PATTERN_SOLID`).
   - If `AUTO_REBOOT_AFTER_CALIBRATION == true`, FSM reboots after 2.0s; otherwise, parks holding solid Green.
 - If user long-presses button (>2.0s), FSM aborts calibration, calls `vTaskDelete(s_active_calib_handle)`, flashes Red, and returns to selection menu.
+
+---
+
+## 4. Cross-References & Traceability
+- Extends sensor calibration and state transition rules from `[[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]]`.
+- Concrete iterative worker implementation and 6-point pose capture gestures defined in `[[0026-sixPointAccelCalibSimdEllipsoidFitFsmLedArchitecture]]` and `[[0025-rotEllipsoidMagCalibSimdAdamEkfUnitSphereStackLifecycle]]`.
+- Manages hardware WS2812 interface isolated per `[[0012-ws2812HardwareIsolationAndMutexEncapsulationRule]]`.
+

@@ -5,7 +5,6 @@
 #include "config.h"
 #include "middleware/ipc.h"
 #include "middleware/sysview_tracing.h"
-#include "platforms/hal/hal_simd.h"
 
 // =============================================================================
 // SINGULAR CALIBRATION TASKS
@@ -43,7 +42,7 @@ void task_calib_gyro(void* arg){
   Serial.println("[CALIB_GYRO] Settling complete. Collecting stationary samples...");
 
   uint32_t sample_count = 0;
-  const uint32_t target_samples = 400; // 2 seconds at 200 Hz
+  const uint32_t target_samples = CALIB_GYRO_SAMPLE_COUNT;
   Vec3<float> sum_gyro{0.0f, 0.0f, 0.0f};
   bool completed = false;
 
@@ -104,7 +103,7 @@ void task_calib_baro(void* arg){
   TickType_t last_wake_time = xTaskGetTickCount();
 
   uint32_t sample_count = 0;
-  const uint32_t target_samples = 150; // 3 seconds at 50 Hz
+  const uint32_t target_samples = CALIB_BARO_SAMPLE_COUNT;
   bool completed = false;
 
   Serial.println("[CALIB_BARO] Task started. Collecting ground pressure baseline...");
@@ -158,15 +157,52 @@ void task_calib_baro(void* arg){
 
 // Accelerometer Calibration: 6-Point interactive tumble + Ellipsoid fit solver
 void task_calib_accel(void* arg){
-  const TickType_t period_ticks = pdMS_TO_TICKS(1000 / TASK_CALIB_ACCEL_FREQ_HZ);
-  TickType_t last_wake_time = xTaskGetTickCount();
+  // Point cloud buffer on task stack (reclaimed when FSM deletes task upon completion)
+  Vec3<float> accel_cloud[CALIB_ACCEL_SAMPLE_COUNT];
+  Vec3<float> locked_orientations[CALIB_ACCEL_ORIENTATIONS_COUNT];
 
-  uint8_t current_orientation = 0;
-  const uint8_t total_orientations = 6;
+  const TickType_t period_ticks = pdMS_TO_TICKS(1000 / TASK_CALIB_ACCEL_FREQ_HZ);
+
+  Serial.printf("[CALIB_ACCEL] Task started. Entering %u ms settling delay...\n",
+                static_cast<unsigned int>(CALIB_SETTLING_DELAY_MS));
+
+  // Report settling phase to FSM coordinator (LED: Fast-blinking Amber)
+  CalibReportMsg settle_msg = {
+    .target       = CALIB_TARGET_ACCEL,
+    .status       = CALIB_STATUS_SETTLING,
+    .current_step = 0,
+    .progress_pct = 0,
+    .timestamp_us = static_cast<uint32_t>(micros())
+  };
+  xQueueSend(calib_report_queue, &settle_msg, 0);
+
+  vTaskDelay(pdMS_TO_TICKS(CALIB_SETTLING_DELAY_MS));
+
+  // Report active sampling transition to FSM coordinator (LED: Breathing Orange)
+  CalibReportMsg sample_msg = {
+    .target       = CALIB_TARGET_ACCEL,
+    .status       = CALIB_STATUS_SAMPLING,
+    .current_step = 0,
+    .progress_pct = 0,
+    .timestamp_us = static_cast<uint32_t>(micros())
+  };
+  xQueueSend(calib_report_queue, &sample_msg, 0);
+
+  Serial.println("[CALIB_ACCEL] Settling complete. Place drone on each of 6 sides.");
+  Serial.println("[CALIB_ACCEL] Hold drone stationary for 2.0s to lock each orientation.");
+
+  TickType_t last_wake_time = xTaskGetTickCount();
+  uint8_t orientation_count = 0;
+  uint16_t sample_head = 0;
   uint32_t loop_counter = 0;
   bool daq_completed = false;
 
-  Serial.println("[CALIB_ACCEL] Task started. Entering 6-point interactive acquisition...");
+  const uint32_t required_stationary_samples = (CALIB_ACCEL_STATIONARY_HOLD_MS * TASK_CALIB_ACCEL_FREQ_HZ) / 1000;
+  uint32_t stationary_counter = 0;
+  Vec3<float> pose_ref{0.0f, 0.0f, 0.0f};
+  bool has_pose_ref = false;
+  bool motion_unlatched = true; // First orientation does not need prior unlatching
+  Vec3<float> last_locked_pose{0.0f, 0.0f, 0.0f};
 
   // Phase 1: Interactive Data Acquisition across 6 orientations
   while(!daq_completed){
@@ -178,32 +214,126 @@ void task_calib_accel(void* arg){
 
     loop_counter++;
 
-    // [Stationary Check Placeholder]:
-    // Wait for user to place drone on side 'current_orientation' and hold still.
-    // When variance stays below threshold for 2.0s, lock side:
-    // (Simulated placeholder condition every 3 seconds for framework verification)
-    if(loop_counter % 600 == 0){
-      current_orientation++;
+    if(!accel_raw.empty()){
+      Vec3<float> raw = accel_raw.front();
 
-      CalibReportMsg lock_msg = {
-        .target       = CALIB_TARGET_ACCEL,
-        .status       = CALIB_STATUS_STEP_LOCKED,
-        .current_step = current_orientation,
-        .progress_pct = static_cast<uint8_t>((current_orientation * 100) / total_orientations),
-        .timestamp_us = static_cast<uint32_t>(micros())
-      };
-      xQueueSend(calib_report_queue, &lock_msg, 0);
+      if(!motion_unlatched){
+        // Require pilot to move the drone away from the last locked pose
+        Vec3<float> delta = raw - last_locked_pose;
+        if(delta.norm() > CALIB_ACCEL_MOTION_UNLATCH_G){
+          motion_unlatched = true;
+          stationary_counter = 0;
+          has_pose_ref = false;
+          Serial.println("[CALIB_ACCEL] Motion detected. Awaiting next stationary orientation...");
+        }
+      }else{
+        // Track stationary hold
+        if(!has_pose_ref){
+          pose_ref = raw;
+          has_pose_ref = true;
+          stationary_counter = 1;
+        }else{
+          bool within_tol = (fabsf(raw.x - pose_ref.x) < CALIB_ACCEL_STATIONARY_TOL_G) &&
+                            (fabsf(raw.y - pose_ref.y) < CALIB_ACCEL_STATIONARY_TOL_G) &&
+                            (fabsf(raw.z - pose_ref.z) < CALIB_ACCEL_STATIONARY_TOL_G);
 
-      Serial.printf("[CALIB_ACCEL] Orientation %d of 6 locked!\n", current_orientation);
+          if(within_tol){
+            stationary_counter++;
+          }else{
+            pose_ref = raw;
+            stationary_counter = 1;
+          }
+        }
 
-      if(current_orientation >= total_orientations) daq_completed = true;
-    }else if(loop_counter % 20 == 0){
-      // Periodic healthcheck report at 10 Hz
+        // Check if stationary duration achieved
+        if(stationary_counter >= required_stationary_samples){
+          // Verify orientation divergence (>= 45 deg) against all previously locked poses
+          bool is_diverged = true;
+          for(uint8_t j = 0; j < orientation_count; ++j){
+            float dot = pose_ref.dot(locked_orientations[j]);
+            float norm_prod = pose_ref.norm() * locked_orientations[j].norm();
+            if(norm_prod > 1e-4f){
+              float cos_theta = dot / norm_prod;
+              if(cos_theta > CALIB_ACCEL_MIN_DIVERGENCE_COS){
+                is_diverged = false;
+                break;
+              }
+            }
+          }
+
+          if(is_diverged){
+            // Collect CALIB_ACCEL_SAMPLES_PER_ORIENTATION (50) samples directly
+            Vec3<float> sum_samples{0.0f, 0.0f, 0.0f};
+            uint8_t samples_collected = 0;
+
+            while(samples_collected < CALIB_ACCEL_SAMPLES_PER_ORIENTATION){
+              TickType_t s_now = xTaskGetTickCount();
+              if((s_now - last_wake_time) > (period_ticks * 2)) last_wake_time = s_now;
+              vTaskDelayUntil(&last_wake_time, period_ticks);
+
+              if(!accel_raw.empty()){
+                Vec3<float> s_sample = accel_raw.front();
+                accel_cloud[sample_head + samples_collected] = s_sample;
+                sum_samples += s_sample;
+                samples_collected++;
+              }
+            }
+
+            sample_head += CALIB_ACCEL_SAMPLES_PER_ORIENTATION;
+            Vec3<float> centroid = sum_samples * (1.0f / static_cast<float>(CALIB_ACCEL_SAMPLES_PER_ORIENTATION));
+            locked_orientations[orientation_count] = centroid;
+            last_locked_pose = centroid;
+            orientation_count++;
+
+            Serial.printf("[CALIB_ACCEL] Orientation %u of %u locked! Pose: [%.3f, %.3f, %.3f] g\n",
+                          orientation_count, CALIB_ACCEL_ORIENTATIONS_COUNT,
+                          centroid.x, centroid.y, centroid.z);
+
+            // Visual ACK: White flash burst
+            CalibReportMsg lock_msg = {
+              .target       = CALIB_TARGET_ACCEL,
+              .status       = CALIB_STATUS_STEP_LOCKED,
+              .current_step = orientation_count,
+              .progress_pct = static_cast<uint8_t>((orientation_count * 100) / CALIB_ACCEL_ORIENTATIONS_COUNT),
+              .timestamp_us = static_cast<uint32_t>(micros())
+            };
+            xQueueSend(calib_report_queue, &lock_msg, 0);
+
+            if(orientation_count >= CALIB_ACCEL_ORIENTATIONS_COUNT){
+              daq_completed = true;
+            }else{
+              // Small delay to let White flash burst start, then switch back to breathing Orange
+              vTaskDelay(pdMS_TO_TICKS(100));
+              CalibReportMsg resume_msg = {
+                .target       = CALIB_TARGET_ACCEL,
+                .status       = CALIB_STATUS_SAMPLING,
+                .current_step = orientation_count,
+                .progress_pct = static_cast<uint8_t>((orientation_count * 100) / CALIB_ACCEL_ORIENTATIONS_COUNT),
+                .timestamp_us = static_cast<uint32_t>(micros())
+              };
+              xQueueSend(calib_report_queue, &resume_msg, 0);
+
+              motion_unlatched = false;
+              stationary_counter = 0;
+              has_pose_ref = false;
+              Serial.println("[CALIB_ACCEL] Rotate drone to next orientation...");
+            }
+          }else{
+            // Pose is stationary but too close to an existing locked orientation
+            if(loop_counter % 100 == 0)
+              Serial.println("[CALIB_ACCEL] Pose already recorded or < 45 deg separation. Rotate to different face.");
+          }
+        }
+      }
+    }
+
+    // Periodic healthcheck report at 10 Hz
+    if(loop_counter % 20 == 0){
       CalibReportMsg msg = {
         .target       = CALIB_TARGET_ACCEL,
         .status       = CALIB_STATUS_HEALTHCHECK,
-        .current_step = current_orientation,
-        .progress_pct = static_cast<uint8_t>((current_orientation * 100) / total_orientations),
+        .current_step = orientation_count,
+        .progress_pct = static_cast<uint8_t>((orientation_count * 100) / CALIB_ACCEL_ORIENTATIONS_COUNT),
         .timestamp_us = static_cast<uint32_t>(micros())
       };
       xQueueSend(calib_report_queue, &msg, 0);
@@ -212,25 +342,45 @@ void task_calib_accel(void* arg){
     SYSVIEW_END(TASK_CALIB_ACCEL_ID);
   }
 
-  // Phase 2: Iterative Ellipsoid Fit Numerical Optimization
-  // Must use vTaskDelayUntil across iterations to prevent 100% CPU lockup
-  Serial.println("[CALIB_ACCEL] Running iterative ellipsoid fit algorithm...");
-  const uint32_t max_solver_iterations = 50;
-  for(uint32_t iter = 0; iter < max_solver_iterations; ++iter){
+  // Phase 2: Iterative 6-Parameter Axis-Aligned Ellipsoid Fit (SIMD Adam)
+  Serial.printf("[CALIB_ACCEL] Starting SIMD Adam optimization on %u points...\n", sample_head);
+
+  CalibReportMsg comp_msg = {
+    .target       = CALIB_TARGET_ACCEL,
+    .status       = CALIB_STATUS_COMPUTING,
+    .current_step = CALIB_ACCEL_ORIENTATIONS_COUNT,
+    .progress_pct = 0,
+    .timestamp_us = static_cast<uint32_t>(micros())
+  };
+  xQueueSend(calib_report_queue, &comp_msg, 0);
+
+  Ellipsoid6ParamState fit_state;
+  ellipsoid_fit_6param_init(fit_state, accel_cloud, CALIB_ACCEL_SAMPLE_COUNT,
+                            CALIB_ACCEL_MAX_EPOCHS, CALIB_ACCEL_ADAM_LR, CALIB_ACCEL_ADAM_TOL,
+                            CALIB_ACCEL_ORIENTATIONS_COUNT);
+
+  Serial.printf("[CALIB_ACCEL] Initial RMSE: %.6f. Running %u epochs per cycle...\n",
+                fit_state.initial_rmse, CALIB_ACCEL_EPOCHS_PER_CYCLE);
+
+  bool opt_done = false;
+  while(!opt_done){
     TickType_t now = xTaskGetTickCount();
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
     SYSVIEW_START(TASK_CALIB_ACCEL_ID);
 
-    // [Solver Step Placeholder]: Gradient descent step on ellipsoid error metric
+    // Compute time-sliced Adam optimization epochs
+    opt_done = ellipsoid_fit_6param_step(fit_state, accel_cloud, CALIB_ACCEL_SAMPLE_COUNT,
+                                         CALIB_ACCEL_EPOCHS_PER_CYCLE, CALIB_ACCEL_ORIENTATIONS_COUNT);
 
-    if(iter % 10 == 0){
+    // Periodic progress report at 10 Hz
+    if(fit_state.current_epoch % 10 == 0 || opt_done){
       CalibReportMsg solver_msg = {
         .target       = CALIB_TARGET_ACCEL,
         .status       = CALIB_STATUS_COMPUTING,
-        .current_step = 6,
-        .progress_pct = static_cast<uint8_t>((iter * 100) / max_solver_iterations),
+        .current_step = CALIB_ACCEL_ORIENTATIONS_COUNT,
+        .progress_pct = static_cast<uint8_t>((fit_state.current_epoch * 100) / fit_state.max_epochs),
         .timestamp_us = static_cast<uint32_t>(micros())
       };
       xQueueSend(calib_report_queue, &solver_msg, 0);
@@ -239,7 +389,24 @@ void task_calib_accel(void* arg){
     SYSVIEW_END(TASK_CALIB_ACCEL_ID);
   }
 
-  // Commit accelerometer calibration parameters to Flash NVS
+  // Phase 3: Extract parameters, package 6-DOF model, and save to Flash NVS
+  Ellipsoid6ParamResult params;
+  ellipsoid_fit_6param_get_params(fit_state, params);
+
+  Serial.printf("[CALIB_ACCEL] Optimization finished in %u epochs (converged=%s)!\n",
+                params.epochs_run, params.converged ? "YES" : "NO");
+  Serial.printf("[CALIB_ACCEL] Initial RMSE: %.6f -> Final RMSE: %.6f\n",
+                params.initial_rmse, params.final_rmse);
+  Serial.printf("[CALIB_ACCEL] Calibrated Model Parameters (6-DOF Axis-Aligned):\n");
+  Serial.printf("  Zero-G Center Offset v0 (g): [%.5f, %.5f, %.5f]\n",
+                params.v0.x, params.v0.y, params.v0.z);
+  Serial.printf("  Sensitivity Scale Vector s (1/g): [%.5f, %.5f, %.5f]\n",
+                params.s.x, params.s.y, params.s.z);
+
+  // Store calibration parameters: s maps directly to 1.0g unit sphere
+  calib_data.accel_bias  = params.v0;
+  calib_data.accel_scale = params.s;
+
   bool saved_accel = calib_save_to_nvs();
   Serial.printf("[CALIB_ACCEL] Completed. Saved to NVS: %s\n", saved_accel ? "SUCCESS" : "FAILED");
 
@@ -247,7 +414,7 @@ void task_calib_accel(void* arg){
   CalibReportMsg done_msg = {
     .target       = CALIB_TARGET_ACCEL,
     .status       = CALIB_STATUS_COMPLETED,
-    .current_step = 6,
+    .current_step = CALIB_ACCEL_ORIENTATIONS_COUNT,
     .progress_pct = 100,
     .timestamp_us = static_cast<uint32_t>(micros())
   };
@@ -257,23 +424,48 @@ void task_calib_accel(void* arg){
   ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }
 
-// Static point cloud buffer in BSS (zero heap allocation, fits within SRAM)
-static Vec3<float> s_mag_cloud[CALIB_MAG_SAMPLE_COUNT];
-
 // Magnetometer Calibration: Continuous tumble rotation + SIMD Ellipsoid fit solver
 void task_calib_mag(void* arg){
-  const TickType_t period_ticks = pdMS_TO_TICKS(1000 / TASK_CALIB_MAG_FREQ_HZ);
-  TickType_t last_wake_time = xTaskGetTickCount();
+  // Point cloud buffer on task stack (reclaimed when FSM deletes task upon completion)
+  Vec3<float> mag_cloud[CALIB_MAG_SAMPLE_COUNT];
 
+  const TickType_t period_ticks = pdMS_TO_TICKS(1000 / TASK_CALIB_MAG_FREQ_HZ);
+
+  Serial.printf("[CALIB_MAG] Task started. Entering %u ms settling delay...\n",
+                static_cast<unsigned int>(CALIB_SETTLING_DELAY_MS));
+
+  // Report settling phase to FSM coordinator (LED: Fast-blinking Amber)
+  CalibReportMsg settle_msg = {
+    .target       = CALIB_TARGET_MAG,
+    .status       = CALIB_STATUS_SETTLING,
+    .current_step = 0,
+    .progress_pct = 0,
+    .timestamp_us = static_cast<uint32_t>(micros())
+  };
+  xQueueSend(calib_report_queue, &settle_msg, 0);
+
+  vTaskDelay(pdMS_TO_TICKS(CALIB_SETTLING_DELAY_MS));
+
+  // Report active sampling transition to FSM coordinator (LED: Breathing Magenta)
+  CalibReportMsg sample_msg = {
+    .target       = CALIB_TARGET_MAG,
+    .status       = CALIB_STATUS_SAMPLING,
+    .current_step = 0,
+    .progress_pct = 0,
+    .timestamp_us = static_cast<uint32_t>(micros())
+  };
+  xQueueSend(calib_report_queue, &sample_msg, 0);
+
+  Serial.println("[CALIB_MAG] Settling complete. Rotate drone indefinitely across all 3D axes.");
+  Serial.println("[CALIB_MAG] Press USER BUTTON to stop acquisition and begin optimization.");
+
+  TickType_t last_wake_time = xTaskGetTickCount();
   uint16_t cloud_head = 0;
   uint16_t cloud_count = 0;
   uint32_t loop_counter = 0;
   Vec3<float> last_sample{0.0f, 0.0f, 0.0f};
   bool has_first_sample = false;
   bool daq_completed = false;
-
-  Serial.println("[CALIB_MAG] Task started. Rotate drone indefinitely across all 3D axes.");
-  Serial.println("[CALIB_MAG] Press USER BUTTON to stop acquisition and begin optimization.");
 
   // Phase 1: Real-time user continuous tumble rotation point-cloud acquisition
   while(!daq_completed){
@@ -289,17 +481,16 @@ void task_calib_mag(void* arg){
     if(!mag_raw.empty()){
       Vec3<float> raw = mag_raw.front();
       if(!has_first_sample){
-        s_mag_cloud[cloud_head] = raw;
+        mag_cloud[cloud_head] = raw;
         cloud_head = (cloud_head + 1) % CALIB_MAG_SAMPLE_COUNT;
         cloud_count = 1;
         last_sample = raw;
         has_first_sample = true;
       }else{
-        Vec3<float> diff;
-        hal_simd::sub(raw.m, last_sample.m, diff.m, 3);
-        float dist_sq = hal_simd::dot_product(diff.m, diff.m, 3);
+        Vec3<float> diff = raw - last_sample;
+        float dist_sq = diff.norm_sq();
         if(dist_sq >= (CALIB_MAG_MIN_DIST_GAUSS * CALIB_MAG_MIN_DIST_GAUSS)){
-          s_mag_cloud[cloud_head] = raw;
+          mag_cloud[cloud_head] = raw;
           cloud_head = (cloud_head + 1) % CALIB_MAG_SAMPLE_COUNT;
           if(cloud_count < CALIB_MAG_SAMPLE_COUNT) cloud_count++;
           last_sample = raw;
@@ -311,7 +502,7 @@ void task_calib_mag(void* arg){
     if(loop_counter % 10 == 0){
       CalibReportMsg msg = {
         .target       = CALIB_TARGET_MAG,
-        .status       = CALIB_STATUS_SAMPLING,
+        .status       = CALIB_STATUS_HEALTHCHECK,
         .current_step = 0,
         .progress_pct = static_cast<uint8_t>((cloud_count * 100) / CALIB_MAG_SAMPLE_COUNT),
         .timestamp_us = static_cast<uint32_t>(micros())
@@ -345,9 +536,9 @@ void task_calib_mag(void* arg){
   };
   xQueueSend(calib_report_queue, &comp_msg, 0);
 
-  static EllipsoidFitState fit_state;
-  ellipsoid_fit_init(fit_state, s_mag_cloud, cloud_count,
-                     CALIB_MAG_MAX_EPOCHS, CALIB_MAG_ADAM_LR, CALIB_MAG_ADAM_TOL);
+  Ellipsoid9ParamState fit_state;
+  ellipsoid_fit_9param_init(fit_state, mag_cloud, cloud_count,
+                            CALIB_MAG_MAX_EPOCHS, CALIB_MAG_ADAM_LR, CALIB_MAG_ADAM_TOL, CALIB_MAG_MIN_SAMPLES);
 
   Serial.printf("[CALIB_MAG] Initial RMSE: %.6f. Running %u epochs per cycle...\n",
                 fit_state.initial_rmse, CALIB_MAG_EPOCHS_PER_CYCLE);
@@ -361,7 +552,8 @@ void task_calib_mag(void* arg){
     SYSVIEW_START(TASK_CALIB_MAG_ID);
 
     // Compute time-sliced Adam optimization epochs
-    opt_done = ellipsoid_fit_step(fit_state, s_mag_cloud, cloud_count, CALIB_MAG_EPOCHS_PER_CYCLE);
+    opt_done = ellipsoid_fit_9param_step(fit_state, mag_cloud, cloud_count,
+                                         CALIB_MAG_EPOCHS_PER_CYCLE, CALIB_MAG_MIN_SAMPLES);
 
     // Periodic progress report at 10 Hz
     if(fit_state.current_epoch % 10 == 0 || opt_done){
@@ -379,8 +571,8 @@ void task_calib_mag(void* arg){
   }
 
   // Phase 3: Extract parameters, package unit sphere matrix, and save to Flash NVS
-  EllipsoidParameters params;
-  ellipsoid_fit_get_params(fit_state, params);
+  Ellipsoid9ParamResult params;
+  ellipsoid_fit_9param_get_params(fit_state, params);
 
   Serial.printf("[CALIB_MAG] Optimization finished in %u epochs (converged=%s)!\n",
                 params.epochs_run, params.converged ? "YES" : "NO");
@@ -393,12 +585,12 @@ void task_calib_mag(void* arg){
   Serial.printf("    [%.5f, %.5f, %.5f]\n", params.W(0,0), params.W(0,1), params.W(0,2));
   Serial.printf("    [%.5f, %.5f, %.5f]\n", params.W(1,0), params.W(1,1), params.W(1,2));
   Serial.printf("    [%.5f, %.5f, %.5f]\n", params.W(2,0), params.W(2,1), params.W(2,2));
-  Serial.printf("  Geomagnetic Magnitude B0: %.5f Gauss\n", params.B0);
+  Serial.printf("  Geomagnetic Magnitude B0: %.5f Gauss\n", params.b0);
 
   // Store calibration parameters: W maps directly to unit sphere for Extended Kalman Filter
   calib_data.mag_bias      = params.v0;
   calib_data.mag_soft_iron = params.W;
-  calib_data.mag_field_ref = params.B0;
+  calib_data.mag_field_ref = params.b0;
 
   bool saved_mag = calib_save_to_nvs();
   Serial.printf("[CALIB_MAG] Completed. Saved to NVS: %s\n", saved_mag ? "SUCCESS" : "FAILED");

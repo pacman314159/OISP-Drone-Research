@@ -7,15 +7,20 @@ Capabilities:
 1. Parses binary flight logs (LOG_xxxx.BIN) according to Note 0018 specification.
 2. Performs pre-scan stream discovery and interactive menu selection.
 3. Automatically cuts startup and shutdown transients (keeping steady middle flight data).
-4. Computes distribution statistics (Mean, StDev, Jitter) and spectral FFT peaks.
-5. Generates publication-quality Histogram, FFT, Time-Series, and 3-Plane Projection plots.
+4. Symmetrically analyzes RAW and FILTERED streams for Accelerometer, Gyroscope, Magnetometer, and Barometer:
+     - Histograms & Standard Deviation distributions
+     - Discrete Fast Fourier Transform (FFT) noise & vibration spectra
+     - Continuous time series telemetry (with overlays where applicable)
+     - 3-plane projections (Magnetometer RAW & FILTERED)
+     - Rotated Ellipsoid Calibration with Adam optimizer (Magnetometer RAW)
+5. Computes distribution statistics (Mean, StDev, Min, Max, Range, Jitter) and spectral FFT peaks.
 6. Automatically saves figures to analyzers/img/ using the format:
      YYYY-XXXXX-<short_description>.png
    where:
      - YYYY: Persistent 4-digit ID up front, shared across all images generated in that run,
              dynamically determined from max ID existing in img/ (max + 1, starting at 0000).
-     - XXXXX: Up to 5 characters (HIST, FFT, TIME, PROJ)
-     - <short_description>: Description without spaces (e.g., Accel_raw, Gyro_raw).
+     - XXXXX: Up to 5 characters (HIST, FFT, TIME, PROJ, RMSE)
+     - <short_description>: Description without spaces (e.g., Accel_raw, Accel_filt, Gyro_raw, Gyro_filt, Mag_raw, Mag_filt).
 """
 
 import sys
@@ -58,16 +63,18 @@ PKT_TYPE_BARO_RAW  = 0x05
 PKT_TYPE_BARO_FILT = 0x06
 PKT_TYPE_ATT_QUAT  = 0x07
 PKT_TYPE_ATT_EULER = 0x08
+PKT_TYPE_POWER     = 0x09
 
 PACKET_SIZES = {
     PKT_TYPE_IMU_RAW:   31,  # ts (4B) + pad (3B) + 3*gyro (12B) + 3*accel (12B) = 31B payload (32B total)
     PKT_TYPE_IMU_FILT:  31,
     PKT_TYPE_MAG_RAW:   19,  # ts (4B) + pad (3B) + 3*mag (12B) = 19B payload (20B total)
     PKT_TYPE_MAG_FILT:  19,
-    PKT_TYPE_BARO_RAW:  11,  # ts (4B) + pad (3B) + press (4B) = 11B payload (12B total)
-    PKT_TYPE_BARO_FILT: 11,
+    PKT_TYPE_BARO_RAW:  8,   # ts (4B) + press (4B) = 8B payload (9B total, packed)
+    PKT_TYPE_BARO_FILT: 8,
     PKT_TYPE_ATT_QUAT:  23,  # ts (4B) + pad (3B) + 4*quat (16B) = 23B payload (24B total)
     PKT_TYPE_ATT_EULER: 19,  # ts (4B) + pad (3B) + 3*euler (12B) = 19B payload (20B total)
+    PKT_TYPE_POWER:     23,  # ts (4B) + pad (3B) + 4*power_fields (16B) = 23B payload (24B total)
 }
 
 # Sea level standard atmospheric pressure (Pa) for barometric altitude
@@ -84,28 +91,36 @@ def get_img_dir() -> Path:
     img_dir.mkdir(parents=True, exist_ok=True)
     return img_dir
 
-def determine_next_run_id(img_dir: Path) -> int:
+def get_log_dir() -> Path:
+    log_dir = get_script_dir() / "log"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
+
+def determine_next_run_id(img_dir: Path, log_dir: Optional[Path] = None) -> int:
     """
     Stateless run ID scanner:
-    Scans img/ for files matching '*-(\\d{4})-*.png'.
+    Scans img/ and log/ for files matching '*-(\\d{4})-*.png' or '(\\d{4})-LOG.txt'.
     Returns max(found_ids) + 1, or 0 if none exist.
     """
-    if not img_dir.exists():
-        return 0
-
     new_pattern = re.compile(r"^(?P<id>\d{4})-[A-Za-z0-9]+-[A-Za-z0-9_]+\.png$")
     old_pattern = re.compile(r"^[A-Za-z0-9]+-(?P<id>\d{4})-[A-Za-z0-9_]+\.png$")
     log_pattern = re.compile(r"^(?P<id>\d{4})-LOG\.txt$")
     existing_ids = []
 
-    for entry in img_dir.iterdir():
-        if entry.is_file():
-            match = new_pattern.match(entry.name) or old_pattern.match(entry.name) or log_pattern.match(entry.name)
-            if match:
-                try:
-                    existing_ids.append(int(match.group("id")))
-                except ValueError:
-                    pass
+    dirs_to_scan = [img_dir]
+    if log_dir is not None:
+        dirs_to_scan.append(log_dir)
+
+    for d in dirs_to_scan:
+        if d.exists():
+            for entry in d.iterdir():
+                if entry.is_file():
+                    match = new_pattern.match(entry.name) or old_pattern.match(entry.name) or log_pattern.match(entry.name)
+                    if match:
+                        try:
+                            existing_ids.append(int(match.group("id")))
+                        except ValueError:
+                            pass
 
     if not existing_ids:
         return 0
@@ -228,6 +243,7 @@ class FlightLogData:
         self.baro_filt: Optional[np.ndarray] = None
         self.att_quat: Optional[np.ndarray] = None
         self.att_euler: Optional[np.ndarray] = None
+        self.power: Optional[np.ndarray] = None
 
 def parse_binary_log(filepath: Path) -> Optional[FlightLogData]:
     if not filepath.exists():
@@ -265,6 +281,7 @@ def parse_binary_log(filepath: Path) -> Optional[FlightLogData]:
         baro_filt_list = []
         quat_list = []
         euler_list = []
+        power_list = []
 
         while True:
             tag_byte = f.read(1)
@@ -300,10 +317,10 @@ def parse_binary_log(filepath: Path) -> Optional[FlightLogData]:
                 ts, mx, my, mz = struct.unpack("<I3xfff", payload[:19])
                 mag_filt_list.append((ts, mx, my, mz))
             elif tag == PKT_TYPE_BARO_RAW:
-                ts, press = struct.unpack("<I3xf", payload[:11])
+                ts, press = struct.unpack("<If", payload[:8])
                 baro_raw_list.append((ts, press))
             elif tag == PKT_TYPE_BARO_FILT:
-                ts, press = struct.unpack("<I3xf", payload[:11])
+                ts, press = struct.unpack("<If", payload[:8])
                 baro_filt_list.append((ts, press))
             elif tag == PKT_TYPE_ATT_QUAT:
                 ts, qw, qx, qy, qz = struct.unpack("<I3xffff", payload[:23])
@@ -311,6 +328,9 @@ def parse_binary_log(filepath: Path) -> Optional[FlightLogData]:
             elif tag == PKT_TYPE_ATT_EULER:
                 ts, roll, pitch, yaw = struct.unpack("<I3xfff", payload[:19])
                 euler_list.append((ts, roll, pitch, yaw))
+            elif tag == PKT_TYPE_POWER:
+                ts, v_mv, i_ma, p_mw, e_mah = struct.unpack("<I3xffff", payload[:23])
+                power_list.append((ts, v_mv, i_ma, p_mw, e_mah))
 
     if imu_raw_list:
         log_data.imu_raw = np.array(imu_raw_list, dtype=[
@@ -345,6 +365,11 @@ def parse_binary_log(filepath: Path) -> Optional[FlightLogData]:
     if euler_list:
         log_data.att_euler = np.array(euler_list, dtype=[
             ('ts_us', 'u4'), ('roll', 'f4'), ('pitch', 'f4'), ('yaw', 'f4')
+        ])
+    if power_list:
+        log_data.power = np.array(power_list, dtype=[
+            ('ts_us', 'u4'), ('voltage_mv', 'f4'), ('current_ma', 'f4'),
+            ('power_mw', 'f4'), ('energy_mah', 'f4')
         ])
 
     return log_data
@@ -385,10 +410,11 @@ def calculate_stream_stats(
     unit: str
 ) -> Dict[str, Any]:
     n = len(values)
-    mean_val = float(np.mean(values))
-    std_val = float(np.std(values))
-    min_val = float(np.min(values))
-    max_val = float(np.max(values))
+    vals_f64 = values.astype(np.float64)
+    mean_val = float(np.mean(vals_f64))
+    std_val = float(np.std(vals_f64))
+    min_val = float(np.min(vals_f64))
+    max_val = float(np.max(vals_f64))
     peak_to_peak = max_val - min_val
 
     # Timing analysis
@@ -414,7 +440,7 @@ def calculate_stream_stats(
     peak_freq_hz = 0.0
     peak_db = -100.0
     if n >= 16 and fs_hz > 0:
-        detrended = values - mean_val
+        detrended = vals_f64 - mean_val
         fft_vals = np.fft.rfft(detrended)
         freqs = np.fft.rfftfreq(n, d=(1.0 / fs_hz))
         amps = np.abs(fft_vals) * 2.0 / n
@@ -501,10 +527,11 @@ def plot_histogram_3axis(
     ]
 
     for ax, (axis_name, data) in zip(axes, axes_data):
-        mean_val = float(np.mean(data))
-        std_val = float(np.std(data))
+        data_f64 = data.astype(np.float64)
+        mean_val = float(np.mean(data_f64))
+        std_val = float(np.std(data_f64))
 
-        ax.hist(data, bins=50, alpha=0.75, color=color, edgecolor="black", linewidth=0.5)
+        ax.hist(data_f64, bins=50, alpha=0.75, color=color, edgecolor="black", linewidth=0.5)
         ax.axvline(mean_val, color="red", linestyle="solid", linewidth=2.0, label=f"Mean: {mean_val:+.4f} {unit}")
         ax.axvline(mean_val - std_val, color="orange", linestyle="dashed", linewidth=1.8, label=f"SD: {std_val:.4f} {unit}")
         ax.axvline(mean_val + std_val, color="orange", linestyle="dashed", linewidth=1.8)
@@ -554,7 +581,8 @@ def plot_fft_3axis(
     ]
 
     for ax, (axis_name, data) in zip(axes, axes_data):
-        detrended = data - np.mean(data)
+        data_f64 = data.astype(np.float64)
+        detrended = data_f64 - np.mean(data_f64)
         fft_vals = np.fft.rfft(detrended)
         freqs = np.fft.rfftfreq(n, d=dt_s)
         amps = np.abs(fft_vals) * 2.0 / n
@@ -585,13 +613,14 @@ def plot_baro_histogram(
     pressure_pa: np.ndarray,
     short_desc: str,
     run_id: int,
-    img_dir: Path
+    img_dir: Path,
+    sensor_name: str = "Barometer"
 ):
     # Altitude estimation using hypsometric formula
     altitude_m = 44330.0 * (1.0 - (pressure_pa / P0_SEA_LEVEL_PA) ** (1.0 / 5.255))
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-    fig.suptitle("Barometer Distribution & Standard Deviation (Middle Flight Data)", fontsize=14, fontweight="bold")
+    fig.suptitle(f"{sensor_name} Distribution & Standard Deviation (Middle Flight Data)", fontsize=14, fontweight="bold")
 
     # Pressure
     mean_p = float(np.mean(pressure_pa))
@@ -627,24 +656,25 @@ def plot_baro_fft(
     pressure_pa: np.ndarray,
     short_desc: str,
     run_id: int,
-    img_dir: Path
+    img_dir: Path,
+    sensor_name: str = "Barometer"
 ):
     n = len(pressure_pa)
     if n < 16:
-        print(f"  [!] Skipping FFT for Barometer: sample count ({n}) too low.")
+        print(f"  [!] Skipping FFT for {sensor_name}: sample count ({n}) too low.")
         return
 
     intervals = np.diff(ts_us.astype(np.float64))
     valid_int = intervals[intervals > 0]
     if len(valid_int) == 0:
-        print("  [!] Skipping FFT for Barometer: invalid timestamps.")
+        print(f"  [!] Skipping FFT for {sensor_name}: invalid timestamps.")
         return
 
     dt_s = np.mean(valid_int) / 1e6
     fs_hz = 1.0 / dt_s if dt_s > 0 else 1.0
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    fig.suptitle(f"Barometer Frequency Spectrum (fs ≈ {fs_hz:.1f} Hz)", fontsize=14, fontweight="bold")
+    fig.suptitle(f"{sensor_name} Frequency Spectrum (fs ≈ {fs_hz:.1f} Hz)", fontsize=14, fontweight="bold")
 
     detrended = pressure_pa - np.mean(pressure_pa)
     fft_vals = np.fft.rfft(detrended)
@@ -663,7 +693,7 @@ def plot_baro_fft(
         ax.axvline(peak_f, color="crimson", linestyle="--", label=f"Peak: {peak_f:.2f} Hz ({peak_a:.1f} dB)")
         ax.legend(loc="upper right", fontsize=9)
 
-    ax.set_title("Pressure Sensor Noise Spectrum", fontsize=11, fontweight="bold")
+    ax.set_title(f"{sensor_name} Pressure Sensor Noise Spectrum", fontsize=11, fontweight="bold")
     ax.set_xlabel("Frequency [Hz]", fontsize=10)
     ax.set_ylabel("Amplitude [dB]", fontsize=10)
     ax.set_xlim(0, fs_hz / 2.0)
@@ -729,7 +759,8 @@ def plot_baro_time_series(
     run_id: int,
     img_dir: Path,
     filt_ts_us: Optional[np.ndarray] = None,
-    filt_pressure_pa: Optional[np.ndarray] = None
+    filt_pressure_pa: Optional[np.ndarray] = None,
+    sensor_name: str = "Barometer"
 ):
     n = len(pressure_pa)
     if n == 0:
@@ -739,7 +770,7 @@ def plot_baro_time_series(
     alt_m = 44330.0 * (1.0 - (pressure_pa / P0_SEA_LEVEL_PA) ** (1.0 / 5.255))
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 7), sharex=True)
-    fig.suptitle(f"Barometer Time Series ({n:,d} samples, {time_s[-1]:.2f} s)", fontsize=14, fontweight="bold")
+    fig.suptitle(f"{sensor_name} Time Series ({n:,d} samples, {time_s[-1]:.2f} s)", fontsize=14, fontweight="bold")
 
     # Pressure
     ax1.plot(time_s, pressure_pa, color="teal", linewidth=1.0, label="Pressure")
@@ -803,6 +834,100 @@ def plot_attitude_time_series(
     plt.tight_layout()
     save_figure(fig, img_dir, "TIME", run_id, short_desc)
 
+def plot_power_histogram(
+    v_mv: np.ndarray,
+    i_ma: np.ndarray,
+    p_mw: np.ndarray,
+    short_desc: str,
+    run_id: int,
+    img_dir: Path
+):
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 5))
+    fig.suptitle("Power Monitor Distribution & Standard Deviation (Middle Flight Data)", fontsize=14, fontweight="bold")
+
+    # 1. Voltage
+    v_mean = float(np.mean(v_mv))
+    v_std = float(np.std(v_mv))
+    ax1.hist(v_mv, bins=50, alpha=0.75, color="#e74c3c", edgecolor="black", linewidth=0.5)
+    ax1.axvline(v_mean, color="red", linestyle="solid", linewidth=2.0, label=f"Mean: {v_mean:.1f} mV")
+    ax1.axvline(v_mean - v_std, color="darkred", linestyle="dashed", linewidth=1.8, label=f"SD: {v_std:.1f} mV")
+    ax1.axvline(v_mean + v_std, color="darkred", linestyle="dashed", linewidth=1.8)
+    ax1.set_title("Pack Voltage", fontsize=11, fontweight="bold")
+    ax1.set_xlabel("Voltage [mV]", fontsize=10)
+    ax1.set_ylabel("Frequency", fontsize=10)
+    ax1.legend(loc="upper right", fontsize=8.5)
+    ax1.grid(True, alpha=0.3, linestyle=":")
+
+    # 2. Current
+    i_mean = float(np.mean(i_ma))
+    i_std = float(np.std(i_ma))
+    ax2.hist(i_ma, bins=50, alpha=0.75, color="#3498db", edgecolor="black", linewidth=0.5)
+    ax2.axvline(i_mean, color="blue", linestyle="solid", linewidth=2.0, label=f"Mean: {i_mean:.1f} mA")
+    ax2.axvline(i_mean - i_std, color="darkblue", linestyle="dashed", linewidth=1.8, label=f"SD: {i_std:.1f} mA")
+    ax2.axvline(i_mean + i_std, color="darkblue", linestyle="dashed", linewidth=1.8)
+    ax2.set_title("Current Draw", fontsize=11, fontweight="bold")
+    ax2.set_xlabel("Current [mA]", fontsize=10)
+    ax2.set_ylabel("Frequency", fontsize=10)
+    ax2.legend(loc="upper right", fontsize=8.5)
+    ax2.grid(True, alpha=0.3, linestyle=":")
+
+    # 3. Power
+    p_mean = float(np.mean(p_mw))
+    p_std = float(np.std(p_mw))
+    ax3.hist(p_mw, bins=50, alpha=0.75, color="#f39c12", edgecolor="black", linewidth=0.5)
+    ax3.axvline(p_mean, color="darkorange", linestyle="solid", linewidth=2.0, label=f"Mean: {p_mean:.1f} mW")
+    ax3.axvline(p_mean - p_std, color="brown", linestyle="dashed", linewidth=1.8, label=f"SD: {p_std:.1f} mW")
+    ax3.axvline(p_mean + p_std, color="brown", linestyle="dashed", linewidth=1.8)
+    ax3.set_title("Instantaneous Power", fontsize=11, fontweight="bold")
+    ax3.set_xlabel("Power [mW]", fontsize=10)
+    ax3.set_ylabel("Frequency", fontsize=10)
+    ax3.legend(loc="upper right", fontsize=8.5)
+    ax3.grid(True, alpha=0.3, linestyle=":")
+
+    plt.tight_layout()
+    save_figure(fig, img_dir, "HIST", run_id, short_desc)
+
+def plot_power_time_series(
+    ts_us: np.ndarray,
+    v_mv: np.ndarray,
+    i_ma: np.ndarray,
+    p_mw: np.ndarray,
+    e_mah: np.ndarray,
+    short_desc: str,
+    run_id: int,
+    img_dir: Path
+):
+    n = len(v_mv)
+    if n == 0:
+        return
+
+    time_s = (ts_us.astype(np.float64) - float(ts_us[0])) / 1e6
+    fig, axes = plt.subplots(4, 1, figsize=(16, 11), sharex=True)
+    fig.suptitle(f"Power & Energy Consumption vs. Time ({n:,d} samples, {time_s[-1]:.2f} s)", fontsize=14, fontweight="bold")
+
+    plots = [
+        ("Pack Voltage", v_mv, "mV", "#e74c3c"),
+        ("Current Draw", i_ma, "mA", "#3498db"),
+        ("Power Dissipation", p_mw, "mW", "#f39c12"),
+        ("Cumulative Energy", e_mah, "mAh", "#2ecc71")
+    ]
+
+    for ax, (name, data, unit, color) in zip(axes, plots):
+        ax.plot(time_s, data, color=color, linewidth=1.2, label=name)
+        mean_v = float(np.mean(data))
+        if name != "Cumulative Energy":
+            ax.axhline(mean_v, color="black", linestyle="--", linewidth=1.0, alpha=0.7, label=f"Mean: {mean_v:.1f} {unit}")
+        else:
+            final_v = float(data[-1])
+            ax.axhline(final_v, color="darkgreen", linestyle="--", linewidth=1.0, alpha=0.7, label=f"Total: {final_v:.2f} mAh")
+        ax.set_ylabel(f"{name} [{unit}]", fontsize=10, fontweight="bold")
+        ax.grid(True, alpha=0.3, linestyle=":")
+        ax.legend(loc="upper right", fontsize=8.5)
+
+    axes[-1].set_xlabel("Elapsed Flight Time [seconds]", fontsize=11, fontweight="bold")
+    plt.tight_layout()
+    save_figure(fig, img_dir, "TIME", run_id, short_desc)
+
 def plot_mag_plane_projections(
     mx: np.ndarray,
     my: np.ndarray,
@@ -811,9 +936,7 @@ def plot_mag_plane_projections(
     short_desc: str,
     run_id: int,
     img_dir: Path,
-    filt_mx: Optional[np.ndarray] = None,
-    filt_my: Optional[np.ndarray] = None,
-    filt_mz: Optional[np.ndarray] = None,
+    is_filtered: bool = False,
     custom_limit: Optional[float] = None
 ):
     n = len(mx)
@@ -822,24 +945,24 @@ def plot_mag_plane_projections(
 
     # Calculate uniform symmetric bounds across all axes
     max_val = max(float(np.max(np.abs(mx))), float(np.max(np.abs(my))), float(np.max(np.abs(mz))))
-    if filt_mx is not None and len(filt_mx) > 0:
-        filt_max = max(float(np.max(np.abs(filt_mx))), float(np.max(np.abs(filt_my))), float(np.max(np.abs(filt_mz))))
-        max_val = max(max_val, filt_max)
-
     limit = custom_limit if (custom_limit is not None and custom_limit > 0) else (max_val * 1.15 if max_val > 0 else 1.0)
 
+    label_type = "Filtered" if is_filtered else "Raw"
+    color_xy = "red" if is_filtered else "gray"
+    color_xz = "blue" if is_filtered else "gray"
+    color_yz = "green" if is_filtered else "gray"
+    alpha_val = 0.7 if is_filtered else 0.6
+
     fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-    fig.suptitle("Magnetometer 3-Plane Projections (Middle Flight Data)", fontsize=14, fontweight="bold")
+    fig.suptitle(f"Magnetometer {label_type} 3-Plane Projections (Middle Flight Data)", fontsize=14, fontweight="bold")
 
     # 1. XY Plane
     axes[0].axhline(0, color="black", linestyle="--", linewidth=1.0)
     axes[0].axvline(0, color="black", linestyle="--", linewidth=1.0)
-    axes[0].scatter(mx, my, c="gray", s=10, alpha=0.6, label="Raw")
-    if filt_mx is not None and len(filt_mx) > 0:
-        axes[0].scatter(filt_mx, filt_my, c="red", s=10, alpha=0.7, label="Filtered")
+    axes[0].scatter(mx, my, c=color_xy, s=10, alpha=alpha_val, label=label_type)
     axes[0].set_xlabel(f"X axis [{unit}]", fontsize=10)
     axes[0].set_ylabel(f"Y axis [{unit}]", fontsize=10)
-    axes[0].set_title("Magnetometer XY Plane", fontsize=11, fontweight="bold")
+    axes[0].set_title(f"Magnetometer {label_type} XY Plane", fontsize=11, fontweight="bold")
     axes[0].set_xlim(-limit, limit)
     axes[0].set_ylim(-limit, limit)
     axes[0].set_aspect('equal', adjustable='box')
@@ -849,12 +972,10 @@ def plot_mag_plane_projections(
     # 2. XZ Plane
     axes[1].axhline(0, color="black", linestyle="--", linewidth=1.0)
     axes[1].axvline(0, color="black", linestyle="--", linewidth=1.0)
-    axes[1].scatter(mx, mz, c="gray", s=10, alpha=0.6, label="Raw")
-    if filt_mx is not None and len(filt_mx) > 0:
-        axes[1].scatter(filt_mx, filt_mz, c="blue", s=10, alpha=0.7, label="Filtered")
+    axes[1].scatter(mx, mz, c=color_xz, s=10, alpha=alpha_val, label=label_type)
     axes[1].set_xlabel(f"X axis [{unit}]", fontsize=10)
     axes[1].set_ylabel(f"Z axis [{unit}]", fontsize=10)
-    axes[1].set_title("Magnetometer XZ Plane", fontsize=11, fontweight="bold")
+    axes[1].set_title(f"Magnetometer {label_type} XZ Plane", fontsize=11, fontweight="bold")
     axes[1].set_xlim(-limit, limit)
     axes[1].set_ylim(-limit, limit)
     axes[1].set_aspect('equal', adjustable='box')
@@ -864,12 +985,10 @@ def plot_mag_plane_projections(
     # 3. YZ Plane
     axes[2].axhline(0, color="black", linestyle="--", linewidth=1.0)
     axes[2].axvline(0, color="black", linestyle="--", linewidth=1.0)
-    axes[2].scatter(my, mz, c="gray", s=10, alpha=0.6, label="Raw")
-    if filt_my is not None and len(filt_my) > 0:
-        axes[2].scatter(filt_my, filt_mz, c="green", s=10, alpha=0.7, label="Filtered")
+    axes[2].scatter(my, mz, c=color_yz, s=10, alpha=alpha_val, label=label_type)
     axes[2].set_xlabel(f"Y axis [{unit}]", fontsize=10)
     axes[2].set_ylabel(f"Z axis [{unit}]", fontsize=10)
-    axes[2].set_title("Magnetometer YZ Plane", fontsize=11, fontweight="bold")
+    axes[2].set_title(f"Magnetometer {label_type} YZ Plane", fontsize=11, fontweight="bold")
     axes[2].set_xlim(-limit, limit)
     axes[2].set_ylim(-limit, limit)
     axes[2].set_aspect('equal', adjustable='box')
@@ -1044,213 +1163,368 @@ def process_mag_calibration(
 # =============================================================================
 def process_accelerometer(
     log_data: FlightLogData,
-    do_hist: bool,
-    do_fft: bool,
-    do_time: bool,
+    do_raw_hist: bool,
+    do_raw_fft: bool,
+    do_raw_time: bool,
+    do_filt_hist: bool,
+    do_filt_fft: bool,
+    do_filt_time: bool,
     run_id: int,
     img_dir: Path,
     trim_start: float,
     trim_end: float
 ):
-    if log_data.imu_raw is None or len(log_data.imu_raw) == 0:
+    has_raw = log_data.imu_raw is not None and len(log_data.imu_raw) > 0
+    has_filt = log_data.imu_filt is not None and len(log_data.imu_filt) > 0
+
+    if not has_raw and not has_filt:
         print("[!] No Accelerometer data found in flight log.")
         return
 
-    raw_data, s_idx, e_idx = trim_data_stream(log_data.imu_raw, trim_start, trim_end)
-    print(f"\n>> Processing Accelerometer: {len(raw_data)} samples analyzed (trimmed {s_idx} to {e_idx} of {len(log_data.imu_raw)})")
+    # 1. RAW Accelerometer Processing
+    if has_raw and (do_raw_hist or do_raw_fft or do_raw_time):
+        raw_data, s_idx, e_idx = trim_data_stream(log_data.imu_raw, trim_start, trim_end)
+        print(f"\n>> Processing Accelerometer RAW: {len(raw_data)} samples analyzed (trimmed {s_idx} to {e_idx} of {len(log_data.imu_raw)})")
 
-    ts = raw_data['ts_us']
-    ax = raw_data['ax']
-    ay = raw_data['ay']
-    az = raw_data['az']
+        ts = raw_data['ts_us']
+        ax = raw_data['ax']
+        ay = raw_data['ay']
+        az = raw_data['az']
 
-    stats = [
-        calculate_stream_stats("Accel X", ts, ax, "g"),
-        calculate_stream_stats("Accel Y", ts, ay, "g"),
-        calculate_stream_stats("Accel Z", ts, az, "g")
-    ]
-    print_stats_table(stats, f"Accelerometer RAW (Session LOG_{log_data.session_id:04d})")
+        stats = [
+            calculate_stream_stats("Accel X (Raw)", ts, ax, "g"),
+            calculate_stream_stats("Accel Y (Raw)", ts, ay, "g"),
+            calculate_stream_stats("Accel Z (Raw)", ts, az, "g")
+        ]
+        print_stats_table(stats, f"Accelerometer RAW (Session LOG_{log_data.session_id:04d})")
 
-    filt_data = None
-    if log_data.imu_filt is not None and len(log_data.imu_filt) > 0:
-        filt_data, _, _ = trim_data_stream(log_data.imu_filt, trim_start, trim_end)
+        filt_data = None
+        if has_filt:
+            filt_data, _, _ = trim_data_stream(log_data.imu_filt, trim_start, trim_end)
 
-    if do_hist:
-        plot_histogram_3axis(ts, ax, ay, az, "Accelerometer", "g", "Accel_raw", run_id, img_dir, color="#4C72B0")
+        if do_raw_hist:
+            plot_histogram_3axis(ts, ax, ay, az, "Accelerometer RAW", "g", "Accel_raw", run_id, img_dir, color="#4C72B0")
 
-    if do_fft:
-        plot_fft_3axis(ts, ax, ay, az, "Accelerometer", "g", "Accel_raw", run_id, img_dir, color="midnightblue")
+        if do_raw_fft:
+            plot_fft_3axis(ts, ax, ay, az, "Accelerometer RAW", "g", "Accel_raw", run_id, img_dir, color="midnightblue")
 
-    if do_time:
-        if filt_data is not None:
-            plot_time_series_3axis(
-                ts, ax, ay, az, "Accelerometer", "g", "Accel_raw", run_id, img_dir,
-                filt_ts_us=filt_data['ts_us'], filt_x=filt_data['ax'], filt_y=filt_data['ay'], filt_z=filt_data['az']
-            )
-        else:
-            plot_time_series_3axis(ts, ax, ay, az, "Accelerometer", "g", "Accel_raw", run_id, img_dir)
+        if do_raw_time:
+            if filt_data is not None:
+                plot_time_series_3axis(
+                    ts, ax, ay, az, "Accelerometer RAW", "g", "Accel_raw", run_id, img_dir,
+                    filt_ts_us=filt_data['ts_us'], filt_x=filt_data['ax'], filt_y=filt_data['ay'], filt_z=filt_data['az']
+                )
+            else:
+                plot_time_series_3axis(ts, ax, ay, az, "Accelerometer RAW", "g", "Accel_raw", run_id, img_dir)
+
+    elif not has_raw and (do_raw_hist or do_raw_fft or do_raw_time):
+        print("  [!] No Raw Accelerometer data found in flight log.")
+
+    # 2. FILTERED Accelerometer Processing
+    if has_filt and (do_filt_hist or do_filt_fft or do_filt_time):
+        filt_data, fs_idx, fe_idx = trim_data_stream(log_data.imu_filt, trim_start, trim_end)
+        print(f"\n>> Processing Accelerometer FILTERED: {len(filt_data)} samples analyzed (trimmed {fs_idx} to {fe_idx} of {len(log_data.imu_filt)})")
+
+        filt_ts = filt_data['ts_us']
+        filt_ax = filt_data['ax']
+        filt_ay = filt_data['ay']
+        filt_az = filt_data['az']
+
+        stats_filt = [
+            calculate_stream_stats("Accel X (Filt)", filt_ts, filt_ax, "g"),
+            calculate_stream_stats("Accel Y (Filt)", filt_ts, filt_ay, "g"),
+            calculate_stream_stats("Accel Z (Filt)", filt_ts, filt_az, "g")
+        ]
+        print_stats_table(stats_filt, f"Accelerometer FILTERED (Session LOG_{log_data.session_id:04d})")
+
+        if do_filt_hist:
+            plot_histogram_3axis(filt_ts, filt_ax, filt_ay, filt_az, "Accelerometer FILTERED", "g", "Accel_filt", run_id, img_dir, color="#5B92E5")
+
+        if do_filt_fft:
+            plot_fft_3axis(filt_ts, filt_ax, filt_ay, filt_az, "Accelerometer FILTERED", "g", "Accel_filt", run_id, img_dir, color="#1D4E89")
+
+        if do_filt_time:
+            plot_time_series_3axis(filt_ts, filt_ax, filt_ay, filt_az, "Accelerometer FILTERED", "g", "Accel_filt", run_id, img_dir)
+
+    elif not has_filt and (do_filt_hist or do_filt_fft or do_filt_time):
+        print("  [!] No Filtered Accelerometer data found in flight log.")
 
 def process_gyroscope(
     log_data: FlightLogData,
-    do_hist: bool,
-    do_fft: bool,
-    do_time: bool,
+    do_raw_hist: bool,
+    do_raw_fft: bool,
+    do_raw_time: bool,
+    do_filt_hist: bool,
+    do_filt_fft: bool,
+    do_filt_time: bool,
     run_id: int,
     img_dir: Path,
     trim_start: float,
     trim_end: float
 ):
-    if log_data.imu_raw is None or len(log_data.imu_raw) == 0:
+    has_raw = log_data.imu_raw is not None and len(log_data.imu_raw) > 0
+    has_filt = log_data.imu_filt is not None and len(log_data.imu_filt) > 0
+
+    if not has_raw and not has_filt:
         print("[!] No Gyroscope data found in flight log.")
         return
 
-    raw_data, s_idx, e_idx = trim_data_stream(log_data.imu_raw, trim_start, trim_end)
-    print(f"\n>> Processing Gyroscope: {len(raw_data)} samples analyzed (trimmed {s_idx} to {e_idx} of {len(log_data.imu_raw)})")
+    # 1. RAW Gyroscope Processing
+    if has_raw and (do_raw_hist or do_raw_fft or do_raw_time):
+        raw_data, s_idx, e_idx = trim_data_stream(log_data.imu_raw, trim_start, trim_end)
+        print(f"\n>> Processing Gyroscope RAW: {len(raw_data)} samples analyzed (trimmed {s_idx} to {e_idx} of {len(log_data.imu_raw)})")
 
-    ts = raw_data['ts_us']
-    # Firmware MPU6050 driver already converts raw ADC values to deg/s via inv_gyro_sens (1/131.0 LSB/(deg/s)).
-    # Data is already in deg/s. Do not apply np.degrees() to avoid false 57.3x multiplication!
-    gx = raw_data['gx']
-    gy = raw_data['gy']
-    gz = raw_data['gz']
+        ts = raw_data['ts_us']
+        # Firmware MPU6050 driver already converts raw ADC values to deg/s via inv_gyro_sens (1/131.0 LSB/(deg/s)).
+        # Data is already in deg/s. Do not apply np.degrees() to avoid false 57.3x multiplication!
+        gx = raw_data['gx']
+        gy = raw_data['gy']
+        gz = raw_data['gz']
 
-    stats = [
-        calculate_stream_stats("Gyro X", ts, gx, "deg/s"),
-        calculate_stream_stats("Gyro Y", ts, gy, "deg/s"),
-        calculate_stream_stats("Gyro Z", ts, gz, "deg/s")
-    ]
-    print_stats_table(stats, f"Gyroscope RAW (Session LOG_{log_data.session_id:04d})")
+        stats = [
+            calculate_stream_stats("Gyro X (Raw)", ts, gx, "deg/s"),
+            calculate_stream_stats("Gyro Y (Raw)", ts, gy, "deg/s"),
+            calculate_stream_stats("Gyro Z (Raw)", ts, gz, "deg/s")
+        ]
+        print_stats_table(stats, f"Gyroscope RAW (Session LOG_{log_data.session_id:04d})")
 
-    filt_data = None
-    if log_data.imu_filt is not None and len(log_data.imu_filt) > 0:
-        filt_data, _, _ = trim_data_stream(log_data.imu_filt, trim_start, trim_end)
+        filt_data = None
+        if has_filt:
+            filt_data, _, _ = trim_data_stream(log_data.imu_filt, trim_start, trim_end)
 
-    if do_hist:
-        plot_histogram_3axis(ts, gx, gy, gz, "Gyroscope", "deg/s", "Gyro_raw", run_id, img_dir, color="#C44E52")
+        if do_raw_hist:
+            plot_histogram_3axis(ts, gx, gy, gz, "Gyroscope RAW", "deg/s", "Gyro_raw", run_id, img_dir, color="#C44E52")
 
-    if do_fft:
-        plot_fft_3axis(ts, gx, gy, gz, "Gyroscope", "deg/s", "Gyro_raw", run_id, img_dir, color="#8172B2")
+        if do_raw_fft:
+            plot_fft_3axis(ts, gx, gy, gz, "Gyroscope RAW", "deg/s", "Gyro_raw", run_id, img_dir, color="#8172B2")
 
-    if do_time:
-        if filt_data is not None:
-            plot_time_series_3axis(
-                ts, gx, gy, gz, "Gyroscope", "deg/s", "Gyro_raw", run_id, img_dir,
-                filt_ts_us=filt_data['ts_us'], filt_x=filt_data['gx'], filt_y=filt_data['gy'], filt_z=filt_data['gz']
-            )
-        else:
-            plot_time_series_3axis(ts, gx, gy, gz, "Gyroscope", "deg/s", "Gyro_raw", run_id, img_dir)
+        if do_raw_time:
+            if filt_data is not None:
+                plot_time_series_3axis(
+                    ts, gx, gy, gz, "Gyroscope RAW", "deg/s", "Gyro_raw", run_id, img_dir,
+                    filt_ts_us=filt_data['ts_us'], filt_x=filt_data['gx'], filt_y=filt_data['gy'], filt_z=filt_data['gz']
+                )
+            else:
+                plot_time_series_3axis(ts, gx, gy, gz, "Gyroscope RAW", "deg/s", "Gyro_raw", run_id, img_dir)
+
+    elif not has_raw and (do_raw_hist or do_raw_fft or do_raw_time):
+        print("  [!] No Raw Gyroscope data found in flight log.")
+
+    # 2. FILTERED Gyroscope Processing
+    if has_filt and (do_filt_hist or do_filt_fft or do_filt_time):
+        filt_data, fs_idx, fe_idx = trim_data_stream(log_data.imu_filt, trim_start, trim_end)
+        print(f"\n>> Processing Gyroscope FILTERED: {len(filt_data)} samples analyzed (trimmed {fs_idx} to {fe_idx} of {len(log_data.imu_filt)})")
+
+        filt_ts = filt_data['ts_us']
+        filt_gx = filt_data['gx']
+        filt_gy = filt_data['gy']
+        filt_gz = filt_data['gz']
+
+        stats_filt = [
+            calculate_stream_stats("Gyro X (Filt)", filt_ts, filt_gx, "deg/s"),
+            calculate_stream_stats("Gyro Y (Filt)", filt_ts, filt_gy, "deg/s"),
+            calculate_stream_stats("Gyro Z (Filt)", filt_ts, filt_gz, "deg/s")
+        ]
+        print_stats_table(stats_filt, f"Gyroscope FILTERED (Session LOG_{log_data.session_id:04d})")
+
+        if do_filt_hist:
+            plot_histogram_3axis(filt_ts, filt_gx, filt_gy, filt_gz, "Gyroscope FILTERED", "deg/s", "Gyro_filt", run_id, img_dir, color="#E26D5C")
+
+        if do_filt_fft:
+            plot_fft_3axis(filt_ts, filt_gx, filt_gy, filt_gz, "Gyroscope FILTERED", "deg/s", "Gyro_filt", run_id, img_dir, color="#5E4FA2")
+
+        if do_filt_time:
+            plot_time_series_3axis(filt_ts, filt_gx, filt_gy, filt_gz, "Gyroscope FILTERED", "deg/s", "Gyro_filt", run_id, img_dir)
+
+    elif not has_filt and (do_filt_hist or do_filt_fft or do_filt_time):
+        print("  [!] No Filtered Gyroscope data found in flight log.")
 
 def process_magnetometer(
     log_data: FlightLogData,
-    do_hist: bool,
-    do_fft: bool,
-    do_time: bool,
-    do_proj: bool,
-    do_calib: bool,
+    do_raw_hist: bool,
+    do_raw_fft: bool,
+    do_raw_time: bool,
+    do_raw_proj: bool,
+    do_raw_calib: bool,
+    do_filt_hist: bool,
+    do_filt_fft: bool,
+    do_filt_time: bool,
+    do_filt_proj: bool,
     run_id: int,
     img_dir: Path,
     trim_start: float,
     trim_end: float
 ):
-    if log_data.mag_raw is None or len(log_data.mag_raw) == 0:
+    has_raw = log_data.mag_raw is not None and len(log_data.mag_raw) > 0
+    has_filt = log_data.mag_filt is not None and len(log_data.mag_filt) > 0
+
+    if not has_raw and not has_filt:
         print("[!] No Magnetometer data found in flight log.")
         return
 
-    raw_data, s_idx, e_idx = trim_data_stream(log_data.mag_raw, trim_start, trim_end)
-    print(f"\n>> Processing Magnetometer: {len(raw_data)} samples analyzed (trimmed {s_idx} to {e_idx} of {len(log_data.mag_raw)})")
+    # 1. RAW Magnetometer Processing
+    if has_raw and (do_raw_hist or do_raw_fft or do_raw_time or do_raw_proj or do_raw_calib):
+        raw_data, s_idx, e_idx = trim_data_stream(log_data.mag_raw, trim_start, trim_end)
+        print(f"\n>> Processing Magnetometer RAW: {len(raw_data)} samples analyzed (trimmed {s_idx} to {e_idx} of {len(log_data.mag_raw)})")
 
-    ts = raw_data['ts_us']
-    mx = raw_data['mx']
-    my = raw_data['my']
-    mz = raw_data['mz']
+        ts = raw_data['ts_us']
+        mx = raw_data['mx']
+        my = raw_data['my']
+        mz = raw_data['mz']
 
-    stats = [
-        calculate_stream_stats("Mag X", ts, mx, "Gauss"),
-        calculate_stream_stats("Mag Y", ts, my, "Gauss"),
-        calculate_stream_stats("Mag Z", ts, mz, "Gauss")
-    ]
-    print_stats_table(stats, f"Magnetometer RAW (Session LOG_{log_data.session_id:04d})")
+        stats = [
+            calculate_stream_stats("Mag X (Raw)", ts, mx, "Gauss"),
+            calculate_stream_stats("Mag Y (Raw)", ts, my, "Gauss"),
+            calculate_stream_stats("Mag Z (Raw)", ts, mz, "Gauss")
+        ]
+        print_stats_table(stats, f"Magnetometer RAW (Session LOG_{log_data.session_id:04d})")
 
-    filt_data = None
-    if log_data.mag_filt is not None and len(log_data.mag_filt) > 0:
-        filt_data, _, _ = trim_data_stream(log_data.mag_filt, trim_start, trim_end)
+        filt_data = None
+        if has_filt:
+            filt_data, _, _ = trim_data_stream(log_data.mag_filt, trim_start, trim_end)
 
-    if do_hist:
-        plot_histogram_3axis(ts, mx, my, mz, "Magnetometer", "Gauss", "Mag_raw", run_id, img_dir, color="#55A868")
+        if do_raw_hist:
+            plot_histogram_3axis(ts, mx, my, mz, "Magnetometer RAW", "Gauss", "Mag_raw", run_id, img_dir, color="#55A868")
 
-    if do_fft:
-        plot_fft_3axis(ts, mx, my, mz, "Magnetometer", "Gauss", "Mag_raw", run_id, img_dir, color="#2B7A4B")
+        if do_raw_fft:
+            plot_fft_3axis(ts, mx, my, mz, "Magnetometer RAW", "Gauss", "Mag_raw", run_id, img_dir, color="#2B7A4B")
 
-    if do_time:
-        if filt_data is not None:
-            plot_time_series_3axis(
-                ts, mx, my, mz, "Magnetometer", "Gauss", "Mag_raw", run_id, img_dir,
-                filt_ts_us=filt_data['ts_us'], filt_x=filt_data['mx'], filt_y=filt_data['my'], filt_z=filt_data['mz']
-            )
-        else:
-            plot_time_series_3axis(ts, mx, my, mz, "Magnetometer", "Gauss", "Mag_raw", run_id, img_dir)
+        if do_raw_time:
+            if filt_data is not None:
+                plot_time_series_3axis(
+                    ts, mx, my, mz, "Magnetometer RAW", "Gauss", "Mag_raw", run_id, img_dir,
+                    filt_ts_us=filt_data['ts_us'], filt_x=filt_data['mx'], filt_y=filt_data['my'], filt_z=filt_data['mz']
+                )
+            else:
+                plot_time_series_3axis(ts, mx, my, mz, "Magnetometer RAW", "Gauss", "Mag_raw", run_id, img_dir)
 
-    if do_proj:
-        if filt_data is not None:
-            plot_mag_plane_projections(
-                mx, my, mz, "Gauss", "Mag_raw", run_id, img_dir,
-                filt_mx=filt_data['mx'], filt_my=filt_data['my'], filt_mz=filt_data['mz']
-            )
-        else:
-            plot_mag_plane_projections(mx, my, mz, "Gauss", "Mag_raw", run_id, img_dir)
+        if do_raw_proj:
+            plot_mag_plane_projections(mx, my, mz, "Gauss", "Mag_raw", run_id, img_dir, is_filtered=False)
 
-    if do_calib:
-        process_mag_calibration(mx, my, mz, "Gauss", run_id, img_dir)
+        if do_raw_calib:
+            process_mag_calibration(mx, my, mz, "Gauss", run_id, img_dir)
+
+    elif not has_raw and (do_raw_hist or do_raw_fft or do_raw_time or do_raw_proj or do_raw_calib):
+        print("  [!] No Raw Magnetometer data found in flight log.")
+
+    # 2. FILTERED Magnetometer Processing
+    if has_filt and (do_filt_hist or do_filt_fft or do_filt_time or do_filt_proj):
+        filt_data, fs_idx, fe_idx = trim_data_stream(log_data.mag_filt, trim_start, trim_end)
+        print(f"\n>> Processing Magnetometer FILTERED: {len(filt_data)} samples analyzed (trimmed {fs_idx} to {fe_idx} of {len(log_data.mag_filt)})")
+
+        filt_ts = filt_data['ts_us']
+        filt_mx = filt_data['mx']
+        filt_my = filt_data['my']
+        filt_mz = filt_data['mz']
+
+        stats_filt = [
+            calculate_stream_stats("Mag X (Filt)", filt_ts, filt_mx, "Gauss"),
+            calculate_stream_stats("Mag Y (Filt)", filt_ts, filt_my, "Gauss"),
+            calculate_stream_stats("Mag Z (Filt)", filt_ts, filt_mz, "Gauss")
+        ]
+        print_stats_table(stats_filt, f"Magnetometer FILTERED (Session LOG_{log_data.session_id:04d})")
+
+        if do_filt_hist:
+            plot_histogram_3axis(filt_ts, filt_mx, filt_my, filt_mz, "Magnetometer FILTERED", "Gauss", "Mag_filt", run_id, img_dir, color="#2CA25F")
+
+        if do_filt_fft:
+            plot_fft_3axis(filt_ts, filt_mx, filt_my, filt_mz, "Magnetometer FILTERED", "Gauss", "Mag_filt", run_id, img_dir, color="#006D2C")
+
+        if do_filt_time:
+            plot_time_series_3axis(filt_ts, filt_mx, filt_my, filt_mz, "Magnetometer FILTERED", "Gauss", "Mag_filt", run_id, img_dir)
+
+        if do_filt_proj:
+            plot_mag_plane_projections(filt_mx, filt_my, filt_mz, "Gauss", "Mag_filt", run_id, img_dir, is_filtered=True)
+
+    elif not has_filt and (do_filt_hist or do_filt_fft or do_filt_time or do_filt_proj):
+        print("  [!] No Filtered Magnetometer data found in flight log.")
 
 def process_barometer(
     log_data: FlightLogData,
-    do_hist: bool,
-    do_fft: bool,
-    do_time: bool,
+    do_raw_hist: bool,
+    do_raw_fft: bool,
+    do_raw_time: bool,
+    do_filt_hist: bool,
+    do_filt_fft: bool,
+    do_filt_time: bool,
     run_id: int,
     img_dir: Path,
     trim_start: float,
     trim_end: float
 ):
-    data_source = log_data.baro_raw if log_data.baro_raw is not None else log_data.baro_filt
-    desc = "Baro_raw" if log_data.baro_raw is not None else "Baro_filt"
+    has_raw = log_data.baro_raw is not None and len(log_data.baro_raw) > 0
+    has_filt = log_data.baro_filt is not None and len(log_data.baro_filt) > 0
 
-    if data_source is None or len(data_source) == 0:
+    if not has_raw and not has_filt:
         print("[!] No Barometer data found in flight log.")
         return
 
-    if len(data_source) < 16:
-        print(f"[!] Barometer sample count ({len(data_source)}) is too small for statistical distribution/FFT analysis.")
-        return
-
-    raw_data, s_idx, e_idx = trim_data_stream(data_source, trim_start, trim_end)
-    print(f"\n>> Processing Barometer: {len(raw_data)} samples analyzed (trimmed {s_idx} to {e_idx} of {len(data_source)})")
-
-    ts = raw_data['ts_us']
-    press = raw_data['press']
-    alt = 44330.0 * (1.0 - (press / P0_SEA_LEVEL_PA) ** (1.0 / 5.255))
-
-    stats = [
-        calculate_stream_stats("Pressure", ts, press, "Pa"),
-        calculate_stream_stats("Est Altitude", ts, alt, "m")
-    ]
-    print_stats_table(stats, f"Barometer (Session LOG_{log_data.session_id:04d})")
-
-    filt_data = None
-    if log_data.baro_raw is not None and log_data.baro_filt is not None and len(log_data.baro_filt) > 0:
-        filt_data, _, _ = trim_data_stream(log_data.baro_filt, trim_start, trim_end)
-
-    if do_hist:
-        plot_baro_histogram(ts, press, desc, run_id, img_dir)
-
-    if do_fft:
-        plot_baro_fft(ts, press, desc, run_id, img_dir)
-
-    if do_time:
-        if filt_data is not None:
-            plot_baro_time_series(ts, press, desc, run_id, img_dir, filt_ts_us=filt_data['ts_us'], filt_pressure_pa=filt_data['press'])
+    # 1. RAW Barometer Processing
+    if has_raw and (do_raw_hist or do_raw_fft or do_raw_time):
+        if len(log_data.baro_raw) < 16 and (do_raw_hist or do_raw_fft):
+            print(f"  [!] Barometer RAW sample count ({len(log_data.baro_raw)}) is too small for statistical distribution/FFT analysis.")
         else:
-            plot_baro_time_series(ts, press, desc, run_id, img_dir)
+            raw_data, s_idx, e_idx = trim_data_stream(log_data.baro_raw, trim_start, trim_end)
+            print(f"\n>> Processing Barometer RAW: {len(raw_data)} samples analyzed (trimmed {s_idx} to {e_idx} of {len(log_data.baro_raw)})")
+
+            ts = raw_data['ts_us']
+            press = raw_data['press']
+            alt = 44330.0 * (1.0 - (press / P0_SEA_LEVEL_PA) ** (1.0 / 5.255))
+
+            stats = [
+                calculate_stream_stats("Pressure (Raw)", ts, press, "Pa"),
+                calculate_stream_stats("Est Alt (Raw)", ts, alt, "m")
+            ]
+            print_stats_table(stats, f"Barometer RAW (Session LOG_{log_data.session_id:04d})")
+
+            filt_data = None
+            if has_filt:
+                filt_data, _, _ = trim_data_stream(log_data.baro_filt, trim_start, trim_end)
+
+            if do_raw_hist:
+                plot_baro_histogram(ts, press, "Baro_raw", run_id, img_dir, sensor_name="Barometer RAW")
+
+            if do_raw_fft:
+                plot_baro_fft(ts, press, "Baro_raw", run_id, img_dir, sensor_name="Barometer RAW")
+
+            if do_raw_time:
+                if filt_data is not None:
+                    plot_baro_time_series(ts, press, "Baro_raw", run_id, img_dir, filt_ts_us=filt_data['ts_us'], filt_pressure_pa=filt_data['press'], sensor_name="Barometer RAW")
+                else:
+                    plot_baro_time_series(ts, press, "Baro_raw", run_id, img_dir, sensor_name="Barometer RAW")
+
+    elif not has_raw and (do_raw_hist or do_raw_fft or do_raw_time):
+        print("  [!] No Raw Barometer data found in flight log.")
+
+    # 2. FILTERED Barometer Processing
+    if has_filt and (do_filt_hist or do_filt_fft or do_filt_time):
+        if len(log_data.baro_filt) < 16 and (do_filt_hist or do_filt_fft):
+            print(f"  [!] Barometer FILTERED sample count ({len(log_data.baro_filt)}) is too small for statistical distribution/FFT analysis.")
+        else:
+            filt_data, fs_idx, fe_idx = trim_data_stream(log_data.baro_filt, trim_start, trim_end)
+            print(f"\n>> Processing Barometer FILTERED: {len(filt_data)} samples analyzed (trimmed {fs_idx} to {fe_idx} of {len(log_data.baro_filt)})")
+
+            filt_ts = filt_data['ts_us']
+            filt_press = filt_data['press']
+            filt_alt = 44330.0 * (1.0 - (filt_press / P0_SEA_LEVEL_PA) ** (1.0 / 5.255))
+
+            stats_filt = [
+                calculate_stream_stats("Pressure (Filt)", filt_ts, filt_press, "Pa"),
+                calculate_stream_stats("Est Alt (Filt)", filt_ts, filt_alt, "m")
+            ]
+            print_stats_table(stats_filt, f"Barometer FILTERED (Session LOG_{log_data.session_id:04d})")
+
+            if do_filt_hist:
+                plot_baro_histogram(filt_ts, filt_press, "Baro_filt", run_id, img_dir, sensor_name="Barometer FILTERED")
+
+            if do_filt_fft:
+                plot_baro_fft(filt_ts, filt_press, "Baro_filt", run_id, img_dir, sensor_name="Barometer FILTERED")
+
+            if do_filt_time:
+                plot_baro_time_series(filt_ts, filt_press, "Baro_filt", run_id, img_dir, sensor_name="Barometer FILTERED")
+
+    elif not has_filt and (do_filt_hist or do_filt_fft or do_filt_time):
+        print("  [!] No Filtered Barometer data found in flight log.")
 
 def process_attitude(
     log_data: FlightLogData,
@@ -1282,6 +1556,64 @@ def process_attitude(
     if do_time:
         plot_attitude_time_series(ts, roll, pitch, yaw, "Attitude_euler", run_id, img_dir)
 
+def process_power(
+    log_data: FlightLogData,
+    do_hist: bool,
+    do_time: bool,
+    run_id: int,
+    img_dir: Path,
+    trim_start: float,
+    trim_end: float
+):
+    if log_data.power is None or len(log_data.power) == 0:
+        print("[!] No Power (INA226) data found in flight log.")
+        return
+
+    raw_data, s_idx, e_idx = trim_data_stream(log_data.power, trim_start, trim_end)
+    print(f"\n>> Processing Power Module: {len(raw_data)} samples analyzed (trimmed {s_idx} to {e_idx} of {len(log_data.power)})")
+
+    ts = raw_data['ts_us']
+    v_mv = raw_data['voltage_mv']
+    i_ma = raw_data['current_ma']
+    p_mw = raw_data['power_mw']
+    e_mah = raw_data['energy_mah']
+
+    stats = [
+        calculate_stream_stats("Voltage", ts, v_mv, "mV"),
+        calculate_stream_stats("Current", ts, i_ma, "mA"),
+        calculate_stream_stats("Power", ts, p_mw, "mW"),
+        calculate_stream_stats("Energy", ts, e_mah, "mAh")
+    ]
+    print_stats_table(stats, f"Power Monitor INA226 (Session LOG_{log_data.session_id:04d})")
+
+    # High-level electrical metrics
+    v_initial = float(v_mv[0])
+    v_min = float(np.min(v_mv))
+    v_sag = v_initial - v_min
+    i_peak = float(np.max(i_ma))
+    i_avg = float(np.mean(i_ma))
+    p_peak = float(np.max(p_mw))
+    p_avg = float(np.mean(p_mw))
+    total_mah = float(e_mah[-1] - e_mah[0])
+
+    print("------------------------------------------------------------------------------------------")
+    print("  POWER METRICS SUMMARY:")
+    print(f"    Initial Pack Voltage:    {v_initial:.1f} mV ({v_initial / 1000.0:.2f} V)")
+    print(f"    Minimum Loaded Voltage:  {v_min:.1f} mV ({v_min / 1000.0:.2f} V)")
+    print(f"    Maximum Voltage Sag:     {v_sag:.1f} mV ({v_sag / 1000.0:.2f} V)")
+    print(f"    Average Current Draw:    {i_avg:.1f} mA ({i_avg / 1000.0:.2f} A)")
+    print(f"    Peak Current Draw:       {i_peak:.1f} mA ({i_peak / 1000.0:.2f} A)")
+    print(f"    Average Power Usage:     {p_avg:.1f} mW ({p_avg / 1000.0:.2f} W)")
+    print(f"    Peak Power Usage:        {p_peak:.1f} mW ({p_peak / 1000.0:.2f} W)")
+    print(f"    Energy Consumed (Window):{total_mah:.2f} mAh")
+    print("------------------------------------------------------------------------------------------\n")
+
+    if do_hist:
+        plot_power_histogram(v_mv, i_ma, p_mw, "Power_ina226", run_id, img_dir)
+
+    if do_time:
+        plot_power_time_series(ts, v_mv, i_ma, p_mw, e_mah, "Power_ina226", run_id, img_dir)
+
 # =============================================================================
 # 6. SCAN REPORT & MENU
 # =============================================================================
@@ -1311,6 +1643,7 @@ def print_scan_report(log_data: FlightLogData):
     describe_stream("Barometer FILT", log_data.baro_filt, 50)
     describe_stream("Attitude Euler Angles", log_data.att_euler, 50)
     describe_stream("Attitude Quaternions", log_data.att_quat, 50)
+    describe_stream("Power Monitor (INA226)", log_data.power, 50)
     print("=" * 80 + "\n")
 
 def display_menu(run_id: int):
@@ -1318,36 +1651,55 @@ def display_menu(run_id: int):
     print(f"  ANALYSIS SELECTION MENU (Assigned Run ID: {run_id:04d})")
     print("------------------------------------------------------------")
     print("  ACCELEROMETER:")
-    print("    [1] Accelerometer - Histogram & Standard Deviation")
-    print("    [2] Accelerometer - Fast Fourier Transform (FFT)")
-    print("    [3] Accelerometer - Time Series (Value vs. Time)")
+    print("    [1]  Accelerometer RAW      - Histogram & Standard Deviation")
+    print("    [2]  Accelerometer RAW      - Fast Fourier Transform (FFT)")
+    print("    [3]  Accelerometer RAW      - Time Series (Value vs. Time)")
+    print("    [4]  Accelerometer FILTERED - Histogram & Standard Deviation")
+    print("    [5]  Accelerometer FILTERED - Fast Fourier Transform (FFT)")
+    print("    [6]  Accelerometer FILTERED - Time Series (Value vs. Time)")
     print("")
     print("  GYROSCOPE:")
-    print("    [4] Gyroscope     - Histogram & Standard Deviation")
-    print("    [5] Gyroscope     - Fast Fourier Transform (FFT)")
-    print("    [6] Gyroscope     - Time Series (Value vs. Time)")
+    print("    [7]  Gyroscope RAW          - Histogram & Standard Deviation")
+    print("    [8]  Gyroscope RAW          - Fast Fourier Transform (FFT)")
+    print("    [9]  Gyroscope RAW          - Time Series (Value vs. Time)")
+    print("   [10]  Gyroscope FILTERED     - Histogram & Standard Deviation")
+    print("   [11]  Gyroscope FILTERED     - Fast Fourier Transform (FFT)")
+    print("   [12]  Gyroscope FILTERED     - Time Series (Value vs. Time)")
     print("")
     print("  MAGNETOMETER:")
-    print("    [7] Magnetometer  - Histogram & Standard Deviation")
-    print("    [8] Magnetometer  - Fast Fourier Transform (FFT)")
-    print("    [9] Magnetometer  - Time Series (Value vs. Time)")
-    print("   [10] Magnetometer  - 3-Plane Projections (XY, XZ, YZ Coordinates)")
-    print("   [11] Magnetometer  - Ellipsoid Calibration (Rotated Fit & Epoch RMSE)")
+    print("   [13]  Magnetometer RAW       - Histogram & Standard Deviation")
+    print("   [14]  Magnetometer RAW       - Fast Fourier Transform (FFT)")
+    print("   [15]  Magnetometer RAW       - Time Series (Value vs. Time)")
+    print("   [16]  Magnetometer RAW       - 3-Plane Projections")
+    print("   [17]  Magnetometer RAW       - Ellipsoid Calibration (Rotated Fit & Epoch RMSE)")
+    print("   [18]  Magnetometer FILTERED  - Histogram & Standard Deviation")
+    print("   [19]  Magnetometer FILTERED  - Fast Fourier Transform (FFT)")
+    print("   [20]  Magnetometer FILTERED  - Time Series (Value vs. Time)")
+    print("   [21]  Magnetometer FILTERED  - 3-Plane Projections")
     print("")
     print("  BAROMETER:")
-    print("   [12] Barometer     - Histogram & Standard Deviation")
-    print("   [13] Barometer     - Fast Fourier Transform (FFT)")
-    print("   [14] Barometer     - Time Series (Value vs. Time)")
+    print("   [22]  Barometer RAW          - Histogram & Standard Deviation")
+    print("   [23]  Barometer RAW          - Fast Fourier Transform (FFT)")
+    print("   [24]  Barometer RAW          - Time Series (Value vs. Time)")
+    print("   [25]  Barometer FILTERED     - Histogram & Standard Deviation")
+    print("   [26]  Barometer FILTERED     - Fast Fourier Transform (FFT)")
+    print("   [27]  Barometer FILTERED     - Time Series (Value vs. Time)")
     print("")
     print("  ATTITUDE (ORIENTATION):")
-    print("   [15] Attitude      - Time Series (Roll / Pitch / Yaw vs. Time)")
+    print("   [28]  Attitude Euler         - Time Series (Roll / Pitch / Yaw vs. Time)")
+    print("")
+    print("  POWER MONITOR (INA226):")
+    print("   [29]  Power                  - Histogram & Standard Deviation (Voltage / Current / Power)")
+    print("   [30]  Power                  - Time Series (Voltage, Current, Power, Energy vs. Time)")
     print("")
     print("  BATCH / COMBINED:")
-    print("   [16] All Time Series Plots")
-    print("   [17] All Histograms")
-    print("   [18] All FFTs")
-    print("   [19] Complete Analysis (All Time Series, Histograms, FFTs & Projections)")
-    print("    [0] Exit")
+    print("   [31]  All Time Series Plots (Raw & Filtered)")
+    print("   [32]  All Histograms (Raw & Filtered)")
+    print("   [33]  All FFTs (Raw & Filtered)")
+    print("   [34]  All RAW Analysis (Histograms, FFTs, Time Series, Projections, Calibration)")
+    print("   [35]  All FILTERED Analysis (Histograms, FFTs, Time Series, Projections)")
+    print("   [36]  Complete Analysis (Everything: All Raw + All Filtered)")
+    print("    [0]  Exit")
     print("------------------------------------------------------------")
 
 def parse_user_choices(raw_input: str) -> List[int]:
@@ -1375,21 +1727,25 @@ def main():
         description="Universal Flight Log Decoder, Trimmer & Spectral Analyzer"
     )
     parser.add_argument("logfile", nargs="?", help="Path to LOG_xxxx.BIN file (default: newest in binary_black_box_data/)")
-    parser.add_argument("--select", type=str, help="Non-interactive menu choices (e.g., '1,2,3' or '19')")
-    parser.add_argument("--all", action="store_true", help="Non-interactive full analysis shortcut (same as --select 19)")
-    parser.add_argument("--time", action="store_true", help="Non-interactive all time-series shortcut (same as --select 16)")
+    parser.add_argument("--select", type=str, help="Non-interactive menu choices (e.g., '1,4,7' or '36')")
+    parser.add_argument("--all", action="store_true", help="Non-interactive full analysis shortcut (same as --select 36)")
+    parser.add_argument("--raw", action="store_true", help="Non-interactive all RAW analysis shortcut (same as --select 34)")
+    parser.add_argument("--filt", action="store_true", help="Non-interactive all FILTERED analysis shortcut (same as --select 35)")
+    parser.add_argument("--time", action="store_true", help="Non-interactive all time-series shortcut (same as --select 31)")
+    parser.add_argument("--hist", action="store_true", help="Non-interactive all histograms shortcut (same as --select 32)")
+    parser.add_argument("--fft", action="store_true", help="Non-interactive all FFTs shortcut (same as --select 33)")
     parser.add_argument("--trim-start", type=float, default=10.0, help="Initial data percentage to cut (default: 10.0%%)")
     parser.add_argument("--trim-end", type=float, default=10.0, help="Final data percentage to cut (default: 10.0%%)")
     args = parser.parse_args()
 
-    # Determine next stateless run ID directly from img/
+    # Determine next stateless run ID directly from img/ and log/
     img_dir = get_img_dir()
-    run_id = determine_next_run_id(img_dir)
+    log_dir = get_log_dir()
+    run_id = determine_next_run_id(img_dir, log_dir)
 
-    # Initialize terminal output mirroring to YYYY-LOG.txt (saved in img/ and analyzers/)
-    log_file_img = img_dir / f"{run_id:04d}-LOG.txt"
-    log_file_root = get_script_dir() / f"{run_id:04d}-LOG.txt"
-    tee = TeeLogger([log_file_img, log_file_root])
+    # Initialize terminal output mirroring to YYYY-LOG.txt (saved exclusively in log/)
+    log_file = log_dir / f"{run_id:04d}-LOG.txt"
+    tee = TeeLogger([log_file])
     orig_stdout = sys.stdout
     sys.stdout = tee
 
@@ -1414,7 +1770,7 @@ def main():
                     sys.exit(1)
                 print(f"[INFO] Auto-selected fallback log file: {target_path}")
 
-        print(f"[INFO] Initialized next Run ID from img/: {run_id:04d}")
+        print(f"[INFO] Initialized next Run ID: {run_id:04d}")
 
         # 1. Parse binary log
         log_data = parse_binary_log(target_path)
@@ -1426,18 +1782,26 @@ def main():
 
         # 3. Handle selection (CLI arguments or interactive prompt)
         if args.all:
-            selected_options = [19]
+            selected_options = [36]
+        elif args.raw:
+            selected_options = [34]
+        elif args.filt:
+            selected_options = [35]
         elif args.time:
-            selected_options = [16]
+            selected_options = [31]
+        elif args.hist:
+            selected_options = [32]
+        elif args.fft:
+            selected_options = [33]
         elif args.select:
             selected_options = parse_user_choices(args.select)
         else:
             display_menu(run_id)
             try:
-                user_in = input("Enter option number(s) [e.g. 1, 3, 6 or 1-6 or 19]: ").strip()
+                user_in = input("Enter option number(s) [e.g. 1, 4, 7 or 1-6 or 36]: ").strip()
                 if not user_in:
-                    print("[INFO] No option entered. Defaulting to option 19 (Complete Analysis).")
-                    selected_options = [19]
+                    print("[INFO] No option entered. Defaulting to option 36 (Complete Analysis).")
+                    selected_options = [36]
                 else:
                     selected_options = parse_user_choices(user_in)
             except (KeyboardInterrupt, EOFError):
@@ -1449,48 +1813,99 @@ def main():
             sys.exit(0)
 
         # Resolve batch shortcuts
-        do_accel_hist = (1 in selected_options) or (17 in selected_options) or (19 in selected_options)
-        do_accel_fft  = (2 in selected_options) or (18 in selected_options) or (19 in selected_options)
-        do_accel_time = (3 in selected_options) or (16 in selected_options) or (19 in selected_options)
+        all_complete = (36 in selected_options)
+        all_raw      = (34 in selected_options) or all_complete
+        all_filt     = (35 in selected_options) or all_complete
+        all_time     = (31 in selected_options) or all_complete
+        all_hist     = (32 in selected_options) or all_complete
+        all_fft      = (33 in selected_options) or all_complete
 
-        do_gyro_hist  = (4 in selected_options) or (17 in selected_options) or (19 in selected_options)
-        do_gyro_fft   = (5 in selected_options) or (18 in selected_options) or (19 in selected_options)
-        do_gyro_time  = (6 in selected_options) or (16 in selected_options) or (19 in selected_options)
+        do_accel_raw_hist  = (1 in selected_options) or all_raw or all_hist
+        do_accel_raw_fft   = (2 in selected_options) or all_raw or all_fft
+        do_accel_raw_time  = (3 in selected_options) or all_raw or all_time
+        do_accel_filt_hist = (4 in selected_options) or all_filt or all_hist
+        do_accel_filt_fft  = (5 in selected_options) or all_filt or all_fft
+        do_accel_filt_time = (6 in selected_options) or all_filt or all_time
 
-        do_mag_hist   = (7 in selected_options) or (17 in selected_options) or (19 in selected_options)
-        do_mag_fft    = (8 in selected_options) or (18 in selected_options) or (19 in selected_options)
-        do_mag_time   = (9 in selected_options) or (16 in selected_options) or (19 in selected_options)
-        do_mag_proj   = (10 in selected_options) or (19 in selected_options)
-        do_mag_calib  = (11 in selected_options) or (19 in selected_options)
+        do_gyro_raw_hist   = (7 in selected_options) or all_raw or all_hist
+        do_gyro_raw_fft    = (8 in selected_options) or all_raw or all_fft
+        do_gyro_raw_time   = (9 in selected_options) or all_raw or all_time
+        do_gyro_filt_hist  = (10 in selected_options) or all_filt or all_hist
+        do_gyro_filt_fft   = (11 in selected_options) or all_filt or all_fft
+        do_gyro_filt_time  = (12 in selected_options) or all_filt or all_time
 
-        do_baro_hist  = (12 in selected_options) or (17 in selected_options) or (19 in selected_options)
-        do_baro_fft   = (13 in selected_options) or (18 in selected_options) or (19 in selected_options)
-        do_baro_time  = (14 in selected_options) or (16 in selected_options) or (19 in selected_options)
+        do_mag_raw_hist    = (13 in selected_options) or all_raw or all_hist
+        do_mag_raw_fft     = (14 in selected_options) or all_raw or all_fft
+        do_mag_raw_time    = (15 in selected_options) or all_raw or all_time
+        do_mag_raw_proj    = (16 in selected_options) or all_raw or all_complete
+        do_mag_raw_calib   = (17 in selected_options) or all_raw or all_complete
 
-        do_att_time   = (15 in selected_options) or (16 in selected_options) or (19 in selected_options)
+        do_mag_filt_hist   = (18 in selected_options) or all_filt or all_hist
+        do_mag_filt_fft    = (19 in selected_options) or all_filt or all_fft
+        do_mag_filt_time   = (20 in selected_options) or all_filt or all_time
+        do_mag_filt_proj   = (21 in selected_options) or all_filt or all_complete
+
+        do_baro_raw_hist   = (22 in selected_options) or all_raw or all_hist
+        do_baro_raw_fft    = (23 in selected_options) or all_raw or all_fft
+        do_baro_raw_time   = (24 in selected_options) or all_raw or all_time
+        do_baro_filt_hist  = (25 in selected_options) or all_filt or all_hist
+        do_baro_filt_fft   = (26 in selected_options) or all_filt or all_fft
+        do_baro_filt_time  = (27 in selected_options) or all_filt or all_time
+
+        do_att_time        = (28 in selected_options) or all_time or all_raw or all_filt or all_complete
+
+        do_power_hist      = (29 in selected_options) or all_hist or all_raw or all_complete
+        do_power_time      = (30 in selected_options) or all_time or all_raw or all_complete
 
         print(f"\n[INFO] Commencing Analysis with Run ID: {run_id:04d} (Trimming: First {args.trim_start}% and Last {args.trim_end}%)")
         print(f"[INFO] All output images will be saved in: {img_dir}\n")
 
         # 4. Dispatch tasks
-        if do_accel_hist or do_accel_fft or do_accel_time:
-            process_accelerometer(log_data, do_accel_hist, do_accel_fft, do_accel_time, run_id, img_dir, args.trim_start, args.trim_end)
+        if (do_accel_raw_hist or do_accel_raw_fft or do_accel_raw_time or
+            do_accel_filt_hist or do_accel_filt_fft or do_accel_filt_time):
+            process_accelerometer(
+                log_data,
+                do_accel_raw_hist, do_accel_raw_fft, do_accel_raw_time,
+                do_accel_filt_hist, do_accel_filt_fft, do_accel_filt_time,
+                run_id, img_dir, args.trim_start, args.trim_end
+            )
 
-        if do_gyro_hist or do_gyro_fft or do_gyro_time:
-            process_gyroscope(log_data, do_gyro_hist, do_gyro_fft, do_gyro_time, run_id, img_dir, args.trim_start, args.trim_end)
+        if (do_gyro_raw_hist or do_gyro_raw_fft or do_gyro_raw_time or
+            do_gyro_filt_hist or do_gyro_filt_fft or do_gyro_filt_time):
+            process_gyroscope(
+                log_data,
+                do_gyro_raw_hist, do_gyro_raw_fft, do_gyro_raw_time,
+                do_gyro_filt_hist, do_gyro_filt_fft, do_gyro_filt_time,
+                run_id, img_dir, args.trim_start, args.trim_end
+            )
 
-        if do_mag_hist or do_mag_fft or do_mag_time or do_mag_proj or do_mag_calib:
-            process_magnetometer(log_data, do_mag_hist, do_mag_fft, do_mag_time, do_mag_proj, do_mag_calib, run_id, img_dir, args.trim_start, args.trim_end)
+        if (do_mag_raw_hist or do_mag_raw_fft or do_mag_raw_time or do_mag_raw_proj or do_mag_raw_calib or
+            do_mag_filt_hist or do_mag_filt_fft or do_mag_filt_time or do_mag_filt_proj):
+            process_magnetometer(
+                log_data,
+                do_mag_raw_hist, do_mag_raw_fft, do_mag_raw_time, do_mag_raw_proj, do_mag_raw_calib,
+                do_mag_filt_hist, do_mag_filt_fft, do_mag_filt_time, do_mag_filt_proj,
+                run_id, img_dir, args.trim_start, args.trim_end
+            )
 
-        if do_baro_hist or do_baro_fft or do_baro_time:
-            process_barometer(log_data, do_baro_hist, do_baro_fft, do_baro_time, run_id, img_dir, args.trim_start, args.trim_end)
+        if (do_baro_raw_hist or do_baro_raw_fft or do_baro_raw_time or
+            do_baro_filt_hist or do_baro_filt_fft or do_baro_filt_time):
+            process_barometer(
+                log_data,
+                do_baro_raw_hist, do_baro_raw_fft, do_baro_raw_time,
+                do_baro_filt_hist, do_baro_filt_fft, do_baro_filt_time,
+                run_id, img_dir, args.trim_start, args.trim_end
+            )
 
         if do_att_time:
             process_attitude(log_data, do_att_time, run_id, img_dir, args.trim_start, args.trim_end)
 
+        if do_power_hist or do_power_time:
+            process_power(log_data, do_power_hist, do_power_time, run_id, img_dir, args.trim_start, args.trim_end)
+
         print(f"\n==========================================================================================")
         print(f"  ANALYSIS COMPLETE! Run ID {run_id:04d} artifacts saved into: {img_dir}")
-        print(f"  Session Log Output saved to: {log_file_img.name} in img/ and analyzers/")
+        print(f"  Session Log Output saved to: {log_file.name} in {log_dir}")
         print(f"==========================================================================================\n")
     finally:
         sys.stdout = orig_stdout

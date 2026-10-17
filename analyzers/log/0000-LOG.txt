@@ -1,0 +1,133 @@
+[INFO] Opening File Explorer to select binary flight log (.BIN)...
+[INFO] Selected file via Explorer: D:\OneDrive_MSFT\Work\Drone_Research\analyzers\binary_black_box_data\LOG_0031.BIN
+[INFO] Initialized next Run ID: 0000
+
+================================================================================
+  FLIGHT LOG SCAN REPORT: LOG_0031.BIN
+  Target Board:     esp32-s3-fc-v02-n8r8
+  Session ID:       LOG_0031
+  Boot Timestamp:   898669 us (0.899 s)
+  Limit Policy:     STOP_ON_SIZE
+  Max File Size:    50.0 MB
+================================================================================
+  Tracked Data Streams in Log:
+    [OK] Accelerometer & Gyroscope RAW   : 10,300 samples (~20.60 s @ ~500 Hz)
+    [OK] Accelerometer & Gyroscope FILT  : 10,301 samples (~20.60 s @ ~500 Hz)
+    [OK] Magnetometer RAW                :  2,068 samples (~20.67 s @ ~100 Hz)
+    [OK] Magnetometer FILT               :  2,068 samples (~20.67 s @ ~100 Hz)
+    [OK] Barometer RAW                   :  1,019 samples (~20.76 s @ ~50 Hz)
+    [OK] Barometer FILT                  :  1,019 samples (~20.76 s @ ~50 Hz)
+    [ ] Attitude Euler Angles           : Not logged
+    [ ] Attitude Quaternions            : Not logged
+    [ ] Power Monitor (INA226)          : Not logged
+================================================================================
+
+------------------------------------------------------------
+  ANALYSIS SELECTION MENU (Assigned Run ID: 0000)
+------------------------------------------------------------
+  ACCELEROMETER:
+    [1]  Accelerometer RAW      - Histogram & Standard Deviation
+    [2]  Accelerometer RAW      - Fast Fourier Transform (FFT)
+    [3]  Accelerometer RAW      - Time Series (Value vs. Time)
+    [4]  Accelerometer FILTERED - Histogram & Standard Deviation
+    [5]  Accelerometer FILTERED - Fast Fourier Transform (FFT)
+    [6]  Accelerometer FILTERED - Time Series (Value vs. Time)
+
+  GYROSCOPE:
+    [7]  Gyroscope RAW          - Histogram & Standard Deviation
+    [8]  Gyroscope RAW          - Fast Fourier Transform (FFT)
+    [9]  Gyroscope RAW          - Time Series (Value vs. Time)
+   [10]  Gyroscope FILTERED     - Histogram & Standard Deviation
+   [11]  Gyroscope FILTERED     - Fast Fourier Transform (FFT)
+   [12]  Gyroscope FILTERED     - Time Series (Value vs. Time)
+
+  MAGNETOMETER:
+   [13]  Magnetometer RAW       - Histogram & Standard Deviation
+   [14]  Magnetometer RAW       - Fast Fourier Transform (FFT)
+   [15]  Magnetometer RAW       - Time Series (Value vs. Time)
+   [16]  Magnetometer RAW       - 3-Plane Projections
+   [17]  Magnetometer RAW       - Ellipsoid Calibration (Rotated Fit & Epoch RMSE)
+   [18]  Magnetometer FILTERED  - Histogram & Standard Deviation
+   [19]  Magnetometer FILTERED  - Fast Fourier Transform (FFT)
+   [20]  Magnetometer FILTERED  - Time Series (Value vs. Time)
+   [21]  Magnetometer FILTERED  - 3-Plane Projections
+
+  BAROMETER:
+   [22]  Barometer RAW          - Histogram & Standard Deviation
+   [23]  Barometer RAW          - Fast Fourier Transform (FFT)
+   [24]  Barometer RAW          - Time Series (Value vs. Time)
+   [25]  Barometer FILTERED     - Histogram & Standard Deviation
+   [26]  Barometer FILTERED     - Fast Fourier Transform (FFT)
+   [27]  Barometer FILTERED     - Time Series (Value vs. Time)
+
+  ATTITUDE (ORIENTATION):
+   [28]  Attitude Euler         - Time Series (Roll / Pitch / Yaw vs. Time)
+
+  POWER MONITOR (INA226):
+   [29]  Power                  - Histogram & Standard Deviation (Voltage / Current / Power)
+   [30]  Power                  - Time Series (Voltage, Current, Power, Energy vs. Time)
+
+  BATCH / COMBINED:
+   [31]  All Time Series Plots (Raw & Filtered)
+   [32]  All Histograms (Raw & Filtered)
+   [33]  All FFTs (Raw & Filtered)
+   [34]  All RAW Analysis (Histograms, FFTs, Time Series, Projections, Calibration)
+   [35]  All FILTERED Analysis (Histograms, FFTs, Time Series, Projections)
+   [36]  Complete Analysis (Everything: All Raw + All Filtered)
+    [0]  Exit
+------------------------------------------------------------
+Enter option number(s) [e.g. 1, 4, 7 or 1-6 or 36]: 
+[INFO] Commencing Analysis with Run ID: 0000 (Trimming: First 10.0% and Last 10.0%)
+[INFO] All output images will be saved in: D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img
+
+
+>> Processing Accelerometer FILTERED: 8241 samples analyzed (trimmed 1030 to 9271 of 10301)
+
+==========================================================================================
+  STATISTICAL REPORT: Accelerometer FILTERED (Session LOG_0031)
+==========================================================================================
+ Channel            | Samples | Mean        | StDev       | Range       | Fs (Hz)  | Peak Freq 
+-------------------+---------+-------------+-------------+-------------+----------+-----------
+ Accel X (Filt)     | 8241    | +0.0103 g   | 0.0043 g    | 0.0361      | 500.0    | 0.1 Hz    
+ Accel Y (Filt)     | 8241    | +0.0070 g   | 0.0021 g    | 0.0212      | 500.0    | 0.1 Hz    
+ Accel Z (Filt)     | 8241    | +0.9984 g   | 0.0022 g    | 0.0256      | 500.0    | 8.3 Hz    
+==========================================================================================
+
+  [OK] Saved: 0000-HIST-Accel_filt.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0000-HIST-Accel_filt.png
+  [OK] Saved: 0000-FFT-Accel_filt.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0000-FFT-Accel_filt.png
+
+>> Processing Gyroscope FILTERED: 8241 samples analyzed (trimmed 1030 to 9271 of 10301)
+
+==========================================================================================
+  STATISTICAL REPORT: Gyroscope FILTERED (Session LOG_0031)
+==========================================================================================
+ Channel            | Samples | Mean        | StDev       | Range       | Fs (Hz)  | Peak Freq 
+-------------------+---------+-------------+-------------+-------------+----------+-----------
+ Gyro X (Filt)      | 8241    | +0.0801 deg/s | 0.2415 deg/s | 7.5264      | 500.0    | 4.1 Hz    
+ Gyro Y (Filt)      | 8241    | -0.0314 deg/s | 0.4643 deg/s | 12.4279     | 500.0    | 0.1 Hz    
+ Gyro Z (Filt)      | 8241    | -0.0965 deg/s | 1.5687 deg/s | 16.9080     | 500.0    | 0.1 Hz    
+==========================================================================================
+
+  [OK] Saved: 0000-HIST-Gyro_filt.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0000-HIST-Gyro_filt.png
+  [OK] Saved: 0000-FFT-Gyro_filt.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0000-FFT-Gyro_filt.png
+
+>> Processing Magnetometer FILTERED: 1656 samples analyzed (trimmed 206 to 1862 of 2068)
+
+==========================================================================================
+  STATISTICAL REPORT: Magnetometer FILTERED (Session LOG_0031)
+==========================================================================================
+ Channel            | Samples | Mean        | StDev       | Range       | Fs (Hz)  | Peak Freq 
+-------------------+---------+-------------+-------------+-------------+----------+-----------
+ Mag X (Filt)       | 1656    | -0.7867 Gauss | 0.0120 Gauss | 0.0546      | 100.0    | 0.1 Hz    
+ Mag Y (Filt)       | 1656    | -0.6170 Gauss | 0.0144 Gauss | 0.0651      | 100.0    | 0.1 Hz    
+ Mag Z (Filt)       | 1656    | -0.0060 Gauss | 0.0063 Gauss | 0.0402      | 100.0    | 0.1 Hz    
+==========================================================================================
+
+  [OK] Saved: 0000-HIST-Mag_filt.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0000-HIST-Mag_filt.png
+  [OK] Saved: 0000-FFT-Mag_filt.png  -->  D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img\0000-FFT-Mag_filt.png
+
+==========================================================================================
+  ANALYSIS COMPLETE! Run ID 0000 artifacts saved into: D:\OneDrive_MSFT\Work\Drone_Research\analyzers\img
+  Session Log Output saved to: 0000-LOG.txt in D:\OneDrive_MSFT\Work\Drone_Research\analyzers\log
+==========================================================================================
+

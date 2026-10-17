@@ -12,6 +12,8 @@ references:
   - "[[0013-sdCardSpiStorageAndFlightLoggingArchitecture]]"
   - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
   - "[[0019-universalFlightDataAnalyzerAndBinaryTelemetryAlignmentSpecification]]"
+  - "[[0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture]]"
+  - "[[0032-rcReceiverCommandBlackboxSdCardLoggingArchitecture]]"
 ---
 
 # Zettel 0018: MicroSD Flight Logging Architecture, POSIX Metadata Sync, User Button Shutdown & Binary Log Specification

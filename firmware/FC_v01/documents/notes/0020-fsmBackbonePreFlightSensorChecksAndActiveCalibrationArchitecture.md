@@ -14,6 +14,7 @@ references:
   - "[[0012-ws2812HardwareIsolationAndMutexEncapsulationRule]]"
   - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
   - "[[0018-sdCardLoggingRestorationAndUserButtonShutdown]]"
+  - "[[0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture]]"
 ---
 
 # Zettel 0020: Finite State Machine (FSM) Backbone, Pre-Flight Sensor Checks & Active Calibration Architecture Specification

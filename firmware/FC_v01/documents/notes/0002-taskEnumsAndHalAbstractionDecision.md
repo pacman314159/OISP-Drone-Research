@@ -85,4 +85,4 @@ enum TaskFrequencies : uint16_t {
 4. **Explicit Typing Rule**: Replace any `auto` declarations with explicit types.
 5. **Deterministic Delay Rule**: Use `vTaskDelayUntil()` for all periodic loops.
 6. **Centralized IPC Rule**: Declare all shared locks, semaphores, queues, and ring buffers inside `src/middleware/ipc.h` / `ipc.cpp` and initialize via `init_ipc()`.
-7. **Task Scoping Rule**: Ensure all task functions reside exclusively in `core/` or `app/` (e.g. `src/core/sensor/daq_tasks.h`, `src/core/math/filter_tasks.h`, `src/core/telemetry/ble_telem_tasks.h`).
+7. **Task Scoping Rule**: Ensure all task functions reside exclusively in `core/` or `app/` (e.g. `src/core/sensor/daq_tasks.h`, `src/core/sensor/sensor_preprocess_tasks.h`, `src/core/telemetry/ble_telem_tasks.h`).

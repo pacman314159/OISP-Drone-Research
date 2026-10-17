@@ -1,10 +1,10 @@
 ---
 id: "0008"
-title: Layer 4 LPF Filter & Calibration Task Architecture Specification
+title: Layer 4 Sensor Preprocessing & Calibration Pipeline Architecture Specification
 author: Drone Research Team / Developer
 date: 2026-09-30
 time: 13:46:00 +07:00
-tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#lpf", "#simd", "#freertos", "#dsp"]
+tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#preprocess", "#lpf", "#simd", "#freertos", "#dsp"]
 references:
   - "[[0000-firmwareStructureLayerDecision]]"
   - "[[0001-taskConfigMiddlewareIsrDecision]]"
@@ -16,7 +16,7 @@ references:
   - "[[0022-unifiedPressureRingBufferSensorVariableConsolidationAndAttitudeTaskRemoval]]"
 ---
 
-# Zettel 0008: Layer 4 LPF Filter & Calibration Task Architecture Specification
+# Zettel 0008: Layer 4 Sensor Preprocessing & Calibration Pipeline Architecture Specification
 
 ## 1. Metadata & Context
 - **ID**: `0008`
@@ -31,9 +31,9 @@ references:
 ## 2. Core Architectural Decisions
 
 ### Rule 1: Layer 4 Submodule Scoping (`src/core/math/` & `src/core/sensor/`)
-- Digital signal processing (DSP) filters and sensor calibration routines belong exclusively to **Layer 4 (Flight Core & Algorithms Layer)** [Note 0016].
-- `src/core/math/` houses discrete low-pass filter algorithms (`lpf.h`), matrix math (`matrix.h`), filter task runners (`filter_tasks.h`, `filter_tasks.cpp`), and state estimators (`estimator_tasks.h`, `estimator_tasks.cpp`).
-- `src/core/sensor/` houses sensor Data Acquisition (DAQ) sampling tasks (`daq_tasks.cpp`, `daq_tasks.h`) and calibration routines (sensor bias removal, axis alignment, scaling matrices, and hard/soft-iron magnetometer compensation routines).
+- Digital signal processing (DSP) filters, in-flight calibration application, and offline calibration routines belong exclusively to **Layer 4 (Flight Core & Algorithms Layer)** [Note 0016].
+- `src/core/math/` houses mathematical algorithms: discrete low-pass filter algorithms (`lpf.h`), matrix math (`matrix.h`), 3D ellipsoid fitting (`ellipsoid_fit.h`, `ellipsoid_fit.cpp`), and state estimators (`estimator_tasks.h`, `estimator_tasks.cpp`).
+- `src/core/sensor/` houses sensor Data Acquisition (DAQ) sampling tasks (`daq_tasks.cpp`, `daq_tasks.h`), sensor preprocessing task runners (`sensor_preprocess_tasks.cpp`, `sensor_preprocess_tasks.h`), and calibration routines (`calib.cpp/.h`, `calib_tasks.cpp/.h`). Preprocessing tasks decouple raw DAQ from estimators, applying in-flight sensor bias/scale/misalignment calibration corrections (`calib_apply_*`) followed immediately by discrete low-pass filtering (`lpf_apply`) before pushing to downstream ring buffers.
 
 ### Rule 2: Tustin Bilinear 1st-Order Low-Pass Filter State (`LowPassFilter1stOrder`)
 - Filters use discrete 1st-order difference equations derived from s-domain $H(s) = \frac{\omega_c}{s + \omega_c}$ via the Tustin bilinear transform ($s = \frac{2}{T} \cdot \frac{z - 1}{z + 1}$):
@@ -58,7 +58,7 @@ references:
 
 ## 3. Impact & Architectural Constraints
 1. **Zero Dynamic Allocation**: All filter state objects and task stacks are allocated statically.
-2. **Frequency Match**: `accel_gyro_lpf_task` runs at 500 Hz (matching `TASK_ACCEL_GYRO_DAQ_FREQ_HZ`), `mag_lpf_task` runs at 100 Hz.
+2. **Frequency Match**: `accel_gyro_preprocess_task` runs at 500 Hz (matching `TASK_ACCEL_GYRO_DAQ_FREQ_HZ`), `mag_preprocess_task` runs at 100 Hz.
 3. **Traceability**: All task iterations are instrumented with `SYSVIEW_START(task_id)` and `SYSVIEW_END(task_id)` markers.
 4. **BLE GATT Isolation**: Raw and filtered telemetry streams are isolated across distinct characteristic handles (`p_vec3_raw_char` and `p_vec3_filt_char`).
 5. **FSM & Calibration Integration**: Cross-reference [[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]] for the 100 Hz FSM coordinator, pre-flight stationary detection, and active/passive calibration lifecycle.

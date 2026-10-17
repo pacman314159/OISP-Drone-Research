@@ -5,13 +5,12 @@
 #include "middleware/sysview_tracing.h"
 #include "drivers/telemetry/ble_driver.h"
 
-#include "drivers/led/ws2812.h"
-
 SemaphoreHandle_t i2c0_mutex = nullptr;
 SemaphoreHandle_t i2c1_mutex = nullptr;
 SemaphoreHandle_t status_led_mutex = nullptr;
 SemaphoreHandle_t spi_bus_mutex = nullptr;
 SemaphoreHandle_t flash_mutex = nullptr;
+SemaphoreHandle_t ekf_state_mutex = nullptr;
 TaskHandle_t app_task_handles[TASK_COUNT] = {nullptr};
 QueueHandle_t ota_data_queue = nullptr;
 QueueHandle_t led_cmd_queue = nullptr;
@@ -22,21 +21,30 @@ OtaStartPayload ota_start_payload = {0, 0, 0};
 volatile bool ota_abort_requested = false;
 volatile bool sd_stop_logging_requested = false;
 
-RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> accel_raw;
-RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> gyro_raw;
-RingBuffer<Vec3<float>, IMU_RAW_RING_BUF_SIZE> mag_raw;
-RingBuffer<float, IMU_RAW_RING_BUF_SIZE>       pressure;
+RingBuffer<Vec3<float>, RING_BUF_SIZE> accel_raw;
+RingBuffer<Vec3<float>, RING_BUF_SIZE> gyro_raw;
+RingBuffer<Vec3<float>, RING_BUF_SIZE> mag_raw;
+RingBuffer<float, RING_BUF_SIZE>       pressure;
+RingBuffer<PowerMeasurement, RING_BUF_SIZE> power_data;
 
-RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_accel_gyro_timestamp;
-RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    raw_mag_timestamp;
-RingBuffer<uint32_t, IMU_RAW_RING_BUF_SIZE>    pressure_timestamp;
+RingBuffer<uint32_t, RING_BUF_SIZE>    raw_accel_gyro_timestamp;
+RingBuffer<uint32_t, RING_BUF_SIZE>    raw_mag_timestamp;
+RingBuffer<uint32_t, RING_BUF_SIZE>    pressure_timestamp;
+RingBuffer<uint32_t, RING_BUF_SIZE>    power_timestamp;
 
-RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> accel;
-RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> gyro;
-RingBuffer<Vec3<float>, IMU_FILT_RING_BUF_SIZE> mag;
+RingBuffer<Vec3<float>, RING_BUF_SIZE> accel;
+RingBuffer<Vec3<float>, RING_BUF_SIZE> gyro;
+RingBuffer<Vec3<float>, RING_BUF_SIZE> mag;
 
-RingBuffer<uint32_t, IMU_FILT_RING_BUF_SIZE>    filtered_accel_gyro_timestamp;
-RingBuffer<uint32_t, IMU_FILT_RING_BUF_SIZE>    filtered_mag_timestamp;
+RingBuffer<uint32_t, RING_BUF_SIZE>    filtered_accel_gyro_timestamp;
+RingBuffer<uint32_t, RING_BUF_SIZE>    filtered_mag_timestamp;
+
+RingBuffer<RcChannels, RING_BUF_SIZE>  rc_data;
+RingBuffer<uint32_t, RING_BUF_SIZE>    rc_timestamp;
+
+RingBuffer<Vec4, RING_BUF_SIZE>        att_quat;
+RingBuffer<Vec3<float>, RING_BUF_SIZE> att_euler;
+RingBuffer<uint32_t, RING_BUF_SIZE>    att_timestamp;
 
 FcBleServerCallbacks ble_server_callbacks;
 
@@ -134,6 +142,9 @@ bool init_ipc(){
   if(flash_mutex == nullptr)
     flash_mutex = xSemaphoreCreateMutex();
 
+  if(ekf_state_mutex == nullptr)
+    ekf_state_mutex = xSemaphoreCreateMutex();
+
   if(ota_data_queue == nullptr)
     ota_data_queue = xQueueCreate(OTA_DATA_QUEUE_DEPTH, sizeof(OtaDataChunk));
 
@@ -158,6 +169,7 @@ bool init_ipc(){
           status_led_mutex != nullptr &&
           spi_bus_mutex != nullptr &&
           flash_mutex != nullptr &&
+          ekf_state_mutex != nullptr &&
           ota_data_queue != nullptr &&
           led_cmd_queue != nullptr &&
           calib_report_queue != nullptr &&

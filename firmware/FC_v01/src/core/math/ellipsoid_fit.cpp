@@ -1,9 +1,13 @@
 #include "core/math/ellipsoid_fit.h"
 #include <cmath>
 
-void ellipsoid_fit_init(EllipsoidFitState& state, const Vec3<float>* points, uint16_t n,
-                        uint16_t max_epochs, float lr, float tol){
-  if(points == nullptr || n < CALIB_MAG_MIN_SAMPLES) return;
+// =============================================================================
+// 1. 9-PARAMETER FULL ROTATED ELLIPSOID SOLVER (SIMD ADAM)
+// =============================================================================
+
+void ellipsoid_fit_9param_init(Ellipsoid9ParamState& state, const Vec3<float>* points, uint16_t n,
+                               uint16_t max_epochs, float lr, float tol, uint16_t min_samples){
+  if(points == nullptr || n < min_samples) return;
 
   state.max_epochs    = max_epochs;
   state.lr            = lr;
@@ -28,11 +32,11 @@ void ellipsoid_fit_init(EllipsoidFitState& state, const Vec3<float>* points, uin
     sum_dist += diff.norm();
   }
 
-  state.B0 = sum_dist * inv_n;
-  if(state.B0 <= 1e-6f) state.B0 = 1.0f;
+  state.b0 = sum_dist * inv_n;
+  if(state.b0 <= 1e-6f) state.b0 = 1.0f;
 
-  // 3. Initial Guess: Soft-iron matrix W = (1 / B0) * I (maps initial sphere to unit sphere)
-  state.W = Matrix<float, 3, 3>::identity() * (1.0f / state.B0);
+  // 3. Initial Guess: Soft-iron matrix W = (1 / b0) * I (maps initial sphere to unit sphere)
+  state.W = Matrix<float, 3, 3>::identity() * (1.0f / state.b0);
 
   // 4. Initialize Adam momentum states to zero
   state.m_v0 = Vec3<float>(0.0f, 0.0f, 0.0f);
@@ -54,9 +58,9 @@ void ellipsoid_fit_init(EllipsoidFitState& state, const Vec3<float>* points, uin
   state.prev_rmse    = 1e9f;
 }
 
-bool ellipsoid_fit_step(EllipsoidFitState& state, const Vec3<float>* points, uint16_t n,
-                        uint8_t epochs_in_batch){
-  if(points == nullptr || n < CALIB_MAG_MIN_SAMPLES || !state.initialized) return true;
+bool ellipsoid_fit_9param_step(Ellipsoid9ParamState& state, const Vec3<float>* points, uint16_t n,
+                               uint8_t epochs_in_batch, uint16_t min_samples){
+  if(points == nullptr || n < min_samples || !state.initialized) return true;
 
   constexpr float beta1 = 0.9f;
   constexpr float beta2 = 0.999f;
@@ -139,10 +143,159 @@ bool ellipsoid_fit_step(EllipsoidFitState& state, const Vec3<float>* points, uin
   return (state.converged || state.current_epoch >= state.max_epochs);
 }
 
-void ellipsoid_fit_get_params(const EllipsoidFitState& state, EllipsoidParameters& out_params){
+void ellipsoid_fit_9param_get_params(const Ellipsoid9ParamState& state, Ellipsoid9ParamResult& out_params){
   out_params.v0           = state.v0;
   out_params.W            = state.W;
-  out_params.B0           = state.B0;
+  out_params.b0           = state.b0;
+  out_params.initial_rmse = state.initial_rmse;
+  out_params.final_rmse   = state.current_rmse;
+  out_params.epochs_run   = state.current_epoch;
+  out_params.converged    = state.converged;
+}
+
+// =============================================================================
+// 2. 6-PARAMETER AXIS-ALIGNED ELLIPSOID SOLVER (SIMD ADAM)
+// =============================================================================
+
+void ellipsoid_fit_6param_init(Ellipsoid6ParamState& state, const Vec3<float>* points, uint16_t n,
+                               uint16_t max_epochs, float lr, float tol, uint16_t min_samples){
+  if(points == nullptr || n < min_samples) return;
+
+  state.max_epochs    = max_epochs;
+  state.lr            = lr;
+  state.tol           = tol;
+  state.current_epoch = 0;
+  state.converged     = false;
+  state.initialized   = true;
+
+  const float inv_n = 1.0f / static_cast<float>(n);
+
+  // 1. Initial Guess: Compute empirical centroid v0 (zero-g offset)
+  Vec3<float> sum{0.0f, 0.0f, 0.0f};
+  for(uint16_t i = 0; i < n; ++i)
+    sum += points[i];
+
+  state.v0 = sum * inv_n;
+
+  // 2. Initial Guess: Compute reference magnitude b0 (mean radial distance)
+  float sum_dist = 0.0f;
+  for(uint16_t i = 0; i < n; ++i){
+    Vec3<float> diff = points[i] - state.v0;
+    sum_dist += diff.norm();
+  }
+
+  state.b0 = sum_dist * inv_n;
+  if(state.b0 <= 1e-6f) state.b0 = 1.0f;
+
+  // 3. Initial Guess: Sensitivity scale vector s = [1/b0, 1/b0, 1/b0]
+  float inv_b0 = 1.0f / state.b0;
+  state.s = Vec3<float>(inv_b0, inv_b0, inv_b0);
+
+  // 4. Initialize Adam momentum states to zero
+  state.m_v0 = Vec3<float>(0.0f, 0.0f, 0.0f);
+  state.v_v0 = Vec3<float>(0.0f, 0.0f, 0.0f);
+  state.m_s  = Vec3<float>(0.0f, 0.0f, 0.0f);
+  state.v_s  = Vec3<float>(0.0f, 0.0f, 0.0f);
+
+  // 5. Compute pre-optimization RMSE on unit sphere residual
+  float sum_r_sq = 0.0f;
+  for(uint16_t i = 0; i < n; ++i){
+    Vec3<float> d = points[i] - state.v0;
+    Vec3<float> u = d.hadamard(state.s);
+    float r = u.norm_sq() - 1.0f;
+    sum_r_sq += r * r;
+  }
+
+  state.initial_rmse = sqrtf(sum_r_sq * inv_n);
+  state.current_rmse = state.initial_rmse;
+  state.prev_rmse    = 1e9f;
+}
+
+bool ellipsoid_fit_6param_step(Ellipsoid6ParamState& state, const Vec3<float>* points, uint16_t n,
+                               uint8_t epochs_in_batch, uint16_t min_samples){
+  if(points == nullptr || n < min_samples || !state.initialized) return true;
+
+  constexpr float beta1 = 0.9f;
+  constexpr float beta2 = 0.999f;
+  constexpr float eps   = 1e-8f;
+  const float n_f = static_cast<float>(n);
+
+  for(uint8_t ep = 0; ep < epochs_in_batch; ++ep){
+    if(state.converged || state.current_epoch >= state.max_epochs) return true;
+
+    state.current_epoch++;
+    state.prev_rmse = state.current_rmse;
+
+    Vec3<float> s_u{0.0f, 0.0f, 0.0f};
+    Vec3<float> g_s{0.0f, 0.0f, 0.0f};
+    float sum_r_sq = 0.0f;
+
+    // Evaluate point cloud projections and residuals
+    for(uint16_t i = 0; i < n; ++i){
+      Vec3<float> d = points[i] - state.v0;
+      Vec3<float> u = d.hadamard(state.s);
+
+      float r = u.norm_sq() - 1.0f;
+      sum_r_sq += r * r;
+
+      s_u += u * r;
+      g_s += (u.hadamard(d)) * r;
+    }
+
+    state.current_rmse = sqrtf(sum_r_sq / n_f);
+
+    // Early stopping tolerance check: |RMSE_t - RMSE_{t-1}| < tol
+    if(state.current_epoch > 1){
+      float rmse_diff = fabsf(state.current_rmse - state.prev_rmse);
+      if(rmse_diff < state.tol){
+        state.converged = true;
+        return true;
+      }
+    }
+
+    // Analytical Gradients
+    // grad_v0 = -(4/n) * (s hadamard s_u)
+    Vec3<float> grad_v0 = state.s.hadamard(s_u) * (-4.0f / n_f);
+
+    // grad_s = (4/n) * g_s
+    Vec3<float> grad_s = g_s * (4.0f / n_f);
+
+    // Adam Momentum Updates
+    float beta1_t = powf(beta1, static_cast<float>(state.current_epoch));
+    float beta2_t = powf(beta2, static_cast<float>(state.current_epoch));
+    float inv_one_minus_beta1_t = 1.0f / (1.0f - beta1_t);
+    float inv_one_minus_beta2_t = 1.0f / (1.0f - beta2_t);
+
+    // Update v0 momentum & position
+    Vec3<float> grad_v0_sq = grad_v0.hadamard(grad_v0);
+    state.m_v0 = state.m_v0 * beta1 + grad_v0 * (1.0f - beta1);
+    state.v_v0 = state.v_v0 * beta2 + grad_v0_sq * (1.0f - beta2);
+
+    for(uint8_t k = 0; k < 3; ++k){
+      float m_hat = state.m_v0[k] * inv_one_minus_beta1_t;
+      float v_hat = state.v_v0[k] * inv_one_minus_beta2_t;
+      state.v0[k] -= state.lr * m_hat / (sqrtf(v_hat) + eps);
+    }
+
+    // Update s momentum & position
+    Vec3<float> grad_s_sq = grad_s.hadamard(grad_s);
+    state.m_s = state.m_s * beta1 + grad_s * (1.0f - beta1);
+    state.v_s = state.v_s * beta2 + grad_s_sq * (1.0f - beta2);
+
+    for(uint8_t k = 0; k < 3; ++k){
+      float m_hat = state.m_s[k] * inv_one_minus_beta1_t;
+      float v_hat = state.v_s[k] * inv_one_minus_beta2_t;
+      state.s[k] -= state.lr * m_hat / (sqrtf(v_hat) + eps);
+    }
+  }
+
+  return (state.converged || state.current_epoch >= state.max_epochs);
+}
+
+void ellipsoid_fit_6param_get_params(const Ellipsoid6ParamState& state, Ellipsoid6ParamResult& out_params){
+  out_params.v0           = state.v0;
+  out_params.s            = state.s;
+  out_params.b0           = state.b0;
   out_params.initial_rmse = state.initial_rmse;
   out_params.final_rmse   = state.current_rmse;
   out_params.epochs_run   = state.current_epoch;

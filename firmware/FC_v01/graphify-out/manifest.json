@@ -18,9 +18,9 @@
     "semantic_hash": ""
   },
   "include/config.h": {
-    "mtime": 1791898773.025551,
-    "seen": 1791899247.08145,
-    "ast_hash": "b7894f0d4e9fd7058aea81b6075755f5",
+    "mtime": 1792209190.3532486,
+    "seen": 1792209275.2399964,
+    "ast_hash": "42d961da19a4a2e028d3f7ff285c8087",
     "semantic_hash": ""
   },
   "managed_components/espressif__esp-dsp/applications/azure_board_apps/apps/3d_graphics/main/3d_graphics_demo.cpp": {
@@ -1800,9 +1800,9 @@
     "semantic_hash": ""
   },
   "src/app/app.cpp": {
-    "mtime": 1791899155.841539,
-    "seen": 1791899247.2785244,
-    "ast_hash": "aaaae590cbd3c51adaa45067d2e6be3c",
+    "mtime": 1792181480.473115,
+    "seen": 1792181615.2518,
+    "ast_hash": "67c1b227ca49d04c7008367b71e5f3d8",
     "semantic_hash": ""
   },
   "src/app/app.h": {
@@ -1812,9 +1812,9 @@
     "semantic_hash": ""
   },
   "src/app/fsm.cpp": {
-    "mtime": 1791899129.2033381,
-    "seen": 1791899247.2790284,
-    "ast_hash": "dc11e270110d89b43ebc9ce0c41e6ae9",
+    "mtime": 1792178610.2472637,
+    "seen": 1792178653.174185,
+    "ast_hash": "4ce304f1a8ee59d96a0d47a723d38d60",
     "semantic_hash": ""
   },
   "src/core/control/control_tasks.cpp": {
@@ -1896,39 +1896,39 @@
     "semantic_hash": ""
   },
   "src/drivers/rc_rx/fs_ia6b.cpp": {
-    "mtime": 1789461565.977,
-    "seen": 1790763996.0917604,
-    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "mtime": 1792147235.9881742,
+    "seen": 1792147306.365832,
+    "ast_hash": "e4a8deb0ac6b7497a564127a9cda3ebf",
     "semantic_hash": ""
   },
   "src/drivers/rc_rx/fs_ia6b.h": {
-    "mtime": 1789461561.079,
-    "seen": 1790763996.0917628,
-    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "mtime": 1792147217.2957418,
+    "seen": 1792147306.3658404,
+    "ast_hash": "b855a5579c31fb66e78271a4c77b49d8",
     "semantic_hash": ""
   },
   "src/drivers/telemetry/ble_driver.cpp": {
-    "mtime": 1791638076.2725997,
-    "seen": 1791638278.710923,
-    "ast_hash": "995df5ef2cf8110aa0c13e7f1c5f6848",
+    "mtime": 1792148420.164716,
+    "seen": 1792148461.3481016,
+    "ast_hash": "6904f17a933124339cff027d6d6fc7d8",
     "semantic_hash": ""
   },
   "src/drivers/telemetry/ble_driver.h": {
-    "mtime": 1791638024.2484188,
-    "seen": 1791638278.710925,
-    "ast_hash": "6dbbcbabff756aacab1d39074658a833",
+    "mtime": 1792147197.2307484,
+    "seen": 1792147306.3674037,
+    "ast_hash": "bcf1fefe556bda33d2e72b43b857f95c",
     "semantic_hash": ""
   },
   "src/drivers/telemetry/ble_packet.h": {
-    "mtime": 1791637948.0912514,
-    "seen": 1791638278.711155,
-    "ast_hash": "4b624dbe26fd7dd50351e2bd4f6db3ee",
+    "mtime": 1792147242.6854703,
+    "seen": 1792147306.3676672,
+    "ast_hash": "57f408920240514ee9e4803eb1f4fb05",
     "semantic_hash": ""
   },
   "src/main.cpp": {
-    "mtime": 1791223780.7854302,
-    "seen": 1791224051.2684946,
-    "ast_hash": "ebb71bf07b4b1bc302b50db2382d2112",
+    "mtime": 1792059932.0961287,
+    "seen": 1792064489.8423839,
+    "ast_hash": "1c5a81bb118d818f45d2be18487ed4b5",
     "semantic_hash": ""
   },
   "src/middleware/critical_section.cpp": {
@@ -1944,15 +1944,15 @@
     "semantic_hash": ""
   },
   "src/middleware/ipc.cpp": {
-    "mtime": 1791872137.2675655,
-    "seen": 1791872319.2394314,
-    "ast_hash": "c916e7471640ff61e7b3d901e4702354",
+    "mtime": 1792181362.7703252,
+    "seen": 1792181615.2732055,
+    "ast_hash": "00458dc5b8617813a5a7aad00a9b5f93",
     "semantic_hash": ""
   },
   "src/middleware/ipc.h": {
-    "mtime": 1791898788.2199316,
-    "seen": 1791899247.3002245,
-    "ast_hash": "a29a2e0f34595bc627104f5b46b0c408",
+    "mtime": 1792181326.7779782,
+    "seen": 1792181615.273209,
+    "ast_hash": "6b3ff8169d1bd54ff00c000945be7bab",
     "semantic_hash": ""
   },
   "src/middleware/ring_buffer.h": {
@@ -1962,9 +1962,9 @@
     "semantic_hash": ""
   },
   "src/middleware/sysview_tracing.cpp": {
-    "mtime": 1791710087.3981967,
-    "seen": 1791710384.1917284,
-    "ast_hash": "53549ee741d4a2b4505aa61b1e8e6b1a",
+    "mtime": 1792181374.0235214,
+    "seen": 1792181615.273567,
+    "ast_hash": "cb9c567d426c31ddeae812ef1dfdd240",
     "semantic_hash": ""
   },
   "src/middleware/sysview_tracing.h": {
@@ -1974,9 +1974,9 @@
     "semantic_hash": ""
   },
   "src/platforms/hal/hal_i2c.h": {
-    "mtime": 1789645013.7054887,
-    "seen": 1790763996.0917933,
-    "ast_hash": "cf244eac4253901a4ecb1d6a6e5c10e6",
+    "mtime": 1792143672.7429457,
+    "seen": 1792143814.9127192,
+    "ast_hash": "37e7e2924f1f516bf6f120993d9e1e17",
     "semantic_hash": ""
   },
   "src/platforms/hal/hal_i2c_async.h": {
@@ -1992,15 +1992,15 @@
     "semantic_hash": ""
   },
   "src/platforms/targets/espressif/i2c.cpp": {
-    "mtime": 1789543800.132188,
-    "seen": 1790763996.091806,
-    "ast_hash": "9e110f9de65006d6d74241fb24d6f78a",
+    "mtime": 1792143693.3193717,
+    "seen": 1792143814.914791,
+    "ast_hash": "32b187ac3a574037ffa3c84bc9713c61",
     "semantic_hash": ""
   },
   "src/platforms/targets/espressif/i2c.h": {
-    "mtime": 1789459967.1234148,
-    "seen": 1790763996.0918775,
-    "ast_hash": "7f6afe39c5281039d75fceae1de2d5bb",
+    "mtime": 1792143682.7598488,
+    "seen": 1792143814.9147937,
+    "ast_hash": "ae21f918e0db24b5a6f748af9914089e",
     "semantic_hash": ""
   },
   "src/platforms/targets/espressif/i2c_async.cpp": {
@@ -2022,9 +2022,9 @@
     "semantic_hash": ""
   },
   ".agents/AGENTS.md": {
-    "mtime": 1790772065.1292355,
-    "seen": 1790772812.1627214,
-    "ast_hash": "6b7a32bc0f3f71b804be2ec4a9707253",
+    "mtime": 1792140315.9123757,
+    "seen": 1792143814.917502,
+    "ast_hash": "dcccea378529e03a8d8299bb3c411e6d",
     "semantic_hash": ""
   },
   ".agents/TEAM_ROSTER.md": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   "documents/Firmware Structure.md": {
-    "mtime": 1791872277.5441365,
-    "seen": 1791872319.2481332,
-    "ast_hash": "143c16bb7dcec8742f7c42c8cda69d43",
+    "mtime": 1792179571.619877,
+    "seen": 1792179708.7930331,
+    "ast_hash": "9af1505e895d9d95bbe93d7e493f0411",
     "semantic_hash": ""
   },
   "documents/RTOS Architecture.md": {
@@ -2076,9 +2076,9 @@
     "semantic_hash": ""
   },
   "documents/notes/0000-firmwareStructureLayerDecision.md": {
-    "mtime": 1791370048.7705705,
-    "seen": 1791370098.8240817,
-    "ast_hash": "ee2fd40db0e0723aef90522b4cf8836c",
+    "mtime": 1791983610.3666298,
+    "seen": 1791983849.908047,
+    "ast_hash": "36091b40fd64ef0cd66389376b822605",
     "semantic_hash": ""
   },
   "documents/notes/0001-taskConfigMiddlewareIsrDecision.md": {
@@ -2088,9 +2088,9 @@
     "semantic_hash": ""
   },
   "documents/notes/0002-taskEnumsAndHalAbstractionDecision.md": {
-    "mtime": 1791710248.1733615,
-    "seen": 1791710384.2091632,
-    "ast_hash": "8e78736572a5b8bf3bbd5df9bf62f366",
+    "mtime": 1791983618.1926012,
+    "seen": 1791983849.9087665,
+    "ast_hash": "04f1430e7a17064c9039384c7a9dd62a",
     "semantic_hash": ""
   },
   "documents/notes/0003-simdHalArchitectureAndLayeringRule.md": {
@@ -2118,9 +2118,9 @@
     "semantic_hash": ""
   },
   "documents/notes/0008-lpfAndCalibrationTaskArchitecture.md": {
-    "mtime": 1791710336.7685297,
-    "seen": 1791710384.2116385,
-    "ast_hash": "293322ee9f361158bc5c11332684fcd7",
+    "mtime": 1791983647.787027,
+    "seen": 1791983849.912025,
+    "ast_hash": "7a454ae4017b4bfaf374474270436395",
     "semantic_hash": ""
   },
   "documents/notes/0009-distinctBleGattCharacteristicUuidIsolation.md": {
@@ -2670,21 +2670,21 @@
     "semantic_hash": ""
   },
   "src/platforms/hal/hal_pulse.h": {
-    "mtime": 1790964637.092147,
-    "seen": 1790964922.7691898,
-    "ast_hash": "1376e1735048afd01fce9b72975f4792",
+    "mtime": 1792067518.3816874,
+    "seen": 1792068096.9843187,
+    "ast_hash": "fcf809cc68ab8585376ebd192b5c874e",
     "semantic_hash": ""
   },
   "src/platforms/targets/espressif/pulse_rmt.cpp": {
-    "mtime": 1790965640.6666863,
-    "seen": 1790965661.6464124,
-    "ast_hash": "ad0899f17a66370fa74e2df90ea0a71a",
+    "mtime": 1792071241.51953,
+    "seen": 1792071287.5308678,
+    "ast_hash": "a7cbf810f10f67614391c8f63673d04f",
     "semantic_hash": ""
   },
   "src/platforms/targets/espressif/pulse_rmt.h": {
-    "mtime": 1790965635.5538018,
-    "seen": 1790965661.6464164,
-    "ast_hash": "e5013d0d64095bbe0682a058f60898df",
+    "mtime": 1792140074.2976007,
+    "seen": 1792140126.9884284,
+    "ast_hash": "94a0a5bb8a3b353b2264826baf77346c",
     "semantic_hash": ""
   },
   "documents/notes/0012-ws2812HardwareIsolationAndMutexEncapsulationRule.md": {
@@ -2724,9 +2724,9 @@
     "semantic_hash": ""
   },
   "documents/notes/0013-sdCardSpiStorageAndFlightLoggingArchitecture.md": {
-    "mtime": 1791709692.2166708,
-    "seen": 1791709780.492808,
-    "ast_hash": "08c452b5ba29548c4efac433b87a8e48",
+    "mtime": 1792179648.0561337,
+    "seen": 1792179708.7993329,
+    "ast_hash": "2abfc0b1f10915b2f9934ef8750936b8",
     "semantic_hash": ""
   },
   "tools/ble_ota_uploader.py": {
@@ -2736,9 +2736,9 @@
     "semantic_hash": ""
   },
   "src/core/blackbox/sd_logger_task.cpp": {
-    "mtime": 1791710182.0286732,
-    "seen": 1791710384.1615314,
-    "ast_hash": "523c8775bd9c87d981285934bb313424",
+    "mtime": 1792181547.6863523,
+    "seen": 1792181615.2528443,
+    "ast_hash": "211619b09a3cc01389e69b452904c40b",
     "semantic_hash": ""
   },
   "src/core/blackbox/sd_logger_task.h": {
@@ -2748,33 +2748,21 @@
     "semantic_hash": ""
   },
   "src/core/interface/interface_tasks.h": {
-    "mtime": 1791380225.915744,
-    "seen": 1791380739.490231,
+    "mtime": 1792069158.7228491,
+    "seen": 1792069238.455102,
     "ast_hash": "78d9ac023f3289583310d6b0ff91f5f2",
     "semantic_hash": ""
   },
   "src/core/math/estimator_tasks.cpp": {
-    "mtime": 1791211531.3826723,
-    "seen": 1791212484.99672,
-    "ast_hash": "6ab4be58dc16d7a8239e7b10d6c0ecca",
+    "mtime": 1792209124.762298,
+    "seen": 1792209275.3845346,
+    "ast_hash": "847506d970aa6a1c491379e36e08c93b",
     "semantic_hash": ""
   },
   "src/core/math/estimator_tasks.h": {
-    "mtime": 1791211524.6961575,
-    "seen": 1791212484.9967222,
-    "ast_hash": "9701f1253c296d62dd76cf304df12a0f",
-    "semantic_hash": ""
-  },
-  "src/core/math/filter_tasks.cpp": {
-    "mtime": 1791899036.5796514,
-    "seen": 1791899247.284208,
-    "ast_hash": "129047016ab19eba6fa2f5be00078784",
-    "semantic_hash": ""
-  },
-  "src/core/math/filter_tasks.h": {
-    "mtime": 1791211548.9444933,
-    "seen": 1791212484.996725,
-    "ast_hash": "5d77f757183fc416b65d78811c576d8f",
+    "mtime": 1792209074.5847974,
+    "seen": 1792209275.3845387,
+    "ast_hash": "50c148132bed36ec93d0bc64f0e7e510",
     "semantic_hash": ""
   },
   "src/core/math/lpf.h": {
@@ -2784,21 +2772,21 @@
     "semantic_hash": ""
   },
   "src/core/sensor/daq_tasks.cpp": {
-    "mtime": 1791710133.626791,
-    "seen": 1791710384.1674051,
-    "ast_hash": "06901729de5d2299996e473654f3de90",
+    "mtime": 1792153557.3804066,
+    "seen": 1792153599.847553,
+    "ast_hash": "ba239afa02d93cbb19c0f7ccb19bac63",
     "semantic_hash": ""
   },
   "src/core/sensor/daq_tasks.h": {
-    "mtime": 1791211415.725238,
-    "seen": 1791212484.9969523,
-    "ast_hash": "6179e41a8549c26ff70f49fcd8ca27ed",
+    "mtime": 1792052304.6344285,
+    "seen": 1792053416.8816555,
+    "ast_hash": "31b191939f84bb6ab11eba0e790545d0",
     "semantic_hash": ""
   },
   "src/core/telemetry/ble_ota_tasks.cpp": {
-    "mtime": 1791805850.050282,
-    "seen": 1791805917.7903852,
-    "ast_hash": "dd037beed74020395967507ade19be0e",
+    "mtime": 1792062497.7537158,
+    "seen": 1792064489.8096154,
+    "ast_hash": "ff1d4ff2e6f93b8b5adf47fdd9f5cb09",
     "semantic_hash": ""
   },
   "src/core/telemetry/ble_ota_tasks.h": {
@@ -2808,9 +2796,9 @@
     "semantic_hash": ""
   },
   "src/core/telemetry/ble_telem_tasks.cpp": {
-    "mtime": 1791710194.5473888,
-    "seen": 1791710384.1704793,
-    "ast_hash": "2911ca4f3e4eee3c1b24bfb5e1a6ae8b",
+    "mtime": 1792181502.476663,
+    "seen": 1792181615.2625127,
+    "ast_hash": "90fa7aaf0f12b04bcd8088311bda9dbd",
     "semantic_hash": ""
   },
   "src/core/telemetry/ble_telem_tasks.h": {
@@ -2826,15 +2814,15 @@
     "semantic_hash": ""
   },
   "documents/notes/0016-coreDirectoryCompactionAndDomainConsolidation.md": {
-    "mtime": 1791709726.082006,
-    "seen": 1791709780.493026,
-    "ast_hash": "77d36d3411762b6c65f5beeb3a6486c9",
+    "mtime": 1791983665.498979,
+    "seen": 1791983849.9242027,
+    "ast_hash": "e97c81f0081d59c1bc4d5ef513522b1a",
     "semantic_hash": ""
   },
   "documents/notes/0017-bmp180TwoStepI2cTransactionAndBaroDaqArchitecture.md": {
-    "mtime": 1791710345.4311726,
-    "seen": 1791710384.2163904,
-    "ast_hash": "86958b3d497fbaff0384833c2ce5836f",
+    "mtime": 1792064413.4042113,
+    "seen": 1792064489.9616568,
+    "ast_hash": "ab0491c48d31de4a2524db9dbf2e3c33",
     "semantic_hash": ""
   },
   "src/core/interface/user_button.cpp": {
@@ -2850,9 +2838,9 @@
     "semantic_hash": ""
   },
   "documents/notes/0018-sdCardLoggingRestorationAndUserButtonShutdown.md": {
-    "mtime": 1791709674.3081827,
-    "seen": 1791709780.4932673,
-    "ast_hash": "c41379bd9673d1874b81c32104344578",
+    "mtime": 1792179658.107272,
+    "seen": 1792179708.80041,
+    "ast_hash": "79899998b18c4256a1c8d1b6480b86c1",
     "semantic_hash": ""
   },
   "src/core/sensor/calib.h": {
@@ -2874,15 +2862,15 @@
     "semantic_hash": ""
   },
   "src/app/fsm.h": {
-    "mtime": 1791627253.0760827,
-    "seen": 1791627683.608771,
-    "ast_hash": "a599b75269d8cb285be38896d52af173",
+    "mtime": 1792151795.0861833,
+    "seen": 1792152283.813458,
+    "ast_hash": "cf26be97ae7910a333359ca33783fe02",
     "semantic_hash": ""
   },
   "documents/notes/0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture.md": {
-    "mtime": 1791630393.581434,
-    "seen": 1791630408.4252398,
-    "ast_hash": "3eac36c88739a9649b511a64fa9cf851",
+    "mtime": 1792154909.6120627,
+    "seen": 1792154961.1690953,
+    "ast_hash": "e9a43847f8d0b11d712f6f5eb4b36321",
     "semantic_hash": ""
   },
   "documents/notes/0021-bleTelemetryDispatcherConsolidationAndSubscriptionGating.md": {
@@ -2892,9 +2880,9 @@
     "semantic_hash": ""
   },
   "documents/notes/0022-unifiedPressureRingBufferSensorVariableConsolidationAndAttitudeTaskRemoval.md": {
-    "mtime": 1791710307.8260715,
-    "seen": 1791710384.2208467,
-    "ast_hash": "fbaa71fd1ae9a83548bfdeb859f20dc8",
+    "mtime": 1792181588.2132652,
+    "seen": 1792181615.2952209,
+    "ast_hash": "8996a6c2a68c409b058c221fb3cb5ef6",
     "semantic_hash": ""
   },
   "src/core/interface/led_task.cpp": {
@@ -2910,9 +2898,9 @@
     "semantic_hash": ""
   },
   "src/core/sensor/calib_tasks.cpp": {
-    "mtime": 1791905018.0554535,
-    "seen": 1791905080.468656,
-    "ast_hash": "6c4f7f15fdc31ff105ec424b41ce7188",
+    "mtime": 1791982544.5286062,
+    "seen": 1791982574.8758628,
+    "ast_hash": "5036ec6270fafcfec7f6fd1f2a5d2cd1",
     "semantic_hash": ""
   },
   "src/core/sensor/calib_tasks.h": {
@@ -2922,9 +2910,9 @@
     "semantic_hash": ""
   },
   "documents/notes/0023-fsmCentricCalibrationOrchestrationAndRgbLedArchitecture.md": {
-    "mtime": 1791872290.8058956,
-    "seen": 1791872319.2590103,
-    "ast_hash": "9135ddcdbbc2c2386670a1c9d98b9660",
+    "mtime": 1792154913.832483,
+    "seen": 1792154961.169554,
+    "ast_hash": "75e2a6d5d89d613df142cdebf4001a09",
     "semantic_hash": ""
   },
   "documents/Magnetometer Ellipsoid Calibration SIMD.md": {
@@ -2934,9 +2922,9 @@
     "semantic_hash": ""
   },
   "src/core/sensor/calib.cpp": {
-    "mtime": 1791905046.2441828,
-    "seen": 1791905080.46833,
-    "ast_hash": "0f9d69d37226612090d9bcaa204a1873",
+    "mtime": 1791981812.4898376,
+    "seen": 1791982060.4254138,
+    "ast_hash": "fc05845f6e934e9ce18f998955b4cc4e",
     "semantic_hash": ""
   },
   "src/drivers/storage/flash_storage_driver.cpp": {
@@ -2970,9 +2958,9 @@
     "semantic_hash": ""
   },
   "documents/notes/0024-internalFlashNvsStorageHalAndSensorCalibrationPersistence.md": {
-    "mtime": 1791872250.213902,
-    "seen": 1791872319.2590134,
-    "ast_hash": "f42a960a4370758efcd1d2a098674216",
+    "mtime": 1791983699.216477,
+    "seen": 1791983849.9395883,
+    "ast_hash": "accc8a6680ea8d388000003b48078e72",
     "semantic_hash": ""
   },
   "documents/Magnetometer Ellipsoid Calibration.pdf": {
@@ -2982,15 +2970,123 @@
     "semantic_hash": ""
   },
   "src/core/math/ellipsoid_fit.cpp": {
-    "mtime": 1791904945.2158988,
-    "seen": 1791905080.4662995,
-    "ast_hash": "7ef0d645c5f14d981c2070297472bee2",
+    "mtime": 1791976002.7891822,
+    "seen": 1791976587.2795522,
+    "ast_hash": "f0152e976a21ca88850ba5718fb4f3ca",
     "semantic_hash": ""
   },
   "src/core/math/ellipsoid_fit.h": {
-    "mtime": 1791904913.3527598,
-    "seen": 1791905080.4663045,
-    "ast_hash": "8811c0f94fe9ba4b8b640b57ce72eee3",
+    "mtime": 1791981801.0930395,
+    "seen": 1791982060.4211574,
+    "ast_hash": "7442e0964900a560965b3a923a261853",
+    "semantic_hash": ""
+  },
+  "documents/notes/0025-rotEllipsoidMagCalibSimdAdamEkfUnitSphereStackLifecycle.md": {
+    "mtime": 1791983709.3856146,
+    "seen": 1791983849.939594,
+    "ast_hash": "0c0ddeb4b9fbd2d1a9044dbb1be32add",
+    "semantic_hash": ""
+  },
+  "documents/notes/0026-sixPointAccelCalibSimdEllipsoidFitFsmLedArchitecture.md": {
+    "mtime": 1791976128.0618913,
+    "seen": 1791976587.3191907,
+    "ast_hash": "bb89217e066ebe6e82d13309ba49dbe3",
+    "semantic_hash": ""
+  },
+  "src/core/sensor/sensor_preprocess_tasks.cpp": {
+    "mtime": 1792152749.304154,
+    "seen": 1792152828.9051611,
+    "ast_hash": "221e643aa56c4a51d191cc639f22f8b5",
+    "semantic_hash": ""
+  },
+  "src/core/sensor/sensor_preprocess_tasks.h": {
+    "mtime": 1791983395.6513863,
+    "seen": 1791983849.7958672,
+    "ast_hash": "e98e0a9b8e06ddcb5f34a2ebf59ece9e",
+    "semantic_hash": ""
+  },
+  "documents/notes/0027-preflightSensorDataStreamCheckFsmArchitecture.md": {
+    "mtime": 1792154920.2078018,
+    "seen": 1792154961.1702564,
+    "ast_hash": "13897409414ca914eede703d9d2f57ab",
+    "semantic_hash": ""
+  },
+  "src/drivers/power/ina226.cpp": {
+    "mtime": 1792143729.5492601,
+    "seen": 1792143814.9041033,
+    "ast_hash": "437f05995a06f8354624bad3088f798a",
+    "semantic_hash": ""
+  },
+  "src/drivers/power/ina226.h": {
+    "mtime": 1792143702.75649,
+    "seen": 1792143814.9041088,
+    "ast_hash": "7939591ea6d41eeb81d1aadf4e539951",
+    "semantic_hash": ""
+  },
+  "documents/notes/0028-ina226PowerModuleI2c1DaqAndBatteryMonitoringArchitecture.md": {
+    "mtime": 1792158276.7109084,
+    "seen": 1792178538.7480104,
+    "ast_hash": "d294a52971adc14944fd6d5a63817810",
+    "semantic_hash": ""
+  },
+  "documents/notes/0029-unificationOfInterTaskRingBufferSizeConstant.md": {
+    "mtime": 1792064382.0354688,
+    "seen": 1792064489.983419,
+    "ast_hash": "f385128798c06053699854cd3f0eddb5",
+    "semantic_hash": ""
+  },
+  "documents/notes/0030-rmtHardwarePpmDecodingFsIa6bAndBleTelemetryArchitecture.md": {
+    "mtime": 1792179669.2812076,
+    "seen": 1792179708.8038487,
+    "ast_hash": "08939040169f69755ba83c2205776619",
+    "semantic_hash": ""
+  },
+  "src/core/telemetry/rc_receiver_task.cpp": {
+    "mtime": 1792144793.863611,
+    "seen": 1792144834.802567,
+    "ast_hash": "b019cf711fdc6c02b9901a0e7fb1aff9",
+    "semantic_hash": ""
+  },
+  "src/core/telemetry/rc_receiver_task.h": {
+    "mtime": 1792069128.8760512,
+    "seen": 1792069238.4717717,
+    "ast_hash": "b75d3805e85a7995f2a7be3e92749d2a",
+    "semantic_hash": ""
+  },
+  ".agents/PROJECT.md": {
+    "mtime": 1792140285.9604228,
+    "seen": 1792143814.9175074,
+    "ast_hash": "b8a2d8ae3ab4a1f62addb998024e09ad",
+    "semantic_hash": ""
+  },
+  ".agents/skills/analyze-context/SKILL.md": {
+    "mtime": 1792140267.000495,
+    "seen": 1792143814.9185214,
+    "ast_hash": "cbde6c6197e8346ce58f9491f82badd0",
+    "semantic_hash": ""
+  },
+  ".agents/workflows/analyze-context.md": {
+    "mtime": 1792140270.5040274,
+    "seen": 1792143814.9185255,
+    "ast_hash": "daacf94304d9ab0bbf09e82a0d207b36",
+    "semantic_hash": ""
+  },
+  "documents/notes/0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture.md": {
+    "mtime": 1792179681.4087262,
+    "seen": 1792179708.8038523,
+    "ast_hash": "19196589b6c8df8552b9a249f1a6a75b",
+    "semantic_hash": ""
+  },
+  "documents/notes/0032-rcReceiverCommandBlackboxSdCardLoggingArchitecture.md": {
+    "mtime": 1792179635.7501955,
+    "seen": 1792179708.8038557,
+    "ast_hash": "a567386981bdba2c34c1b52ec4982971",
+    "semantic_hash": ""
+  },
+  "documents/notes/0032-dualCoreEkfStateEstimationAttitudeRingBufferArchitecture.md": {
+    "mtime": 1792205520.9735124,
+    "seen": 1792205595.0840385,
+    "ast_hash": "f273d6e5fce949517cab0dcec7f6d32d",
     "semantic_hash": ""
   }
 }

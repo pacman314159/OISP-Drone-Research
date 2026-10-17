@@ -47,8 +47,8 @@ Layer 4 (`src/core/`) is compacted into strictly 6 cohesive, non-overlapping fun
 
 ```
 src/core/
-├── sensor/     <- Unified high-frequency DAQ sampling & calibration routines
-├── math/       <- Linear algebra, discrete LPF filters & state estimators
+├── sensor/     <- Unified high-frequency DAQ sampling, preprocessing & calibration routines
+├── math/       <- Linear algebra, discrete LPF algorithms, ellipsoid fitting & estimators
 ├── telemetry/  <- Telemetry data packaging, transmission & wireless OTA
 ├── blackbox/   <- High-rate flight data logging & MicroSD storage
 ├── control/    <- Cascaded PID controllers & motor mixer
@@ -56,9 +56,9 @@ src/core/
 ```
 
 1. **`sensor/`** (unified from `daq/` and `calib/`):
-   - Houses high-frequency sensor acquisition loops (`daq_tasks.cpp`, `daq_tasks.h`) and future sensor bias, scale-factor, and hard/soft-iron magnetometer calibration routines.
+   - Houses high-frequency sensor acquisition loops (`daq_tasks.cpp`, `daq_tasks.h`), sensor preprocessing task runners (`sensor_preprocess_tasks.cpp`, `sensor_preprocess_tasks.h`), and calibration routines (`calib.cpp/.h`, `calib_tasks.cpp/.h`).
 2. **`math/`** (incorporates `filters/` and `estimators/`):
-   - Houses linear algebra (`matrix.h`), discrete 1st-order signal filters (`lpf.h`, `filter_tasks.cpp`, `filter_tasks.h`), state estimators (`estimator_tasks.cpp`, `estimator_tasks.h`), and coordinate conversions.
+   - Houses linear algebra (`matrix.h`), discrete 1st-order signal filters (`lpf.h`), 3D ellipsoid fitting (`ellipsoid_fit.cpp/.h`), state estimators (`estimator_tasks.cpp`, `estimator_tasks.h`), and coordinate conversions.
 3. **`telemetry/`** (incorporates `ota/`):
    - Unifies all wireless/wireline remote data streaming and over-the-air firmware update task runners (`ble_telem_tasks.cpp/.h`, `ble_ota_tasks.cpp/.h`).
 4. **`blackbox/`** (renamed from `logging/`):
@@ -78,7 +78,7 @@ To future-proof the communication stack for multiple transceivers (e.g. BLE, LoR
 In `src/app/app.cpp`, task runners are included with clean domain-scoped paths:
 ```cpp
 #include "core/sensor/daq_tasks.h"
-#include "core/math/filter_tasks.h"
+#include "core/sensor/sensor_preprocess_tasks.h"
 #include "core/telemetry/ble_telem_tasks.h"
 #include "core/blackbox/sd_logger_task.h"
 #include "core/telemetry/ble_ota_tasks.h"
