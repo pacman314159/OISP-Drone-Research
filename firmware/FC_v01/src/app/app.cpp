@@ -5,6 +5,7 @@
 #include "platforms/hal/hal_pulse.h"
 #include "platforms/hal/hal_spi.h"
 #include "platforms/hal/hal_flash.h"
+#include "platforms/hal/hal_pwm.h"
 
 #include "middleware/ipc.h"
 
@@ -17,6 +18,7 @@
 #include "drivers/telemetry/ble_driver.h"
 #include "drivers/storage/sd_card_driver.h"
 #include "drivers/storage/flash_storage_driver.h"
+#include "drivers/motor/motor_driver.h"
 
 #include "core/sensor/daq_tasks.h"
 #include "core/sensor/sensor_preprocess_tasks.h"
@@ -27,6 +29,7 @@
 #include "core/interface/led_task.h"
 #include "core/telemetry/rc_receiver_task.h"
 #include "core/math/estimator_tasks.h"
+#include "core/actuator/motor_tasks.h"
 #include "app/fsm.h"
 
 // Pure HAL Interface Accessor (Target Hardware Decoupled per [Note 0002])
@@ -48,6 +51,9 @@ static SDCardDriver sd_driver(spi_bus, SPI_CS_SD_PIN, SD_CARD_DET_PIN);
 
 static HAL_Flash& flash_hal = get_flash_storage();
 static FlashStorageDriver flash_driver(flash_hal);
+
+static HAL_PWM& pwm_hal = get_pwm_hal();
+static MotorDriver motor_driver(pwm_hal);
 
 void app_suspend_all_tasks(){
   for(uint32_t i = 0; i < TASK_COUNT; ++i)
@@ -81,6 +87,10 @@ void app_start(){
 
   user_button_init();
 
+  const int esc_pins[MOTOR_COUNT] = {ESC_PWM1_PIN, ESC_PWM2_PIN, ESC_PWM3_PIN, ESC_PWM4_PIN};
+  motor_driver.init(esc_pins);
+  motor_driver.disarm_all();
+
   xTaskCreatePinnedToCore(status_led_task, TASK_STATUS_LED_NAME, TASK_STATUS_LED_STACK_SIZE, &status_led, TASK_STATUS_LED_PRIORITY, &app_task_handles[TASK_STATUS_LED_ID], TASK_STATUS_LED_CORE);
   xTaskCreatePinnedToCore(ble_ota_task, TASK_BLE_OTA_NAME, TASK_BLE_OTA_STACK_SIZE, nullptr, TASK_BLE_OTA_PRIORITY, &app_task_handles[TASK_BLE_OTA_ID], TASK_BLE_OTA_CORE);
   xTaskCreatePinnedToCore(accel_gyro_daq_task, TASK_ACCEL_GYRO_DAQ_NAME, TASK_ACCEL_GYRO_DAQ_STACK_SIZE, &mpu, TASK_ACCEL_GYRO_DAQ_PRIORITY, &app_task_handles[TASK_ACCEL_GYRO_DAQ_ID], TASK_ACCEL_GYRO_DAQ_CORE);
@@ -92,6 +102,8 @@ void app_start(){
   xTaskCreatePinnedToCore(mag_preprocess_task, TASK_MAG_PREPROCESS_NAME, TASK_MAG_PREPROCESS_STACK_SIZE, nullptr, TASK_MAG_PREPROCESS_PRIORITY, &app_task_handles[TASK_MAG_PREPROCESS_ID], TASK_MAG_PREPROCESS_CORE);
   xTaskCreatePinnedToCore(ekf_roll_pitch_task, TASK_EKF_ROLL_PITCH_NAME, TASK_EKF_ROLL_PITCH_STACK_SIZE, nullptr, TASK_EKF_ROLL_PITCH_PRIORITY, &app_task_handles[TASK_EKF_ROLL_PITCH_ID], TASK_EKF_ROLL_PITCH_CORE);
   xTaskCreatePinnedToCore(ekf_yaw_task, TASK_EKF_YAW_NAME, TASK_EKF_YAW_STACK_SIZE, nullptr, TASK_EKF_YAW_PRIORITY, &app_task_handles[TASK_EKF_YAW_ID], TASK_EKF_YAW_CORE);
+  xTaskCreatePinnedToCore(ekf_altitude_task, TASK_EKF_ALTITUDE_NAME, TASK_EKF_ALTITUDE_STACK_SIZE, nullptr, TASK_EKF_ALTITUDE_PRIORITY, &app_task_handles[TASK_EKF_ALTITUDE_ID], TASK_EKF_ALTITUDE_CORE);
+  xTaskCreatePinnedToCore(motor_task, TASK_MOTOR_NAME, TASK_MOTOR_STACK_SIZE, &motor_driver, TASK_MOTOR_PRIORITY, &app_task_handles[TASK_MOTOR_ID], TASK_MOTOR_CORE);
 
   if constexpr(ACTIVE_BLE_TELEM_MASK != BLE_TELEM_MASK_NONE)
     xTaskCreatePinnedToCore(ble_telem_task, TASK_BLE_TELEM_NAME, TASK_BLE_TELEM_STACK_SIZE, nullptr, TASK_BLE_TELEM_PRIORITY, &app_task_handles[TASK_BLE_TELEM_ID], TASK_BLE_TELEM_CORE);

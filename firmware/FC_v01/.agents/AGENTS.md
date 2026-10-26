@@ -30,7 +30,7 @@
 - **No PowerShell File cmdlets**: Never run slow PowerShell cmdlets (`Get-ChildItem`, `Get-Content`, `Select-String`) for search or inspection.
 
 ## 6. Build & PlatformIO Workflow
-- **Build Invocation**: Use `pio run` from the project root (`firmware/FC_v01`). Specify the environment explicitly (e.g., `pio run -e esp32-s3-devkitc-1`).
+- **Build Invocation**: Use `pio run` from the project root (`firmware/FC_v01`). Specify the environment explicitly and always include `-j 4` (e.g., `pio run -e esp32-s3-devkitc-1 -j 4`) to prevent workstation thermal throttling.
 - **No Concurrent Tooling During Active Builds**: Do not run automated searches or sub-tasks while an active compilation is streaming to avoid process lockouts and disk I/O bottlenecks.
 - **Targeted Compilation Checks**: For quick syntax checks, build only the active component or compilation unit before triggering a full binary link.
 

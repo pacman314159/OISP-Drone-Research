@@ -10,6 +10,7 @@ void calib_reset_defaults(){
   calib_data.mag_bias      = Vec3<float>(0.0f, 0.0f, 0.0f);
   calib_data.mag_soft_iron = Matrix<float, 3, 3>::identity();
   calib_data.mag_field_ref = 1.0f;
+  calib_data.baro_ref_pa   = BARO_SEA_LEVEL_PRESSURE_PA;
   calib_data.is_valid      = false;
 }
 
@@ -31,6 +32,8 @@ bool calib_load_from_flash(){
     SensorCalibrationData temp;
     if(calib_storage->read_record(CALIB_NAMESPACE, CALIB_KEY, &temp, sizeof(SensorCalibrationData))){
       if(temp.is_valid){
+        if(temp.baro_ref_pa < SENSOR_STREAM_BARO_MIN_PA || temp.baro_ref_pa > SENSOR_STREAM_BARO_MAX_PA)
+          temp.baro_ref_pa = BARO_SEA_LEVEL_PRESSURE_PA;
         calib_data = temp;
         loaded = true;
       }

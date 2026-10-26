@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_managed_components_espressif_esp_sr_include_esp32c6_esp_mase_h", "label": "esp_mase.h", "file_type": "code", "source_file": "managed_components/espressif__esp-sr/include/esp32c6/esp_mase.h", "source_location": "L1"}], "edges": [], "raw_calls": [], "parse_errors": {"first_error_line": 89, "multiline_error": false}}

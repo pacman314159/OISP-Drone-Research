@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_managed_components_espressif_esp_modem_private_include_exception_stub_hpp", "label": "exception_stub.hpp", "file_type": "code", "source_file": "managed_components/espressif__esp_modem/private_include/exception_stub.hpp", "source_location": "L1"}], "edges": [], "raw_calls": []}

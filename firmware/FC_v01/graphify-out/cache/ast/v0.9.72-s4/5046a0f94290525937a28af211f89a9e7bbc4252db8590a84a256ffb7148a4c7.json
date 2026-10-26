@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_managed_components_espressif_esp_modem_port_linux_esp_system_protocols_linux_include_machine_endian_h", "label": "endian.h", "file_type": "code", "source_file": "managed_components/espressif__esp_modem/port/linux/esp_system_protocols_linux/include/machine/endian.h", "source_location": "L1"}], "edges": [], "raw_calls": []}

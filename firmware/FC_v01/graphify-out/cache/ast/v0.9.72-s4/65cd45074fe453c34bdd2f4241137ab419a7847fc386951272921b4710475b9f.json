@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_managed_components_espressif_esp_modem_test_target_ota_components_manual_ota_transport_batch_tls_hpp", "label": "transport_batch_tls.hpp", "file_type": "code", "source_file": "managed_components/espressif__esp_modem/test/target_ota/components/manual_ota/transport_batch_tls.hpp", "source_location": "L1"}], "edges": [], "raw_calls": []}

@@ -12,6 +12,7 @@ void sysview_init_markers(){
   SEGGER_SYSVIEW_NameResource(TASK_BLE_TELEM_ID + 1,             TASK_BLE_TELEM_NAME);
   SEGGER_SYSVIEW_NameResource(TASK_EKF_ROLL_PITCH_ID + 1,        TASK_EKF_ROLL_PITCH_NAME);
   SEGGER_SYSVIEW_NameResource(TASK_EKF_YAW_ID + 1,               TASK_EKF_YAW_NAME);
+  SEGGER_SYSVIEW_NameResource(TASK_EKF_ALTITUDE_ID + 1,          TASK_EKF_ALTITUDE_NAME);
 }
 
 #endif

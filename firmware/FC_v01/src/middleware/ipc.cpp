@@ -46,6 +46,12 @@ RingBuffer<Vec4, RING_BUF_SIZE>        att_quat;
 RingBuffer<Vec3<float>, RING_BUF_SIZE> att_euler;
 RingBuffer<uint32_t, RING_BUF_SIZE>    att_timestamp;
 
+RingBuffer<Vec3<float>, RING_BUF_SIZE> alt_state;
+RingBuffer<uint32_t, RING_BUF_SIZE>    alt_timestamp;
+
+IndiControllerOutput indi_output = {};
+QueueHandle_t motor_cmd_queue = nullptr;
+
 FcBleServerCallbacks ble_server_callbacks;
 
 void FcBleServerCallbacks::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc){
@@ -154,6 +160,9 @@ bool init_ipc(){
   if(calib_report_queue == nullptr)
     calib_report_queue = xQueueCreate(CALIB_REPORT_QUEUE_DEPTH, sizeof(CalibReportMsg));
 
+  if(motor_cmd_queue == nullptr)
+    motor_cmd_queue = xQueueCreate(MOTOR_CMD_QUEUE_SIZE, sizeof(MotorCommand));
+
   if(s_btn_hold_timer == nullptr){
     s_btn_hold_timer = xTimerCreate(
       "BtnHoldTmr",
@@ -173,6 +182,7 @@ bool init_ipc(){
           ota_data_queue != nullptr &&
           led_cmd_queue != nullptr &&
           calib_report_queue != nullptr &&
+          motor_cmd_queue != nullptr &&
           s_btn_hold_timer != nullptr);
 }
 

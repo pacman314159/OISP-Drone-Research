@@ -99,8 +99,9 @@ Sensor noise parameters in `include/config.h` are grounded in flight log session
 
 ### Rule 5: Memory Placement & RAM Access Latency (Internal SRAM vs External PSRAM)
 To guarantee the strict $500\,\text{Hz}$ ($2000\,\mu\text{s}$) flight loop WCET without jitter or bus contention:
-1. **Persistent State & Covariance Matrices (`_x`, `_P`, `_Q`, `_Ra`, `_Rm`)**:
-   - Reside within static global instance `AttitudeEKF g_ekf;` in `src/core/math/estimator_tasks.cpp` (~$500\,\text{bytes}$).
+1. **Algorithmic Decoupling & Persistent State (`_x`, `_P`, `_Q`, `_Ra`, `_Rm`)**:
+   - The pure mathematical estimator class `AttitudeEKF` is factored into `src/core/math/estimators.h` and `estimators.cpp`, decoupled from FreeRTOS task primitives in adherence to Note 0016.
+   - Resides within static global instance `AttitudeEKF g_ekf;` in `src/core/math/estimator_tasks.cpp` (~$500\,\text{bytes}$).
    - Placed in `.bss` / `.data` which maps directly to **Internal Data RAM (DRAM, SRAM1/SRAM2)** via the direct internal D-Bus at $240\,\text{MHz}$ ($0\text{ wait-states}$, $\sim 4.16\,\text{ns}$ single-cycle access).
 2. **Intermediate Calculation Matrices (`F`, `H_a`, `H_m`, `S`, `K`, `A`)**:
    - Allocated on the FreeRTOS task stacks in `predict()`, `update_accel()`, and `update_mag()`.
@@ -112,12 +113,13 @@ To guarantee the strict $500\,\text{Hz}$ ($2000\,\mu\text{s}$) flight loop WCET 
 ---
 
 ## 4. Cross-References & Traceability
-- [[0000-firmwareStructureLayerDecision]]: Layer 4 algorithms encapsulation in `src/core/math/estimator_tasks.*`.
+- [[0000-firmwareStructureLayerDecision]]: Layer 4 algorithms encapsulation in `src/core/math/estimators.*` and task runners in `src/core/math/estimator_tasks.*`.
 - [[0001-taskConfigMiddlewareIsrDecision]]: Centralized `ekf_state_mutex` in `init_ipc()`.
 - [[0002-taskEnumsAndHalAbstractionDecision]]: Centralized task parameters in `include/config.h`.
 - [[0003-simdHalArchitectureAndLayeringRule]]: SIMD matrix operations (`hal_simd::inv3x3_f32`, `mat_mul_f32`).
 - [[0007-systemViewTracingAndRTOSTimingAnalysisConventions]]: `SYSVIEW_START` / `SYSVIEW_END` markers and overrun guards.
 - [[0008-lpfAndCalibrationTaskArchitecture]]: Upstream consumption of pre-filtered, calibrated sensor streams.
+- [[0016-coreDirectoryCompactionAndDomainConsolidation]]: Separation of pure mathematical algorithms (`estimators.h/.cpp`) from FreeRTOS task execution (`estimator_tasks.h/.cpp`).
 - [[0019-universalFlightDataAnalyzerAndBinaryTelemetryAlignmentSpecification]]: Binary blackbox logging structs `PktAttQuat` and `PktAttEuler`.
 - [[0022-unifiedPressureRingBufferSensorVariableConsolidationAndAttitudeTaskRemoval]]: Formal replacement of ghost attitude task with dual-core EKF engine.
 - [[0025-rotEllipsoidMagCalibSimdAdamEkfUnitSphereStackLifecycle]]: Unit-sphere magnetometer contract ($\|\mathbf{m}\| = 1.0$).

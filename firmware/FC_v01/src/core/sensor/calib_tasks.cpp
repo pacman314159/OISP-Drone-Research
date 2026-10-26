@@ -1,7 +1,8 @@
 #include <Arduino.h>
-#include "core/sensor/calib_tasks.h"
 #include "core/sensor/calib.h"
+#include "core/sensor/calib_tasks.h"
 #include "core/math/ellipsoid_fit.h"
+#include "core/math/estimator_tasks.h"
 #include "config.h"
 #include "middleware/ipc.h"
 #include "middleware/sysview_tracing.h"
@@ -100,14 +101,41 @@ void task_calib_gyro(void* arg){
 // Barometer Calibration: Ground reference pressure P0 acquisition
 void task_calib_baro(void* arg){
   const TickType_t period_ticks = pdMS_TO_TICKS(1000 / TASK_CALIB_BARO_FREQ_HZ);
-  TickType_t last_wake_time = xTaskGetTickCount();
+
+  Serial.printf("[CALIB_BARO] Task started. Entering %u ms settling delay...\n",
+                static_cast<unsigned int>(CALIB_SETTLING_DELAY_MS));
+
+  // Report settling phase to FSM coordinator
+  CalibReportMsg settle_msg = {
+    .target       = CALIB_TARGET_BARO,
+    .status       = CALIB_STATUS_SETTLING,
+    .current_step = 0,
+    .progress_pct = 0,
+    .timestamp_us = static_cast<uint32_t>(micros())
+  };
+  xQueueSend(calib_report_queue, &settle_msg, 0);
+
+  vTaskDelay(pdMS_TO_TICKS(CALIB_SETTLING_DELAY_MS));
+
+  // Report active sampling transition to FSM coordinator
+  CalibReportMsg sample_msg = {
+    .target       = CALIB_TARGET_BARO,
+    .status       = CALIB_STATUS_SAMPLING,
+    .current_step = 0,
+    .progress_pct = 0,
+    .timestamp_us = static_cast<uint32_t>(micros())
+  };
+  xQueueSend(calib_report_queue, &sample_msg, 0);
+
+  Serial.println("[CALIB_BARO] Settling complete. Collecting ground pressure baseline...");
 
   uint32_t sample_count = 0;
   const uint32_t target_samples = CALIB_BARO_SAMPLE_COUNT;
+  double sum_pressure = 0.0;
+  uint32_t last_baro_ts = 0;
   bool completed = false;
 
-  Serial.println("[CALIB_BARO] Task started. Collecting ground pressure baseline...");
-
+  TickType_t last_wake_time = xTaskGetTickCount();
   while(!completed){
     TickType_t now = xTaskGetTickCount();
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
@@ -115,11 +143,20 @@ void task_calib_baro(void* arg){
 
     SYSVIEW_START(TASK_CALIB_BARO_ID);
 
-    // [DAQ Placeholder]: Retrieve baro pressure samples from ring buffer and accumulate
-    sample_count++;
+    if(!pressure.empty()){
+      uint32_t current_ts = pressure_timestamp.front();
+      if(current_ts != last_baro_ts){
+        last_baro_ts = current_ts;
+        float p = pressure.front();
+        if(p >= SENSOR_STREAM_BARO_MIN_PA && p <= SENSOR_STREAM_BARO_MAX_PA){
+          sum_pressure += static_cast<double>(p);
+          sample_count++;
+        }
+      }
+    }
 
     // Periodic healthcheck report to FSM at 5 Hz (every 10 samples at 50 Hz)
-    if(sample_count % 10 == 0){
+    if(sample_count > 0 && sample_count % 10 == 0){
       CalibReportMsg msg = {
         .target       = CALIB_TARGET_BARO,
         .status       = CALIB_STATUS_HEALTHCHECK,
@@ -135,7 +172,16 @@ void task_calib_baro(void* arg){
     SYSVIEW_END(TASK_CALIB_BARO_ID);
   }
 
-  // [Persistence Placeholder]: Calculate ground reference P0 and save to Flash NVS
+  // Calculate ground reference P0 and commit to Flash NVS
+  float avg_p0 = (sample_count > 0) ? static_cast<float>(sum_pressure / static_cast<double>(sample_count)) : BARO_SEA_LEVEL_PRESSURE_PA;
+  calib_get_data().baro_ref_pa = avg_p0;
+  bool saved = calib_save_to_nvs();
+  if(xSemaphoreTake(ekf_state_mutex, pdMS_TO_TICKS(10)) == pdTRUE){
+    g_alt_ekf.set_reference_pressure(avg_p0);
+    xSemaphoreGive(ekf_state_mutex);
+  }
+  Serial.printf("[CALIB_BARO] Ground Reference P0: %.2f Pa. Saved to NVS: %s\n",
+                avg_p0, saved ? "SUCCESS" : "FAILED");
 
   // Report successful completion to FSM coordinator
   CalibReportMsg done_msg = {

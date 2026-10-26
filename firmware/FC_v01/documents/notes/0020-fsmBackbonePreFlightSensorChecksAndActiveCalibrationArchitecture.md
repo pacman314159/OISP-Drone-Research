@@ -90,6 +90,26 @@ Previous revisions lacked a unified flight state controller. Flight state transi
 - **Temporary State Bypass around `LANDING`**: The `LANDING` state enum is preserved in `SystemState`, but temporarily ignored/bypassed. A direct rule triggers `FLIGHT` $\rightarrow$ `POSTFLIGHT` on `EVT_BTN_LONG_HOLD`.
 - **Post-Flight SD Logger Clean Shutdown**: Upon entering `POSTFLIGHT`, the FSM executes `handle_state_postflight()`, which asserts `sd_stop_logging_requested = true`, notifies `sd_logger_task` via `xTaskNotifyGive()`, flushes unwritten sectors, closes the file, and runs `trigger_sd_stop_led_feedback()` (3 cyan pulses) under `status_led_mutex`.
 
+### Rule 7: Arming, Takeoff Gating & Flight Transition Pipeline (`READY -> TAKEOFF -> FLIGHT`)
+1. **`READY -> TAKEOFF` Initiation**:
+   - In `READY`, motor outputs remain armed at idle throttle.
+   - Arming is commanded when pilot toggles the Ch5 Aux1 switch (`channels[4] > RC_ARM_SWITCH_THRESHOLD_US = 1500 us`) or advances throttle above idle (`channels[2] > RC_THROTTLE_IDLE_US = 1150 us`).
+   - Requires stick centering guard: Roll, Pitch, and Yaw sticks must remain within $\pm 5\%$ deadband of center ($1450\text{--}1550\,\mu\text{s}$).
+   - Dispatches `MOTOR_CMD_ARM` to `motor_cmd_queue` and fires `Rule_Ready_To_Takeoff` (`EVT_TAKEOFF_INITIATED`), updating LED to fast-blinking Lime.
+2. **`TAKEOFF` Execution & Pilot Control Request Gating**:
+   - Captures startup heading reference ($\psi_{\text{ref}}$) from EKF attitude.
+   - Ground Idle Pacing: Throttle $< 40\%$ commands descent rate while drone rests on ground.
+   - Pilot Control Request: When pilot moves throttle into launch window ($40\% \le \text{throttle} \le 80\%$, $1400\text{--}1800\,\mu\text{s}$), the request latches and starts a 5.0-second safety verification window (`TAKEOFF_VERIFY_DURATION_MS = 5000`).
+   - Pilot Abort: Lowering throttle below idle and disarming before launch latch triggers `Rule_Takeoff_To_Ready` (`EVT_TAKEOFF_ABORT`), disarming motors and returning to solid green `READY`.
+3. **Takeoff Safety Guards**:
+   - **Excessive Tilt**: $|\text{roll}| > 30^\circ$ or $|\text{pitch}| > 30^\circ$ trips `EVT_TAKEOFF_SAFETY_VIOLATION`.
+   - **Runaway Anti-Flip Guard**: $|\omega_{x,y,z}| > 150^\circ/\text{s}$ while sticks are centered trips runaway guard.
+   - **Heading Divergence**: $|\Delta \psi| > 30^\circ$ from startup reference trips divergence guard.
+   - Any safety violation trips `fsm_trigger_emergency()`, killing motor PWMs immediately and transitioning to `CRASHED` via `Rule_Takeoff_To_Crashed`.
+4. **`TAKEOFF -> FLIGHT` Transition**:
+   - Once the 5.0s verification window expires with all safety guards continuously intact, the FSM asserts `EVT_TAKEOFF_COMPLETE`.
+   - `Rule_Takeoff_To_Flight` fires, transitioning into `FLIGHT` and locking the LED to solid Blue.
+
 ---
 
 ## 4. Remaining Work & Future Implementation Roadmap

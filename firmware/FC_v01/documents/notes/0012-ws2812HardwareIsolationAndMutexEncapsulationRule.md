@@ -8,6 +8,7 @@ tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#ws2812", "#mu
 references:
   - "[[0000-firmwareStructureLayerDecision]]"
   - "[[0002-taskEnumsAndHalAbstractionDecision]]"
+  - "[[0030-rmtHardwarePpmDecodingFsIa6bAndBleTelemetryArchitecture]]"
 ---
 
 # Zettel 0012: WS2812 External Hardware Treatment & Mutex Encapsulation Rule
@@ -17,6 +18,7 @@ The onboard WS2812 addressable RGB LED must be treated strictly as an **external
 - It is NOT an application utility, nor a driver singleton.
 - It is instantiated statically in Layer 5 (`src/app/app.cpp`) using `get_pulse_tx0()`, per `[Note 0000]` and `[Note 0002]`.
 - Subsystems and callbacks receive `WS2812*` pointers explicitly; global singletons in Layer 1 or Layer 2 are forbidden.
+- Underlying Layer 1 hardware pulse transmission (`ESP32_PulseTX`) operates via the modern ESP-IDF v5 RMT TX driver (`<driver/rmt_tx.h>`, `<driver/rmt_encoder.h>`, `<driver/rmt_common.h>`), utilizing `rmt_new_copy_encoder()` to stream 24-bit GRB `rmt_symbol_word_t` pulse patterns into hardware memory with strict zero dynamic memory allocation.
 
 ## 2. Mandatory Mutex Encapsulation Rule
 Because the LED is a shared hardware resource accessed across multiple asynchronous tasks (e.g. Telemetry/BLE, Flight Core State, Battery Monitor):
@@ -31,3 +33,12 @@ if(xSemaphoreTake(status_led_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTR
 ```
 
 Direct, un-synchronized access without `status_led_mutex` is strictly prohibited across all layers.
+
+---
+
+## 3. Cross-References & Traceability
+- [[0000-firmwareStructureLayerDecision]]: Layer 1 HAL abstraction & 5-layer separation.
+- [[0002-taskEnumsAndHalAbstractionDecision]]: Target-agnostic HAL and global bus mutex allocation.
+- [[0030-rmtHardwarePpmDecodingFsIa6bAndBleTelemetryArchitecture]]: ESP32-S3 hardware RMT peripheral sharing (TX Channel allocation & PPM RX).
+
+

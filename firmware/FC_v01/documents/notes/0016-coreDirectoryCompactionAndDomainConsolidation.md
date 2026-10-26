@@ -58,7 +58,7 @@ src/core/
 1. **`sensor/`** (unified from `daq/` and `calib/`):
    - Houses high-frequency sensor acquisition loops (`daq_tasks.cpp`, `daq_tasks.h`), sensor preprocessing task runners (`sensor_preprocess_tasks.cpp`, `sensor_preprocess_tasks.h`), and calibration routines (`calib.cpp/.h`, `calib_tasks.cpp/.h`).
 2. **`math/`** (incorporates `filters/` and `estimators/`):
-   - Houses linear algebra (`matrix.h`), discrete 1st-order signal filters (`lpf.h`), 3D ellipsoid fitting (`ellipsoid_fit.cpp/.h`), state estimators (`estimator_tasks.cpp`, `estimator_tasks.h`), and coordinate conversions.
+   - Houses linear algebra (`matrix.h`), discrete 1st-order signal filters (`lpf.h`), 3D ellipsoid fitting (`ellipsoid_fit.cpp/.h`), mathematical state estimators (`estimators.cpp/.h`), RTOS estimator task runners (`estimator_tasks.cpp/.h`), and coordinate conversions.
 3. **`telemetry/`** (incorporates `ota/`):
    - Unifies all wireless/wireline remote data streaming and over-the-air firmware update task runners (`ble_telem_tasks.cpp/.h`, `ble_ota_tasks.cpp/.h`).
 4. **`blackbox/`** (renamed from `logging/`):
@@ -92,3 +92,4 @@ In `src/app/app.cpp`, task runners are included with clean domain-scoped paths:
 - Updates task mapping paths in `[[0009-distinctBleGattCharacteristicUuidIsolation]]` and `[[0010-bleMinimumPacketFrequencyAndDualTriggerFlush]]`.
 - Updates storage runner paths in `[[0013-sdCardSpiStorageAndFlightLoggingArchitecture]]` and `[[0018-sdCardLoggingRestorationAndUserButtonShutdown]]`.
 - Updates OTA task identity paths in `[[0015-bleOtaArchitectureHardeningAndResourceCleanup]]`.
+- Concrete Layer 4 math estimators and tasks implemented in `[[0032-dualCoreEkfStateEstimationAttitudeRingBufferArchitecture]]` (`estimators.h/.cpp` and `estimator_tasks.h/.cpp`).

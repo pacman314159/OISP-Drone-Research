@@ -13,12 +13,12 @@ void ble_ota_task(void* arg){
   (void)arg;
   const uint32_t task_id = TASK_BLE_OTA_ID;
   (void)task_id;
-  Serial.printf("[BLE_OTA] Task started. Listening for OTA trigger (%u ms window)...\n", OTA_BOOT_WINDOW_TIMEOUT_MS);
+  Serial.printf("[BLE_OTA] Task started. Listening for OTA trigger (%lu ms window)...\n", static_cast<unsigned long>(OTA_BOOT_WINDOW_TIMEOUT_MS));
 
   uint32_t notified = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(OTA_BOOT_WINDOW_TIMEOUT_MS));
 
   if(notified == 0){
-    Serial.printf("[BLE_OTA] %u ms boot window expired without OTA trigger. Terminating OTA task.\n", OTA_BOOT_WINDOW_TIMEOUT_MS);
+    Serial.printf("[BLE_OTA] %lu ms boot window expired without OTA trigger. Terminating OTA task.\n", static_cast<unsigned long>(OTA_BOOT_WINDOW_TIMEOUT_MS));
     set_ble_ota_active(false);
     app_task_handles[TASK_BLE_OTA_ID] = nullptr;
     if(ota_data_queue != nullptr){
@@ -49,12 +49,13 @@ void ble_ota_task(void* arg){
   }
 
   if(running != nullptr)
-    Serial.printf("[BLE_OTA] Running partition: %s, Target partition: %s (size: 0x%x)\n",
-                  running->label, update_partition->label, update_partition->size);
+    Serial.printf("[BLE_OTA] Running partition: %s, Target partition: %s (size: 0x%lx)\n",
+                  running->label, update_partition->label, static_cast<unsigned long>(update_partition->size));
 
   uint32_t fw_size = ota_start_payload.fw_size_bytes; // bytes
   if(fw_size > update_partition->size){
-    Serial.printf("[BLE_OTA] Error: Firmware size %u exceeds partition capacity %u!\n", fw_size, update_partition->size);
+    Serial.printf("[BLE_OTA] Error: Firmware size %lu exceeds partition capacity %lu!\n",
+                  static_cast<unsigned long>(fw_size), static_cast<unsigned long>(update_partition->size));
     uint8_t err_resp = OTA_RESP_ERR_SIZE;
     send_ble_ota_response(&err_resp, sizeof(err_resp));
     set_ble_ota_active(false);
@@ -117,14 +118,16 @@ void ble_ota_task(void* arg){
         expected_total = embedded_size;
 
       if(total_written != expected_total){
-        Serial.printf("[BLE_OTA] Size mismatch: written %u, expected %u bytes. Discarding image...\n", total_written, expected_total);
+        Serial.printf("[BLE_OTA] Size mismatch: written %lu, expected %lu bytes. Discarding image...\n",
+                      static_cast<unsigned long>(total_written), static_cast<unsigned long>(expected_total));
         esp_ota_abort(ota_handle);
         uint8_t err_resp = OTA_RESP_ERR_VERIFY;
         send_ble_ota_response(&err_resp, sizeof(err_resp));
         break;
       }
 
-      Serial.printf("[BLE_OTA] End of data received. Total bytes written: %u. Validating image...\n", total_written);
+      Serial.printf("[BLE_OTA] End of data received. Total bytes written: %lu. Validating image...\n",
+                    static_cast<unsigned long>(total_written));
       err = esp_ota_end(ota_handle);
       if(err != ESP_OK){
         Serial.printf("[BLE_OTA] esp_ota_end validation failed: 0x%x\n", err);

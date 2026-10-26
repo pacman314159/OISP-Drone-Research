@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "daq_tasks.h"
 #include "config.h"
-#include "esp_timer.h"
+#include <esp_timer.h>
 #include "middleware/ipc.h"
 #include "middleware/sysview_tracing.h"
 #include "drivers/imu/mpu6050.h"

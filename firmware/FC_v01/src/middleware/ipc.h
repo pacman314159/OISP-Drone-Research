@@ -1,6 +1,7 @@
 #pragma once
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include <esp_timer.h>
 #include <NimBLEDevice.h>
 #include "config.h"
 #include "middleware/ring_buffer.h"
@@ -82,6 +83,7 @@ struct SensorCalibrationData {
   Vec3<float>         mag_bias{0.0f, 0.0f, 0.0f};    // Magnetometer hard-iron bias offset v0 (Gauss)
   Matrix<float, 3, 3> mag_soft_iron{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}; // Magnetometer soft-iron matrix W * B0
   float               mag_field_ref{1.0f};           // Geomagnetic reference field B0 (Gauss)
+  float               baro_ref_pa{101325.0f};        // Ground reference pressure P0 (Pa)
   bool                is_valid{false};
 };
 
@@ -96,7 +98,7 @@ enum BtnEventMasks : uint8_t {
 };
 
 uint8_t ipc_pop_btn_events();
-void IRAM_ATTR user_btn_isr();
+void user_btn_isr();
 
 struct OtaDataChunk {
   uint16_t length;
@@ -138,6 +140,33 @@ extern RingBuffer<uint32_t, RING_BUF_SIZE>    rc_timestamp;
 extern RingBuffer<Vec4, RING_BUF_SIZE>        att_quat;      // Unit quaternion [q0, q1, q2, q3]
 extern RingBuffer<Vec3<float>, RING_BUF_SIZE> att_euler;     // Euler angles [roll, pitch, yaw] (deg)
 extern RingBuffer<uint32_t, RING_BUF_SIZE>    att_timestamp; // Microseconds (us)
+
+extern RingBuffer<Vec3<float>, RING_BUF_SIZE> alt_state;     // Vertical state [z (m), v_z (m/s), a_z_inertial (m/s^2)]
+extern RingBuffer<uint32_t, RING_BUF_SIZE>    alt_timestamp; // Microseconds (us)
+
+// INDI Controller Shared Output Signal (Producer: Control Task, Consumer: Motor Task via SYS_ENTER_CRITICAL)
+struct IndiControllerOutput {
+  float       thrust_cmd{0.0f};          // Normalized collective throttle command [0.0, 1.0]
+  Vec3<float> u_in{0.0f, 0.0f, 0.0f};    // Normalized 3-axis torque commands [roll (p), pitch (q), yaw (r)] in [-1.0, 1.0]
+  uint32_t    timestamp_us{0};           // Update timestamp in microseconds (us)
+  bool        is_armed{false};           // Safety arming flag
+};
+
+extern IndiControllerOutput indi_output;
+
+// Actuator Commands & Direct Notification Bits for Layer 4 Actuator Task ([Note 0035])
+enum MotorCommand : uint8_t {
+  MOTOR_CMD_DISARM = 0,
+  MOTOR_CMD_ARM,
+  MOTOR_CMD_EMERGENCY_STOP
+};
+
+enum MotorNotificationBits : uint32_t {
+  NOTIFY_MOTOR_NONE           = 0,
+  NOTIFY_MOTOR_EMERGENCY_STOP = (1 << 0)
+};
+
+extern QueueHandle_t motor_cmd_queue;
 
 
 // Layer 3 Middleware Callbacks for NimBLE Server Events ([Note 0001])

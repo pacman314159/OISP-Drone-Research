@@ -5,12 +5,13 @@
 
 static const char* TAG = "ESP32_I2C_ASYNC";
 
-ESP32_I2C_ASYNC::ESP32_I2C_ASYNC(i2c_port_t port, int sda_pin, int scl_pin)
-  : _port(port), _sda_pin(sda_pin), _scl_pin(scl_pin), _frequency_hz(400000), _initialized(false) {}
+ESP32_I2C_ASYNC::ESP32_I2C_ASYNC(int port, int sda_pin, int scl_pin)
+  : _port(port), _sda_pin(sda_pin), _scl_pin(scl_pin), _frequency_hz(400000), _initialized(false), _bus_handle(nullptr){}
 
 ESP32_I2C_ASYNC::~ESP32_I2C_ASYNC(){
-  if(_initialized){
-    i2c_driver_delete(_port);
+  if(_initialized && _bus_handle != nullptr){
+    i2c_del_master_bus(_bus_handle);
+    _bus_handle = nullptr;
     _initialized = false;
   }
 }
@@ -18,23 +19,17 @@ ESP32_I2C_ASYNC::~ESP32_I2C_ASYNC(){
 bool ESP32_I2C_ASYNC::init(uint32_t frequency_hz){
   _frequency_hz = frequency_hz;
 
-  i2c_config_t conf = {};
-  conf.mode = I2C_MODE_MASTER;
-  conf.sda_io_num = (gpio_num_t)_sda_pin;
-  conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-  conf.scl_io_num = (gpio_num_t)_scl_pin;
-  conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-  conf.master.clk_speed = _frequency_hz;
+  i2c_master_bus_config_t bus_config = {};
+  bus_config.i2c_port = static_cast<i2c_port_num_t>(_port);
+  bus_config.sda_io_num = static_cast<gpio_num_t>(_sda_pin);
+  bus_config.scl_io_num = static_cast<gpio_num_t>(_scl_pin);
+  bus_config.clk_source = I2C_CLK_SRC_DEFAULT;
+  bus_config.glitch_ignore_cnt = 7;
+  bus_config.flags.enable_internal_pullup = 1;
 
-  esp_err_t err = i2c_param_config(_port, &conf);
+  esp_err_t err = i2c_new_master_bus(&bus_config, &_bus_handle);
   if(err != ESP_OK){
-    ESP_LOGE(TAG, "i2c_param_config failed: %s", esp_err_to_name(err));
-    return false;
-  }
-
-  err = i2c_driver_install(_port, conf.mode, 0, 0, 0);
-  if(err != ESP_OK){
-    ESP_LOGE(TAG, "i2c_driver_install failed: %s", esp_err_to_name(err));
+    ESP_LOGE(TAG, "i2c_new_master_bus failed: %s", esp_err_to_name(err));
     return false;
   }
 
@@ -47,16 +42,25 @@ bool ESP32_I2C_ASYNC::write_reg_async(uint8_t dev_addr, uint8_t reg_addr, uint8_
 }
 
 bool ESP32_I2C_ASYNC::write_reg_multi_async(uint8_t dev_addr, uint8_t reg_addr, uint8_t* buf, size_t len, i2c_async_cb_t cb, void* user_arg){
-  if(!_initialized) return false;
+  if(!_initialized || _bus_handle == nullptr) return false;
+
+  i2c_device_config_t dev_cfg = {};
+  dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+  dev_cfg.device_address = dev_addr;
+  dev_cfg.scl_speed_hz = _frequency_hz;
+
+  i2c_master_dev_handle_t dev_handle = nullptr;
+  if(i2c_master_bus_add_device(_bus_handle, &dev_cfg, &dev_handle) != ESP_OK) return false;
 
   uint8_t write_buf[16];
   write_buf[0] = reg_addr;
   if(len > 0 && len < 15)
     memcpy(&write_buf[1], buf, len);
 
-  esp_err_t err = i2c_master_write_to_device(_port, dev_addr, write_buf, len + 1, pdMS_TO_TICKS(10));
-  bool success = (err == ESP_OK);
+  esp_err_t err = i2c_master_transmit(dev_handle, write_buf, len + 1, 10);
+  i2c_master_bus_rm_device(dev_handle);
 
+  bool success = (err == ESP_OK);
   if(cb) cb(success, user_arg);
   return success;
 }
@@ -66,11 +70,20 @@ bool ESP32_I2C_ASYNC::read_reg_async(uint8_t dev_addr, uint8_t reg_addr, uint8_t
 }
 
 bool ESP32_I2C_ASYNC::read_reg_multi_async(uint8_t dev_addr, uint8_t reg_addr, uint8_t* buf, size_t len, i2c_async_cb_t cb, void* user_arg){
-  if(!_initialized) return false;
+  if(!_initialized || _bus_handle == nullptr) return false;
 
-  esp_err_t err = i2c_master_write_read_device(_port, dev_addr, &reg_addr, 1, buf, len, pdMS_TO_TICKS(10));
+  i2c_device_config_t dev_cfg = {};
+  dev_cfg.dev_addr_length = I2C_ADDR_BIT_LEN_7;
+  dev_cfg.device_address = dev_addr;
+  dev_cfg.scl_speed_hz = _frequency_hz;
+
+  i2c_master_dev_handle_t dev_handle = nullptr;
+  if(i2c_master_bus_add_device(_bus_handle, &dev_cfg, &dev_handle) != ESP_OK) return false;
+
+  esp_err_t err = i2c_master_transmit_receive(dev_handle, &reg_addr, 1, buf, len, 10);
+  i2c_master_bus_rm_device(dev_handle);
+
   bool success = (err == ESP_OK);
-
   if(cb) cb(success, user_arg);
   return success;
 }

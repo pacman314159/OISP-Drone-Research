@@ -43,6 +43,16 @@ constexpr int ESC_PWM2_PIN      = 3;
 constexpr int ESC_PWM3_PIN      = 40;
 constexpr int ESC_PWM4_PIN      = 1;
 
+// ESC Motor PWM Hardware Settings (250 Hz Standard PWM, 1000-2000 us Pulse Width = 25-50% Duty Cycle)
+constexpr uint8_t  MOTOR_COUNT                 = 4;
+constexpr uint32_t ESC_PWM_FREQ_HZ             = 250;  // 250 Hz ESC carrier frequency (4,000 us period)
+constexpr uint8_t  ESC_LEDC_TIMER_BIT_DEPTH    = 14;   // 14-bit timer resolution (16384 ticks max on ESP32-S3)
+constexpr uint16_t ESC_PWM_DISARMED_US         = 1000; // Disarmed / zero-throttle pulse width (us) -> 25% duty
+constexpr uint16_t ESC_PWM_MIN_US              = 1000; // Minimum pulse width corresponding to 0.0 normalized input (us)
+constexpr uint16_t ESC_PWM_IDLE_US             = 1080; // Armed idle breakout threshold from bench test (us)
+constexpr uint16_t ESC_PWM_MAX_US              = 2000; // Maximum pulse width corresponding to 1.0 normalized input (us) -> 50% duty
+constexpr size_t   MOTOR_CMD_QUEUE_SIZE         = 4;    // Command queue depth for state arm/disarm triggers
+
 // SPI Bus Pins (SD Card, LoRa & Peripherals)
 constexpr int SPI_MOSI_PIN      = 11;
 constexpr int SPI_SCK_PIN       = 12;
@@ -123,6 +133,8 @@ constexpr const char* TASK_POWER_DAQ_NAME             = "POWER_DAQ";
 constexpr const char* TASK_RC_RECEIVER_NAME          = "RC_RECEIVER";
 constexpr const char* TASK_EKF_ROLL_PITCH_NAME       = "EKF_ROLL_PITCH";
 constexpr const char* TASK_EKF_YAW_NAME              = "EKF_YAW";
+constexpr const char* TASK_EKF_ALTITUDE_NAME         = "EKF_ALTITUDE";
+constexpr const char* TASK_MOTOR_NAME                = "MOTOR";
 
 // Task Unique IDs
 enum TaskIDs : uint32_t {
@@ -144,6 +156,8 @@ enum TaskIDs : uint32_t {
   TASK_RC_RECEIVER_ID,
   TASK_EKF_ROLL_PITCH_ID,
   TASK_EKF_YAW_ID,
+  TASK_EKF_ALTITUDE_ID,
+  TASK_MOTOR_ID,
   TASK_COUNT
 };
 
@@ -166,7 +180,9 @@ enum TaskCores : int32_t {
   TASK_POWER_DAQ_CORE             = tskNO_AFFINITY,
   TASK_RC_RECEIVER_CORE           = tskNO_AFFINITY,
   TASK_EKF_ROLL_PITCH_CORE        = tskNO_AFFINITY,
-  TASK_EKF_YAW_CORE               = tskNO_AFFINITY
+  TASK_EKF_YAW_CORE               = tskNO_AFFINITY,
+  TASK_EKF_ALTITUDE_CORE          = tskNO_AFFINITY,
+  TASK_MOTOR_CORE                 = tskNO_AFFINITY
 };
 
 // Task Real-Time Priorities (System 4 Priority Levels)
@@ -188,7 +204,9 @@ enum TaskPriorities : UBaseType_t {
   TASK_POWER_DAQ_PRIORITY             = 2, // Medium priority sensor DAQ (50 Hz)
   TASK_RC_RECEIVER_PRIORITY           = 2, // Medium priority RC PPM receiver DAQ (50 Hz)
   TASK_EKF_ROLL_PITCH_PRIORITY        = 3, // Realtime pilot attitude loop (500 Hz)
-  TASK_EKF_YAW_PRIORITY               = 2  // Medium priority navigator loop (100 Hz)
+  TASK_EKF_YAW_PRIORITY               = 2, // Medium priority navigator loop (100 Hz)
+  TASK_EKF_ALTITUDE_PRIORITY          = 2, // Medium priority vertical velocity & altitude loop (100 Hz)
+  TASK_MOTOR_PRIORITY                 = 4  // Realtime motor mixer loop (250 Hz)
 };
 
 // Task Nominal Execution Frequencies
@@ -210,7 +228,9 @@ enum TaskFrequenciesHz : uint32_t {
   TASK_POWER_DAQ_FREQ_HZ             = 50,
   TASK_RC_RECEIVER_FREQ_HZ           = 50,
   TASK_EKF_ROLL_PITCH_FREQ_HZ        = 500,
-  TASK_EKF_YAW_FREQ_HZ               = 100
+  TASK_EKF_YAW_FREQ_HZ               = 100,
+  TASK_EKF_ALTITUDE_FREQ_HZ          = 100,
+  TASK_MOTOR_FREQ_HZ                 = 250
 };
 
 // Task Stack Sizes in Bytes
@@ -232,7 +252,9 @@ enum TaskSizesBytes : uint32_t {
   TASK_POWER_DAQ_STACK_SIZE             = 4096,
   TASK_RC_RECEIVER_STACK_SIZE           = 4096,
   TASK_EKF_ROLL_PITCH_STACK_SIZE        = 8192,
-  TASK_EKF_YAW_STACK_SIZE               = 4096
+  TASK_EKF_YAW_STACK_SIZE               = 4096,
+  TASK_EKF_ALTITUDE_STACK_SIZE          = 4096,
+  TASK_MOTOR_STACK_SIZE                 = 4096
 };
 
 // =============================================================================
@@ -252,7 +274,7 @@ constexpr float MAGNETIC_DIP           = MAGNETIC_DIP_DEG * DEG_TO_RAD; // Dip a
 constexpr float EKF_EARTH_BX           = __builtin_cosf(MAGNETIC_DIP); // cos(MAGNETIC_DIP) ≈ 0.98546f
 constexpr float EKF_EARTH_BZ           = __builtin_sinf(MAGNETIC_DIP); // sin(MAGNETIC_DIP) ≈ 0.16985f
 
-// Empirical sensor noise variances derived from 0001-LOG.txt (Session LOG_0032)
+// Empirical sensor noise variances derived from log file
 constexpr float EKF_DEFAULT_Q_QUAT_VAR = 0.0001f;
 constexpr float EKF_DEFAULT_Q_BIAS_VAR = 1e-6f;
 constexpr float EKF_DEFAULT_R_ACCEL_X  = 2.25e-6f; // (0.0015 g)^2
@@ -263,6 +285,17 @@ constexpr float EKF_DEFAULT_R_MAG_X    = 6.76e-6f; // (0.0026 Gauss)^2
 constexpr float EKF_DEFAULT_R_MAG_Y    = 4.84e-6f; // (0.0022 Gauss)^2
 constexpr float EKF_DEFAULT_R_MAG_Z    = 4.49e-5f; // (0.0067 Gauss)^2
 constexpr float EKF_DEFAULT_R_MAG      = 0.2f;     // Environmental magnetic noise margin
+
+// =============================================================================
+// EXTENDED KALMAN FILTER (EKF) VERTICAL VELOCITY & ALTITUDE ESTIMATION CONFIGURATION
+// =============================================================================
+constexpr float STANDARD_GRAVITY_MSS            = 9.80665f;  // Standard acceleration of gravity g (m/s^2)
+constexpr float BARO_SEA_LEVEL_PRESSURE_PA      = 101325.0f; // Standard atmospheric sea-level pressure P0 fallback (Pa)
+constexpr float EKF_ALT_DEFAULT_Q_POS_VAR       = 1e-4f;     // Altitude process noise variance (m^2)
+constexpr float EKF_ALT_DEFAULT_Q_VEL_VAR       = 1e-3f;     // Vertical velocity process noise variance ((m/s)^2)
+constexpr float EKF_ALT_DEFAULT_Q_BIAS_VAR      = 1e-6f;     // Vertical accel bias random walk variance ((m/s^2)^2)
+constexpr float EKF_ALT_DEFAULT_R_BARO_PA_VAR   = 17.8263f;  // Empirical BMP180 OSS=2 variance from LOG_0032 (4.2221 Pa)^2
+constexpr float EKF_ALT_DEFAULT_R_BARO_MARGIN   = 7.1737f;   // Propwash & aerodynamic pressure noise margin (Pa^2)
 
 // =============================================================================
 // BLE CONFIGURATION, GATT SERVICE DEFINITIONS & TELEMETRY BITMASK
@@ -340,7 +373,7 @@ constexpr uint16_t ACTIVE_BLE_TELEM_MASK =
     // | BLE_TELEM_MASK_ATT_QUAT
     | BLE_TELEM_MASK_ATT_EULER
     // | BLE_TELEM_MASK_POWER
-    // | BLE_TELEM_MASK_RC_CHANNELS
+    | BLE_TELEM_MASK_RC_CHANNELS
     ;
 
 // =============================================================================
@@ -408,10 +441,12 @@ constexpr uint8_t      LED_COLOR_SD_STOP_B          = 255;
 // =============================================================================
 // MATH, DIGITAL SIGNAL PROCESSING (DSP) & CONTROL PARAMETERS
 // =============================================================================
-// Digital Low-Pass Filters Cutoff Frequencies
-constexpr float GYRO_LPF_CUTOFF_FREQ_HZ             = 25.0f;
-constexpr float ACCEL_LPF_CUTOFF_FREQ_HZ            = 30.0f;
-constexpr float MAG_LPF_CUTOFF_FREQ_HZ              = 10.0f;
+// Digital Low-Pass Filters Cutoff Parameters
+constexpr float GYRO_LPF_CUTOFF_WN_RAD_S            = 50.0f;  // Natural angular frequency wn (rad/s)
+constexpr float GYRO_LPF_ZETA                       = 0.55f;  // Damping ratio zeta (dimensionless)
+constexpr float GYRO_LPF_CUTOFF_FREQ_HZ             = GYRO_LPF_CUTOFF_WN_RAD_S / (2.0f * MATH_PI); // Cutoff frequency (~7.9577 Hz)
+constexpr float ACCEL_LPF_CUTOFF_FREQ_HZ            = 30.0f;  // Cutoff frequency (Hz)
+constexpr float MAG_LPF_CUTOFF_FREQ_HZ              = 10.0f;  // Cutoff frequency (Hz)
 
 // =============================================================================
 // PRE-FLIGHT SAFETY, HEALTH CHECKS & ARMING GATES
@@ -425,6 +460,20 @@ constexpr float    STATIONARY_ACCEL_VAR_MSS         = 0.15f; // Variance thresho
 constexpr uint32_t STATIONARY_TIME_REQUIRED_MS      = 1500;  // Continuous stationary duration before passive check (1.5s)
 constexpr uint32_t PREFLIGHT_STATIONARY_TIMEOUT_MS   = 5000;  // 5.0s settling window before stationary timeout
 constexpr float    PREFLIGHT_MAX_TILT_DEG            = 10.0f; // Maximum platform incline angle before arming (10 degrees)
+
+// Takeoff & In-Flight Transition Safety Thresholds
+constexpr uint32_t TAKEOFF_VERIFY_DURATION_MS       = 5000;   // 5.0 seconds checking window
+constexpr uint32_t READY_GROUND_IDLE_TIMEOUT_MS     = 2000;   // 2.0 seconds ground idle pacing
+constexpr float    TAKEOFF_MAX_TILT_DEG             = 30.0f;  // Maximum allowed roll/pitch angle during takeoff (deg)
+constexpr float    TAKEOFF_MAX_ANGULAR_RATE_DPS     = 150.0f; // Maximum allowed angular rate before runaway flip guard trips (deg/s)
+constexpr float    TAKEOFF_MAX_YAW_DIVERGENCE_DEG   = 30.0f;  // Maximum yaw deviation from startup heading (deg)
+constexpr uint16_t RC_THROTTLE_MIN_US               = 1000;   // Minimum throttle PWM (us)
+constexpr uint16_t RC_THROTTLE_MAX_US               = 2000;   // Maximum throttle PWM (us)
+constexpr uint16_t RC_THROTTLE_IDLE_US              = 1150;   // Ground idle throttle threshold (us)
+constexpr uint16_t RC_THROTTLE_LAUNCH_MIN_US        = 1400;   // 40% launch window lower bound (us)
+constexpr uint16_t RC_THROTTLE_LAUNCH_MAX_US        = 1800;   // 80% launch window upper bound (us)
+constexpr uint16_t RC_STICK_CENTER_DEADBAND_US      = 50;     // +-5% centering deadband (1450 - 1550 us)
+constexpr uint16_t RC_ARM_SWITCH_THRESHOLD_US       = 1500;   // Ch5 Aux1 arm switch threshold (>1500 us = ARMED)
 
 // Preflight Sensor Data Stream Health Check Latency & Ranges
 constexpr uint32_t SENSOR_STREAM_IMU_TIMEOUT_US     = 50000;   // 50 ms maximum latency for 500 Hz IMU (accel/gyro)

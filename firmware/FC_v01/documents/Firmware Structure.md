@@ -10,6 +10,8 @@ references:
   - "[[0002-taskEnumsAndHalAbstractionDecision]]"
   - "[[0003-simdHalArchitectureAndLayeringRule]]"
   - "[[0004-simdMultiTypeSupportAndBuildIntegration]]"
+  - "[[0032-dualCoreEkfStateEstimationAttitudeRingBufferArchitecture]]"
+  - "[[0037-threeStateVerticalVelocityAltitudeEkfAndBaroAccelFusionArchitecture]]"
 ---
 
 # FC_v01 Firmware Architecture & Structure Specification
@@ -63,7 +65,7 @@ The codebase is organized into **5 decoupled structural layers**:
 - **Directory**: [`src/core/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core)
   - `src/core/sensor/`: Unified sensor Data Acquisition (DAQ) sampling loops, sensor preprocessing loops (calibration application and noise filtering), and sensor calibration routines ([`daq_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/daq_tasks.cpp), [`sensor_preprocess_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/sensor_preprocess_tasks.cpp), [`calib.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/calib.cpp), [`calib_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/calib_tasks.cpp)).
   - `src/core/control/`: Cascaded PID rate and attitude angle controllers, motor mixer ([`control_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/control/control_tasks.cpp)).
-  - `src/core/math/`: Linear algebra matrix engine ([`matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h)), 1st-order discrete low-pass filter algorithms ([`lpf.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/lpf.h)), 3D ellipsoid fitting ([`ellipsoid_fit.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/ellipsoid_fit.h)), and state estimators ([`estimator_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimator_tasks.cpp)).
+  - `src/core/math/`: Linear algebra matrix engine ([`matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h)), 1st-order discrete low-pass filter algorithms ([`lpf.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/lpf.h)), 3D ellipsoid fitting ([`ellipsoid_fit.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/ellipsoid_fit.h)), and state estimators (AttitudeEKF & AltitudeEKF in [`estimators.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimators.h) and [`estimator_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimator_tasks.cpp)).
   - `src/core/telemetry/`: Telemetry streaming protocols and wireless OTA update management ([`ble_telem_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_telem_tasks.cpp), [`ble_ota_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_ota_tasks.cpp)).
   - `src/core/blackbox/`: High-frequency flight data storage and SD card snapshot logger ([`sd_logger_task.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.cpp), [`sd_logger_task.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.h)).
   - `src/core/interface/`: Human-machine and status indication abstractions (reserved for user buttons and status LEDs).
@@ -232,6 +234,12 @@ To maintain high readability and clean git diffs across developers, all C++ code
 | `[0030]` | ESP32-S3 Hardware RMT PPM Receiver Decoding (Flysky FS-iA6B), Layer 1-4 Decoupled Architecture & BLE Real-Time Telemetry Pipeline | Section 1 (HAL Pulse RX & RMT Target), Section 2 (FS-iA6B Driver), Section 3 (Task Config & RC DAQ), Section 4 (IPC rc_data & BLE Telemetry), Section 5 (FSM Preflight Gating) |
 | `[0031]` | Six-Gate Pre-Flight Safety Pipeline, Terminal Development Mode, Subsystem Task Encapsulation & Battery Enforcement Architecture | Section 2 (Layer 5 App Domain), Section 3 (Task Encapsulation & SSM Lifecycle), Section 4 (Preflight Gating, Failover & Battery Arming) |
 | `[0032]` | RC Receiver Command MicroSD Blackbox Logging Architecture, 4-Byte Struct Alignment & Ring Buffer Snapshot Extraction | Section 1 (HAL Pulse RX), Section 2 (FS-iA6B Driver), Section 3 (SD Logger Task), Section 4 (IPC rc_data & Snapshot Buffers), Section 5 (Config & Packet Mask) |
+| `[0033]` | PlatformIO Toolchain Package Pruning, Arduino Framework Scope, and Multi-Generation Dependency Audit | Section 1 (Platform & Build Environment), Section 2 (Layer 0 Entrypoint), Section 4 (BLE Telemetry & NimBLE Dependencies) |
+| `[0034]` | Motor Driver LEDC HAL Abstraction, Normalized [0.0, 1.0] PWM Mapping & Actuator Task Architecture | Section 1 (LEDC PWM HAL), Section 2 (Motor Driver), Section 3 (Actuator Task Config & IPC), Section 4 (Core Actuator Domain) |
+| `[0035]` | Emergency Motor Disarm, Mediator Orchestration & Law of Demeter Architectural Decision | Section 2 (Layer 5 App Arming Authority), Section 3 (Mediator motor_cmd_queue & Direct Notification), Section 4 (Layer 2 MotorDriver & Layer 4 Actuator Task) |
+
+
+
 
 
 

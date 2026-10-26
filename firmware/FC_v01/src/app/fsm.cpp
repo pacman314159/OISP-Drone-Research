@@ -1,6 +1,7 @@
 #include "app/fsm.h"
 #include <Arduino.h>
 #include <cmath>
+#include <cstdlib>
 #include "config.h"
 #include "middleware/ipc.h"
 #include "middleware/critical_section.h"
@@ -9,6 +10,8 @@
 #include "core/interface/user_button.h"
 #include "core/sensor/calib_tasks.h"
 #include "core/sensor/calib.h"
+#include "core/safety/preflight_checks.h"
+#include "core/math/estimator_tasks.h"
 
 // =============================================================================
 // INTERNAL FSM STATE & SYNCHRONIZATION
@@ -26,6 +29,7 @@ enum CalibSubState : uint8_t {
 };
 
 static TaskHandle_t s_active_calib_handle = nullptr;
+static bool s_ready_baro_calibrated = false;
 
 static PaletteColorId get_sensor_menu_color(uint8_t idx){
   switch(idx){
@@ -104,19 +108,55 @@ static const TransitRule TRANSITION_RULES[] = {
     "Rule_Preflight_To_Development"
   },
 
-  // 6. READY -> FLIGHT (Arming / Takeoff command - future expansion)
+  // 6. READY -> TAKEOFF (Pilot commanded arm / takeoff initiation)
   {
     READY,
-    FLIGHT,
+    TAKEOFF,
+    EVT_TAKEOFF_INITIATED,
     EVT_NONE,
-    EVT_NONE,
-    MatchPolicy::NEVER,
-    EVT_EMERGENCY_SHUTDOWN,
     MatchPolicy::ANY,
-    "Rule_Ready_To_Flight"
+    EVT_EMERGENCY_SHUTDOWN | EVT_RC_SIGNAL_FAIL | EVT_BATTERY_LOW,
+    MatchPolicy::ANY,
+    "Rule_Ready_To_Takeoff"
   },
 
-  // 7. FLIGHT -> POSTFLIGHT (Temporary bypass around LANDING: 3s button hold terminates flight)
+  // 7. TAKEOFF -> FLIGHT (5-second takeoff window satisfied with all safety guards intact)
+  {
+    TAKEOFF,
+    FLIGHT,
+    EVT_TAKEOFF_COMPLETE,
+    EVT_NONE,
+    MatchPolicy::ANY,
+    EVT_EMERGENCY_SHUTDOWN | EVT_RC_SIGNAL_FAIL | EVT_TAKEOFF_SAFETY_VIOLATION,
+    MatchPolicy::ANY,
+    "Rule_Takeoff_To_Flight"
+  },
+
+  // 8. TAKEOFF -> READY (Pilot aborted takeoff / throttled down to idle during ground pacing)
+  {
+    TAKEOFF,
+    READY,
+    EVT_TAKEOFF_ABORT,
+    EVT_NONE,
+    MatchPolicy::ANY,
+    EVT_EMERGENCY_SHUTDOWN,
+    MatchPolicy::ANY,
+    "Rule_Takeoff_To_Ready"
+  },
+
+  // 9. TAKEOFF -> CRASHED (Safety violation or emergency during takeoff)
+  {
+    TAKEOFF,
+    CRASHED,
+    EVT_TAKEOFF_SAFETY_VIOLATION | EVT_EMERGENCY_SHUTDOWN,
+    EVT_NONE,
+    MatchPolicy::ANY,
+    EVT_NONE,
+    MatchPolicy::NEVER,
+    "Rule_Takeoff_To_Crashed"
+  },
+
+  // 10. FLIGHT -> POSTFLIGHT (Temporary bypass around LANDING: 3s button hold terminates flight)
   {
     FLIGHT,
     POSTFLIGHT,
@@ -128,7 +168,19 @@ static const TransitRule TRANSITION_RULES[] = {
     "Rule_Flight_To_Postflight"
   },
 
-  // 8. DEVELOPMENT -> POSTFLIGHT (3-second user button long hold in DEVELOPMENT state triggers safe shutdown / SD flush)
+  // 11. FLIGHT -> CRASHED (Emergency shutdown during flight)
+  {
+    FLIGHT,
+    CRASHED,
+    EVT_EMERGENCY_SHUTDOWN,
+    EVT_NONE,
+    MatchPolicy::ANY,
+    EVT_NONE,
+    MatchPolicy::NEVER,
+    "Rule_Flight_To_Crashed"
+  },
+
+  // 12. DEVELOPMENT -> POSTFLIGHT (3-second user button long hold in DEVELOPMENT state triggers safe shutdown / SD flush)
   {
     DEVELOPMENT,
     POSTFLIGHT,
@@ -152,6 +204,81 @@ static bool check_match_policy(uint32_t current, uint32_t mask, MatchPolicy poli
   if(policy == MatchPolicy::ALL) return (current & mask) == mask;
   if(policy == MatchPolicy::ANY) return (current & mask) != 0;
   return false;
+}
+
+static void fsm_on_state_transition(SystemState from, SystemState to){
+  LedCommand cmd{LED_PATTERN_OFF, PALETTE_OFF};
+  bool dispatch_led = true;
+
+  switch(to){
+    case UNINIT:
+      cmd = {LED_PATTERN_OFF, PALETTE_OFF};
+      break;
+
+    case PREFLIGHT:
+      cmd = {LED_PATTERN_SOLID, PALETTE_CYAN};
+      break;
+
+    case CALIB:
+      // Active calibration coordinator directly commands interactive sensor-specific LEDs
+      dispatch_led = false;
+      break;
+
+    case READY:
+      cmd = {LED_PATTERN_SOLID, PALETTE_GREEN};
+      s_ready_baro_calibrated = false;
+      if(!pressure.empty()){
+        float p_ground = pressure.front();
+        if(p_ground >= SENSOR_STREAM_BARO_MIN_PA && p_ground <= SENSOR_STREAM_BARO_MAX_PA){
+          if(xSemaphoreTake(ekf_state_mutex, pdMS_TO_TICKS(10)) == pdTRUE){
+            g_alt_ekf.set_reference_pressure(p_ground);
+            xSemaphoreGive(ekf_state_mutex);
+          }
+          s_ready_baro_calibrated = true;
+          Serial.printf("[FSM] READY Transition: Calibrated barometer ground reference P0 to %.2f Pa (Option A)\n", p_ground);
+        }
+      }
+      break;
+
+    case TAKEOFF:
+      cmd = {LED_PATTERN_BLINK_FAST, PALETTE_LIME};
+      break;
+
+    case FLIGHT:
+      cmd = {LED_PATTERN_SOLID, PALETTE_BLUE};
+      break;
+
+    case LANDING:
+      cmd = {LED_PATTERN_SOLID, PALETTE_TEAL};
+      break;
+
+    case POSTFLIGHT:
+      cmd = {LED_PATTERN_SOLID, PALETTE_PURPLE};
+      break;
+
+    case DEVELOPMENT:
+      cmd = {LED_PATTERN_SOLID, PALETTE_YELLOW};
+      break;
+
+    case LEVELOUT:
+      cmd = {LED_PATTERN_BLINK_FAST, PALETTE_ORANGE};
+      break;
+
+    case CRASHED:
+      cmd = {LED_PATTERN_BLINK_FAST, PALETTE_RED};
+      break;
+
+    case FREEFALL:
+      cmd = {LED_PATTERN_FLASH_BURST, PALETTE_RED};
+      break;
+
+    default:
+      dispatch_led = false;
+      break;
+  }
+
+  if(dispatch_led && led_cmd_queue != nullptr)
+    xQueueSend(led_cmd_queue, &cmd, 0);
 }
 
 static void evaluate_state_transitions(){
@@ -181,363 +308,16 @@ static void evaluate_state_transitions(){
     if(triggered){
       Serial.printf("[FSM] Transition: %s (%d -> %d)\n", rule.rule_name, static_cast<int>(s_current_state), static_cast<int>(rule.to_state));
       SYS_ENTER_CRITICAL();
+      SystemState prev_state = s_current_state;
       s_current_state = rule.to_state;
       s_events_dirty = true; // New state requires re-evaluation of rules in next cycle
       SYS_EXIT_CRITICAL();
+      fsm_on_state_transition(prev_state, rule.to_state);
       return;
     }
   }
 
   s_events_dirty = false;
-}
-
-
-// =============================================================================
-// MODULAR PRE-FLIGHT CHECK FUNCTIONS
-// =============================================================================
-
-// Check 2: Evaluates motion variance from raw IMU shared resources in ipc.h over 1.5s window
-bool check_stationary_condition(){
-  if((s_current_events & EVT_STATIONARY_FAIL) != 0) return false;
-  if((s_current_events & EVT_STATIONARY_MET) != 0) return true;
-
-  static Vec3<float> last_raw_accel{0.0f, 0.0f, 0.0f};
-  static Vec3<float> last_raw_gyro{0.0f, 0.0f, 0.0f};
-  static uint32_t stationary_start_ms = 0;
-  static uint32_t check_start_ms = 0;
-
-  uint32_t current_time_ms = millis();
-  if(check_start_ms == 0) check_start_ms = current_time_ms;
-
-  Vec3<float> current_raw_accel = accel_raw.front();
-  Vec3<float> current_raw_gyro  = gyro_raw.front();
-
-  Vec3<float> delta_gyro  = current_raw_gyro - last_raw_gyro;
-  Vec3<float> delta_accel = current_raw_accel - last_raw_accel;
-
-  last_raw_gyro  = current_raw_gyro;
-  last_raw_accel = current_raw_accel;
-
-  bool gyro_motion_low  = (fabs(delta_gyro.x) < STATIONARY_GYRO_VAR_DPS) &&
-                          (fabs(delta_gyro.y) < STATIONARY_GYRO_VAR_DPS) &&
-                          (fabs(delta_gyro.z) < STATIONARY_GYRO_VAR_DPS);
-  bool accel_motion_low = (fabs(delta_accel.x) < STATIONARY_ACCEL_VAR_MSS) &&
-                          (fabs(delta_accel.y) < STATIONARY_ACCEL_VAR_MSS) &&
-                          (fabs(delta_accel.z) < STATIONARY_ACCEL_VAR_MSS);
-
-  if(gyro_motion_low && accel_motion_low){
-    if(stationary_start_ms == 0)
-      stationary_start_ms = current_time_ms;
-    else if((current_time_ms - stationary_start_ms) >= STATIONARY_TIME_REQUIRED_MS){
-      fsm_set_event(EVT_STATIONARY_MET);
-      fsm_clear_event(EVT_STATIONARY_FAIL);
-      Serial.println("[FSM] [GATE 2/6] Stationary condition check PASSED!");
-      return true;
-    }
-  }else{
-    stationary_start_ms = 0;
-    fsm_clear_event(EVT_STATIONARY_MET);
-
-    if((current_time_ms - check_start_ms) >= PREFLIGHT_STATIONARY_TIMEOUT_MS){
-      fsm_set_event(EVT_STATIONARY_FAIL);
-      Serial.printf("[FSM] [GATE 2/6] Stationary condition check FAILED! (Motion detected or settling timed out after %u ms).\n",
-                    PREFLIGHT_STATIONARY_TIMEOUT_MS);
-      return false;
-    }
-  }
-  return false;
-}
-
-// Check 3: Evaluates resting bias from filtered sensor streams in ipc.h (awaiting calibration)
-bool check_passive_sensor_calibration(){
-  // If passive calibration already failed, return false immediately
-  if((s_current_events & EVT_PASSIVE_CALIB_FAIL) != 0) return false;
-
-  // If already evaluated and passed, return true immediately
-  if((s_current_events & EVT_PASSIVE_CALIB_PASS) != 0) return true;
-
-  // Only evaluate when drone is stationary
-  if((s_current_events & EVT_STATIONARY_MET) == 0) return false;
-
-  Vec3<float> filt_gyro  = gyro.front();
-  Vec3<float> filt_accel = accel.front();
-  Vec3<float> filt_mag   = mag.front();
-
-  bool gyro_bias_ok = (fabs(filt_gyro.x) < GYRO_PASSIVE_TOLERANCE_DPS) &&
-                      (fabs(filt_gyro.y) < GYRO_PASSIVE_TOLERANCE_DPS) &&
-                      (fabs(filt_gyro.z) < GYRO_PASSIVE_TOLERANCE_DPS);
-
-  float accel_norm_g = filt_accel.norm();
-  float accel_dev_mss = fabs(accel_norm_g - 1.0f) * 9.80665f;
-  bool accel_bias_ok = (accel_dev_mss < ACCEL_PASSIVE_TOLERANCE_MSS);
-
-  float mag_norm = filt_mag.norm();
-  bool mag_norm_ok = (mag_norm > 0.1f && mag_norm < 2.0f);
-
-  if(gyro_bias_ok && accel_bias_ok && mag_norm_ok){
-    fsm_set_event(EVT_PASSIVE_CALIB_PASS);
-    fsm_clear_event(EVT_PASSIVE_CALIB_FAIL);
-    Serial.println("[FSM] [GATE 3/6] Passive calibration check PASSED!");
-    return true;
-  }else{
-    fsm_set_event(EVT_PASSIVE_CALIB_FAIL);
-    Serial.printf("[FSM] [GATE 3/6] Passive calibration check FAILED! (gyro_ok:%d, accel_dev:%.2fm/s^2, mag_norm:%.2f)\n",
-                  gyro_bias_ok, accel_dev_mss, mag_norm);
-    return false;
-  }
-}
-
-// Check 4: Platform Tilt Check (Incline <= 10 deg)
-bool check_platform_tilt(){
-  if((s_current_events & EVT_TILT_CHECK_FAIL) != 0) return false;
-  if((s_current_events & EVT_TILT_CHECK_PASS) != 0) return true;
-
-  if(accel.empty()) return false;
-  Vec3<float> a = accel.front();
-  float a_norm = a.norm();
-  if(!std::isfinite(a_norm) || a_norm < 0.5f || a_norm > 2.0f){
-    fsm_set_event(EVT_TILT_CHECK_FAIL);
-    fsm_clear_event(EVT_TILT_CHECK_PASS);
-    Serial.printf("[FSM] [GATE 4/6] Platform tilt check FAILED! Invalid accel norm: %.2f g\n", a_norm);
-    return false;
-  }
-
-  // Calculate tilt angle theta relative to gravity Z-axis: cos(theta) = az / |a|
-  float cos_tilt = a.z / a_norm;
-  if(cos_tilt > 1.0f) cos_tilt = 1.0f;
-  if(cos_tilt < -1.0f) cos_tilt = -1.0f;
-  float tilt_deg = acosf(cos_tilt) * (180.0f / 3.14159265f);
-
-  if(tilt_deg <= PREFLIGHT_MAX_TILT_DEG){
-    fsm_set_event(EVT_TILT_CHECK_PASS);
-    fsm_clear_event(EVT_TILT_CHECK_FAIL);
-    Serial.printf("[FSM] [GATE 4/6] Platform tilt check PASSED! (Incline: %.1f deg <= %.1f deg)\n",
-                  tilt_deg, PREFLIGHT_MAX_TILT_DEG);
-    return true;
-  }else{
-    fsm_set_event(EVT_TILT_CHECK_FAIL);
-    fsm_clear_event(EVT_TILT_CHECK_PASS);
-    Serial.printf("[FSM] [GATE 4/6] Platform tilt check FAILED! (Incline: %.1f deg > %.1f deg)\n",
-                  tilt_deg, PREFLIGHT_MAX_TILT_DEG);
-    return false;
-  }
-}
-
-// Check 1: Sensor Data Stream & Hardware Bus Health Check
-bool sensor_data_stream_check(){
-  // If sensor stream healthcheck already permanently failed, return false immediately
-  if((s_current_events & EVT_SENSOR_STREAM_FAIL) != 0) return false;
-
-  static uint32_t stream_check_start_ms = 0;
-  static uint32_t healthy_start_ms = 0;
-
-  uint32_t now_ms = millis();
-  if(stream_check_start_ms == 0) stream_check_start_ms = now_ms;
-
-  // 1. Buffer Occupancy Verification: Ensure all DAQ and preprocessor tasks have published data
-  bool imu_raw_has_data  = !accel_raw.empty() && !gyro_raw.empty() && !raw_accel_gyro_timestamp.empty();
-  bool mag_raw_has_data  = !mag_raw.empty() && !raw_mag_timestamp.empty();
-  bool baro_raw_has_data = !pressure.empty() && !pressure_timestamp.empty();
-  bool imu_filt_has_data = !accel.empty() && !gyro.empty() && !filtered_accel_gyro_timestamp.empty();
-  bool mag_filt_has_data = !mag.empty() && !filtered_mag_timestamp.empty();
-
-  bool has_data = imu_raw_has_data && mag_raw_has_data && baro_raw_has_data &&
-                  imu_filt_has_data && mag_filt_has_data;
-
-  uint32_t now_us = static_cast<uint32_t>(micros());
-
-  // 2. Stream Latency & Freshness Verification (Microsecond resolution)
-  bool imu_raw_fresh  = false;
-  bool imu_filt_fresh = false;
-  bool mag_raw_fresh  = false;
-  bool mag_filt_fresh = false;
-  bool baro_raw_fresh = false;
-
-  if(imu_raw_has_data)
-    imu_raw_fresh = ((now_us - raw_accel_gyro_timestamp.front()) < SENSOR_STREAM_IMU_TIMEOUT_US);
-  if(imu_filt_has_data)
-    imu_filt_fresh = ((now_us - filtered_accel_gyro_timestamp.front()) < SENSOR_STREAM_IMU_TIMEOUT_US);
-  if(mag_raw_has_data)
-    mag_raw_fresh = ((now_us - raw_mag_timestamp.front()) < SENSOR_STREAM_MAG_TIMEOUT_US);
-  if(mag_filt_has_data)
-    mag_filt_fresh = ((now_us - filtered_mag_timestamp.front()) < SENSOR_STREAM_MAG_TIMEOUT_US);
-  if(baro_raw_has_data)
-    baro_raw_fresh = ((now_us - pressure_timestamp.front()) < SENSOR_STREAM_BARO_TIMEOUT_US);
-
-  bool fresh = imu_raw_fresh && imu_filt_fresh && mag_raw_fresh && mag_filt_fresh && baro_raw_fresh;
-
-  // 3. Numerical Integrity & Physical Range Verification
-  bool imu_valid  = false;
-  bool mag_valid  = false;
-  bool baro_valid = false;
-
-  Vec3<float> a_sample{0.0f, 0.0f, 0.0f};
-  Vec3<float> g_sample{0.0f, 0.0f, 0.0f};
-  Vec3<float> m_sample{0.0f, 0.0f, 0.0f};
-  float       p_sample = 0.0f;
-
-  if(imu_raw_has_data){
-    a_sample = accel_raw.front();
-    g_sample = gyro_raw.front();
-    float a_norm = a_sample.norm();
-    float g_norm = g_sample.norm();
-    imu_valid = std::isfinite(a_sample.x) && std::isfinite(a_sample.y) && std::isfinite(a_sample.z) &&
-                std::isfinite(g_sample.x) && std::isfinite(g_sample.y) && std::isfinite(g_sample.z) &&
-                (a_norm > 0.1f && a_norm < 3.0f) && (g_norm < 200.0f);
-  }
-
-  if(mag_raw_has_data){
-    m_sample = mag_raw.front();
-    float m_norm = m_sample.norm();
-    mag_valid = std::isfinite(m_sample.x) && std::isfinite(m_sample.y) && std::isfinite(m_sample.z) &&
-                (m_norm > 0.05f && m_norm < 5.0f);
-  }
-
-  if(baro_raw_has_data){
-    p_sample = pressure.front();
-    baro_valid = std::isfinite(p_sample) &&
-                 (p_sample >= SENSOR_STREAM_BARO_MIN_PA && p_sample <= SENSOR_STREAM_BARO_MAX_PA);
-  }
-
-  bool valid = imu_valid && mag_valid && baro_valid;
-
-  bool stream_healthy = has_data && fresh && valid;
-
-  if(stream_healthy){
-    if(healthy_start_ms == 0)
-      healthy_start_ms = now_ms;
-    else if((now_ms - healthy_start_ms) >= SENSOR_STREAM_HEALTHY_TIME_MS){
-      if((s_current_events & EVT_SENSOR_STREAM_OK) == 0){
-        fsm_set_event(EVT_SENSOR_STREAM_OK);
-        fsm_clear_event(EVT_SENSOR_STREAM_FAIL);
-        Serial.println("[FSM] [GATE 1/6] Sensor data stream check PASSED! All streams active & healthy.");
-      }
-      return true;
-    }
-  }else{
-    healthy_start_ms = 0;
-
-    // If stream was previously OK and suddenly dropped:
-    if((s_current_events & EVT_SENSOR_STREAM_OK) != 0){
-      fsm_clear_event(EVT_SENSOR_STREAM_OK);
-      fsm_set_event(EVT_SENSOR_STREAM_FAIL);
-      Serial.println("[FSM] [GATE 1/6] Sensor data stream DROPPED while in PREFLIGHT!");
-      return false;
-    }
-
-    // Startup timeout check: If sensors failed to produce healthy streams within grace period
-    if((now_ms - stream_check_start_ms) >= SENSOR_STREAM_STARTUP_TIMEOUT_MS){
-      fsm_set_event(EVT_SENSOR_STREAM_FAIL);
-      Serial.println("[FSM] [GATE 1/6] Sensor data stream check TIMED OUT / FAILED!");
-      if(!has_data){
-        Serial.printf("      Missing data: IMU_raw:%d, MAG_raw:%d, BARO_raw:%d, IMU_filt:%d, MAG_filt:%d\n",
-                      imu_raw_has_data, mag_raw_has_data, baro_raw_has_data, imu_filt_has_data, mag_filt_has_data);
-      }
-      if(!fresh){
-        Serial.printf("      Stale streams: IMU_raw:%d, IMU_filt:%d, MAG_raw:%d, MAG_filt:%d, BARO_raw:%d\n",
-                      imu_raw_fresh, imu_filt_fresh, mag_raw_fresh, mag_filt_fresh, baro_raw_fresh);
-      }
-      if(!valid){
-        Serial.printf("      Invalid ranges: IMU:%d, MAG:%d, BARO:%d (a:%.2f, m:%.2f, p:%.1f)\n",
-                      imu_valid, mag_valid, baro_valid, a_sample.norm(), m_sample.norm(), p_sample);
-      }
-      return false;
-    }
-  }
-
-  return ((s_current_events & EVT_SENSOR_STREAM_OK) != 0);
-}
-
-// Check 5: Power Module Visibility & Initial Voltage Health Check
-bool check_power_initial_condition(){
-  if((s_current_events & EVT_BATTERY_LOW) != 0) return false;
-  if((s_current_events & EVT_BATTERY_VOLTAGE_OK) != 0) return true;
-
-  static uint32_t power_check_start_ms = 0;
-  uint32_t now_ms = millis();
-  if(power_check_start_ms == 0) power_check_start_ms = now_ms;
-
-  if(power_data.empty()){
-    if((now_ms - power_check_start_ms) >= SENSOR_STREAM_STARTUP_TIMEOUT_MS){
-      fsm_set_event(EVT_BATTERY_LOW);
-      fsm_clear_event(EVT_BATTERY_VOLTAGE_OK);
-      Serial.println("[FSM] [GATE 5/6] Battery check TIMED OUT / FAILED! (No power module or battery detected). Transitioning to DEVELOPMENT.");
-      return false;
-    }
-    return false;
-  }
-
-  PowerMeasurement p = power_data.front();
-  float v_mv = p.voltage_mv;
-
-  // Numerical validity check
-  if(!std::isfinite(v_mv) || v_mv < 1000.0f || v_mv > 36000.0f ||
-     !std::isfinite(p.current_ma) || !std::isfinite(p.power_mw)){
-    fsm_set_event(EVT_BATTERY_LOW);
-    fsm_clear_event(EVT_BATTERY_VOLTAGE_OK);
-    Serial.printf("[FSM] [GATE 5/6] Power module initial check FAILED! Invalid reading: %.1f mV. Transitioning to DEVELOPMENT.\n", v_mv);
-    return false;
-  }
-
-  // Auto-detect cell count & calculate per-cell voltage
-  int32_t cell_count = static_cast<int32_t>(roundf(v_mv / 3800.0f));
-  if(cell_count < 1) cell_count = 1;
-  if(cell_count > 8) cell_count = 8;
-  float cell_v_mv = v_mv / static_cast<float>(cell_count);
-
-  if(cell_v_mv < BATTERY_CELL_MIN_VOLTAGE_MV){
-    fsm_set_event(EVT_BATTERY_LOW);
-    fsm_clear_event(EVT_BATTERY_VOLTAGE_OK);
-    Serial.printf("[FSM] [GATE 5/6] Battery initial check FAILED! Pack: %.1f mV (%.1f mV/cell on %dS < %.1f mV/cell). Transitioning to DEVELOPMENT.\n",
-                  v_mv, cell_v_mv, static_cast<int>(cell_count), BATTERY_CELL_MIN_VOLTAGE_MV);
-    return false;
-  }
-
-  fsm_set_event(EVT_BATTERY_VOLTAGE_OK);
-  fsm_clear_event(EVT_BATTERY_LOW);
-  Serial.printf("[FSM] [GATE 5/6] Power module & battery initial check PASSED! Pack: %.1f mV (%.1f mV/cell on %dS)\n",
-                v_mv, cell_v_mv, static_cast<int>(cell_count));
-  return true;
-}
-
-// Check 6: RC Controller Link & Failsafe Check
-bool check_rc_controller_signal(){
-  if((s_current_events & EVT_RC_SIGNAL_FAIL) != 0) return false;
-  if((s_current_events & EVT_RC_SIGNAL_OK) != 0) return true;
-
-  static uint32_t rc_check_start_ms = 0;
-  uint32_t now_ms = millis();
-  if(rc_check_start_ms == 0) rc_check_start_ms = now_ms;
-
-  if(rc_data.empty()){
-    if((now_ms - rc_check_start_ms) >= SENSOR_STREAM_STARTUP_TIMEOUT_MS){
-      fsm_set_event(EVT_RC_SIGNAL_FAIL);
-      fsm_clear_event(EVT_RC_SIGNAL_OK);
-      Serial.println("[FSM] [GATE 6/6] RC receiver signal check TIMED OUT / FAILED! (No RC stream detected). Transitioning to DEVELOPMENT.");
-      return false;
-    }
-    return false;
-  }
-
-  const RcChannels& ch = rc_data.front();
-  if(ch.failsafe){
-    fsm_set_event(EVT_RC_SIGNAL_FAIL);
-    fsm_clear_event(EVT_RC_SIGNAL_OK);
-    Serial.println("[FSM] [GATE 6/6] RC receiver signal check FAILED! (Failsafe active). Transitioning to DEVELOPMENT.");
-    return false;
-  }
-
-  fsm_set_event(EVT_RC_SIGNAL_OK);
-  fsm_clear_event(EVT_RC_SIGNAL_FAIL);
-  Serial.printf("[FSM] [GATE 6/6] RC receiver signal check PASSED! (Signal locked, active channels: %u)\n",
-                ch.channel_count);
-  return true;
-}
-
-// Check 7 (Future): Storage Check (SD card mount status and capacity)
-static bool check_storage_health(){
-  // [FUTURE CHECK] Verify SD card sector capacity and mount status
-  return true;
 }
 
 // =============================================================================
@@ -697,6 +477,16 @@ static void handle_state_calib(uint32_t loop_count){
   }
 }
 
+static void update_gate_event(SafetyStatus status, uint32_t pass_evt, uint32_t fail_evt){
+  if(status == SafetyStatus::PASSED){
+    fsm_set_event(pass_evt);
+    fsm_clear_event(fail_evt);
+  }else if(status == SafetyStatus::FAILED){
+    fsm_clear_event(pass_evt);
+    fsm_set_event(fail_evt);
+  }
+}
+
 static void handle_state_preflight(){
   // [SAFETY MOTOR LOCKOUT] Ensure all motor PWM outputs are disabled (PWM = 0)
   // hal_motor_disable_all(); // Motor driver PWM = 0 lockout
@@ -710,12 +500,24 @@ static void handle_state_preflight(){
   }
 
   // Evaluate 6 mandatory pre-flight safety gates
-  sensor_data_stream_check();
-  check_stationary_condition();
-  check_passive_sensor_calibration();
-  check_platform_tilt();
-  check_power_initial_condition();
-  check_rc_controller_signal();
+  SafetyStatus stream_status = check_sensor_data_stream();
+  update_gate_event(stream_status, EVT_SENSOR_STREAM_OK, EVT_SENSOR_STREAM_FAIL);
+
+  SafetyStatus stat_status = check_stationary_condition();
+  update_gate_event(stat_status, EVT_STATIONARY_MET, EVT_STATIONARY_FAIL);
+
+  bool is_stationary = (stat_status == SafetyStatus::PASSED);
+  SafetyStatus calib_status = check_passive_sensor_calibration(is_stationary);
+  update_gate_event(calib_status, EVT_PASSIVE_CALIB_PASS, EVT_PASSIVE_CALIB_FAIL);
+
+  SafetyStatus tilt_status = check_platform_tilt();
+  update_gate_event(tilt_status, EVT_TILT_CHECK_PASS, EVT_TILT_CHECK_FAIL);
+
+  SafetyStatus power_status = check_power_initial_condition();
+  update_gate_event(power_status, EVT_BATTERY_VOLTAGE_OK, EVT_BATTERY_LOW);
+
+  SafetyStatus rc_status = check_rc_controller_signal();
+  update_gate_event(rc_status, EVT_RC_SIGNAL_OK, EVT_RC_SIGNAL_FAIL);
 
   evaluate_state_transitions();
 }
@@ -728,8 +530,6 @@ static void handle_state_development(){
   if(!s_dev_entry_logged){
     s_dev_entry_logged = true;
     Serial.println("[FSM] ENTERED DEVELOPMENT STATE! Pre-flight check failed. Diagnostic & inspection mode active.");
-    LedCommand dev_cmd = {LED_PATTERN_BLINK_SLOW, PALETTE_ORANGE};
-    xQueueSend(led_cmd_queue, &dev_cmd, 0);
     // Clear any prior stale button clicks on initial entry into DEVELOPMENT
     fsm_clear_event(EVT_BTN_SHORT_CLICK | EVT_BTN_LONG_HOLD);
   }
@@ -738,6 +538,166 @@ static void handle_state_development(){
 }
 
 static void handle_state_ready(){
+  // Action 1: Calibrating the height measured from the barometer (Option A: ground pressure reference)
+  if(!s_ready_baro_calibrated && !pressure.empty()){
+    float p_ground = pressure.front();
+    if(p_ground >= SENSOR_STREAM_BARO_MIN_PA && p_ground <= SENSOR_STREAM_BARO_MAX_PA){
+      if(xSemaphoreTake(ekf_state_mutex, pdMS_TO_TICKS(10)) == pdTRUE){
+        g_alt_ekf.set_reference_pressure(p_ground);
+        xSemaphoreGive(ekf_state_mutex);
+      }
+      s_ready_baro_calibrated = true;
+      Serial.printf("[FSM] READY State: Calibrated barometer ground reference P0 to %.2f Pa (Option A)\n", p_ground);
+    }
+  }
+  // Action 2: Set the start up heading angle (measured from ekf, magnetometer)
+  // Action 3: Start the drone at idle throttle (timeout: 2s), do not lend pilot controls yet
+
+  if(!rc_data.empty()){
+    const RcChannels& ch = rc_data.front();
+    if(ch.failsafe){
+      evaluate_state_transitions();
+      return;
+    }
+
+    // Arming trigger: Arm switch active (Ch5 > 1500 us) OR pilot raises throttle above idle
+    bool arm_switch_active = (ch.channel_count >= 5) && (ch.channels[4] > RC_ARM_SWITCH_THRESHOLD_US);
+    bool throttle_elevated = (ch.channels[2] > RC_THROTTLE_IDLE_US);
+
+    // Require stick centering guard: roll, pitch, yaw within center deadband (+-50 us)
+    bool roll_centered   = abs(static_cast<int>(ch.channels[0]) - 1500) <= RC_STICK_CENTER_DEADBAND_US;
+    bool pitch_centered  = abs(static_cast<int>(ch.channels[1]) - 1500) <= RC_STICK_CENTER_DEADBAND_US;
+    bool yaw_centered    = abs(static_cast<int>(ch.channels[3]) - 1500) <= RC_STICK_CENTER_DEADBAND_US;
+    bool sticks_centered = roll_centered && pitch_centered && yaw_centered;
+
+    if((arm_switch_active || throttle_elevated) && sticks_centered){
+      Serial.println("[FSM] Pilot armed / commanded takeoff! Initiating TAKEOFF sequence...");
+      fsm_set_event(EVT_TAKEOFF_INITIATED);
+      fsm_clear_event(EVT_TAKEOFF_ABORT);
+
+      if(motor_cmd_queue != nullptr){
+        MotorCommand cmd = MOTOR_CMD_ARM;
+        xQueueSend(motor_cmd_queue, &cmd, 0);
+      }
+    }
+  }
+
+  evaluate_state_transitions();
+}
+
+static void handle_state_takeoff(){
+  static bool s_takeoff_initialized = false;
+  static uint32_t s_takeoff_window_start_ms = 0;
+  static bool s_pilot_control_latched = false;
+  static float s_startup_heading_deg = 0.0f;
+
+  if(!s_takeoff_initialized){
+    s_takeoff_initialized = true;
+    s_takeoff_window_start_ms = 0;
+    s_pilot_control_latched = false;
+
+    // Capture initial heading reference from EKF attitude
+    if(!att_euler.empty()){
+      Vec3<float> euler = att_euler.front();
+      s_startup_heading_deg = euler.z;
+    }else{
+      s_startup_heading_deg = 0.0f;
+    }
+    Serial.printf("[FSM] TAKEOFF sequence active! Reference heading: %.2f deg\n", s_startup_heading_deg);
+  }
+
+  // 1. RC Stick Evaluation & Pilot Control Request Gating
+  if(!rc_data.empty()){
+    const RcChannels& ch = rc_data.front();
+    if(ch.failsafe){
+      Serial.println("[FSM] FAILSAFE in TAKEOFF! Triggering emergency stop...");
+      fsm_trigger_emergency();
+      evaluate_state_transitions();
+      return;
+    }
+
+    uint16_t throttle = ch.channels[2];
+    bool arm_switch_active = (ch.channel_count < 5) || (ch.channels[4] > RC_ARM_SWITCH_THRESHOLD_US);
+
+    // Pilot abort: throttle lowered to minimum (< idle) AND arm switch disarmed before launch latch
+    if(throttle < RC_THROTTLE_IDLE_US && !arm_switch_active && !s_pilot_control_latched){
+      Serial.println("[FSM] Pilot aborted takeoff back to READY state.");
+      s_takeoff_initialized = false;
+      fsm_clear_event(EVT_TAKEOFF_INITIATED);
+      fsm_set_event(EVT_TAKEOFF_ABORT);
+
+      if(motor_cmd_queue != nullptr){
+        MotorCommand cmd = MOTOR_CMD_DISARM;
+        xQueueSend(motor_cmd_queue, &cmd, 0);
+      }
+      evaluate_state_transitions();
+      return;
+    }
+
+    // Pilot Control Request Gating: 40% < throttle <= 80% (1400 - 1800 us)
+    if(!s_pilot_control_latched){
+      if(throttle >= RC_THROTTLE_LAUNCH_MIN_US && throttle <= RC_THROTTLE_LAUNCH_MAX_US){
+        s_pilot_control_latched = true;
+        s_takeoff_window_start_ms = millis();
+        Serial.printf("[FSM] Pilot control request latched (throttle: %u us). Starting 5s safety window...\n", throttle);
+      }
+    }
+  }
+
+  // 2. Takeoff Safety Guards (Active once pilot control request is latched)
+  if(s_pilot_control_latched){
+    uint32_t now_ms = millis();
+
+    // Guard A: Excessive Tilt (|roll| > 30 deg or |pitch| > 30 deg)
+    if(!att_euler.empty()){
+      Vec3<float> euler = att_euler.front();
+      if(fabs(euler.x) > TAKEOFF_MAX_TILT_DEG || fabs(euler.y) > TAKEOFF_MAX_TILT_DEG){
+        Serial.printf("[FSM] TAKEOFF SAFETY VIOLATION! Excessive tilt: Roll=%.1f deg, Pitch=%.1f deg\n", euler.x, euler.y);
+        fsm_set_event(EVT_TAKEOFF_SAFETY_VIOLATION);
+        fsm_trigger_emergency();
+        s_takeoff_initialized = false;
+        evaluate_state_transitions();
+        return;
+      }
+
+      // Guard B: Heading Divergence (|Delta yaw| > 30 deg)
+      float yaw_divergence = fabs(euler.z - s_startup_heading_deg);
+      if(yaw_divergence > 180.0f) yaw_divergence = fabs(yaw_divergence - 360.0f);
+      if(yaw_divergence > TAKEOFF_MAX_YAW_DIVERGENCE_DEG){
+        Serial.printf("[FSM] TAKEOFF SAFETY VIOLATION! Heading divergence: DeltaYaw=%.1f deg\n", yaw_divergence);
+        fsm_set_event(EVT_TAKEOFF_SAFETY_VIOLATION);
+        fsm_trigger_emergency();
+        s_takeoff_initialized = false;
+        evaluate_state_transitions();
+        return;
+      }
+    }
+
+    // Guard C: Runaway / Anti-Flip Guard (|omega| > 150 deg/s)
+    if(!gyro.empty()){
+      Vec3<float> omega = gyro.front();
+      if(fabs(omega.x) > TAKEOFF_MAX_ANGULAR_RATE_DPS ||
+         fabs(omega.y) > TAKEOFF_MAX_ANGULAR_RATE_DPS ||
+         fabs(omega.z) > TAKEOFF_MAX_ANGULAR_RATE_DPS){
+        Serial.printf("[FSM] TAKEOFF SAFETY VIOLATION! Runaway angular rate: [%.1f, %.1f, %.1f] deg/s\n",
+                      omega.x, omega.y, omega.z);
+        fsm_set_event(EVT_TAKEOFF_SAFETY_VIOLATION);
+        fsm_trigger_emergency();
+        s_takeoff_initialized = false;
+        evaluate_state_transitions();
+        return;
+      }
+    }
+
+    // 3. Verification Window Completion -> Transition to FLIGHT
+    if((now_ms - s_takeoff_window_start_ms) >= TAKEOFF_VERIFY_DURATION_MS){
+      Serial.println("[FSM] Takeoff 5s safety window satisfied! Transitioning to FLIGHT state.");
+      s_takeoff_initialized = false;
+      fsm_clear_event(EVT_TAKEOFF_INITIATED);
+      fsm_set_event(EVT_TAKEOFF_COMPLETE);
+    }
+  }
+
   evaluate_state_transitions();
 }
 
@@ -753,12 +713,9 @@ static void handle_state_postflight(){
     sd_stop_logging_requested = true;
     if(app_task_handles[TASK_SD_LOGGER_ID] != nullptr)
       xTaskNotifyGive(app_task_handles[TASK_SD_LOGGER_ID]);
-    LedCommand post_cmd = {LED_PATTERN_FLASH_BURST, PALETTE_CYAN};
-    xQueueSend(led_cmd_queue, &post_cmd, 0);
   }
   evaluate_state_transitions();
 }
-
 
 static void handle_state_emergency(){
   evaluate_state_transitions();
@@ -771,6 +728,7 @@ void fsm_init(){
   s_current_state = UNINIT;
   s_current_events = EVT_NONE;
   s_events_dirty = true;
+  fsm_on_state_transition(UNINIT, UNINIT);
 }
 
 SystemState fsm_get_state(){
@@ -797,6 +755,12 @@ void fsm_clear_event(uint32_t event_mask){
 
 void fsm_trigger_emergency(){
   fsm_set_event(EVT_EMERGENCY_SHUTDOWN);
+  if(app_task_handles[TASK_MOTOR_ID] != nullptr)
+    xTaskNotify(app_task_handles[TASK_MOTOR_ID], NOTIFY_MOTOR_EMERGENCY_STOP, eSetBits);
+  if(motor_cmd_queue != nullptr){
+    MotorCommand cmd = MOTOR_CMD_EMERGENCY_STOP;
+    xQueueSendToFront(motor_cmd_queue, &cmd, 0);
+  }
   if(app_task_handles[TASK_FSM_ID] != nullptr)
     xTaskNotifyGive(app_task_handles[TASK_FSM_ID]);
 }
@@ -836,7 +800,7 @@ void fsm_task(void* arg){
       case CALIB:       handle_state_calib(loop_count);         break;
       case PREFLIGHT:   handle_state_preflight();               break;
       case READY:       handle_state_ready();                   break;
-      case TAKEOFF:                                             break;
+      case TAKEOFF:     handle_state_takeoff();                 break;
       case FLIGHT:      handle_state_flight();                  break;
       case DEVELOPMENT: handle_state_development();             break;
       case LANDING:                                             break; //[NOTE] Temporary Ignored/bypassed: 

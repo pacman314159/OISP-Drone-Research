@@ -77,6 +77,21 @@ In previous iterations, RGB LED feedback was scattered across ad-hoc modules (di
   - If `AUTO_REBOOT_AFTER_CALIBRATION == true`, FSM reboots after 2.0s; otherwise, parks holding solid Green.
 - If user long-presses button (>2.0s), FSM aborts calibration, calls `vTaskDelete(s_active_calib_handle)`, flashes Red, and returns to selection menu.
 
+### Rule 4: Centralized State-to-LED Dispatcher
+All system state transitions in `evaluate_state_transitions()` invoke `fsm_on_state_transition()`, guaranteeing an automatic, collision-free visual indicator across all flight states without ad-hoc module code:
+- **`UNINIT`**: `PALETTE_OFF` (`LED_PATTERN_OFF`)
+- **`PREFLIGHT`**: `PALETTE_CYAN` (`LED_PATTERN_SOLID`)
+- **`CALIB`**: Dynamic sensor menu & sampling animations (managed exclusively by active calibration coordinator)
+- **`READY`**: `PALETTE_GREEN` (`LED_PATTERN_SOLID`)
+- **`TAKEOFF`**: `PALETTE_LIME` (`LED_PATTERN_BLINK_FAST`)
+- **`FLIGHT`**: `PALETTE_BLUE` (`LED_PATTERN_SOLID`)
+- **`LANDING`**: `PALETTE_TEAL` (`LED_PATTERN_SOLID`)
+- **`POSTFLIGHT`**: `PALETTE_PURPLE` (`LED_PATTERN_SOLID`)
+- **`DEVELOPMENT`**: `PALETTE_YELLOW` (`LED_PATTERN_SOLID`)
+- **`LEVELOUT`**: `PALETTE_ORANGE` (`LED_PATTERN_BLINK_FAST`)
+- **`CRASHED`**: `PALETTE_RED` (`LED_PATTERN_BLINK_FAST`)
+- **`FREEFALL`**: `PALETTE_RED` (`LED_PATTERN_FLASH_BURST`)
+
 ---
 
 ## 4. Cross-References & Traceability

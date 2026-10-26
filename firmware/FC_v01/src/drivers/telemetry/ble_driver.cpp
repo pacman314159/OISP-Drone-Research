@@ -1,10 +1,20 @@
 #include <Arduino.h>
+#include <esp_timer.h>
 #include <NimBLEDevice.h>
 #include <esp_log.h>
 #include "config.h"
 #include "middleware/ipc.h"
 #include "drivers/telemetry/ble_driver.h"
 #include "drivers/telemetry/ble_ota_packet.h"
+
+#if __has_include(<esp32-hal-alloc-ble-mem.h>)
+#include <esp32-hal-alloc-ble-mem.h>
+#endif
+
+// Prevent Arduino core initArduino() from auto-releasing BLE controller memory to heap
+extern "C" bool bleInUse(void){
+  return true;
+}
 
 static NimBLECharacteristic* p_gyro_raw_char   = nullptr;
 static NimBLECharacteristic* p_gyro_filt_char  = nullptr;

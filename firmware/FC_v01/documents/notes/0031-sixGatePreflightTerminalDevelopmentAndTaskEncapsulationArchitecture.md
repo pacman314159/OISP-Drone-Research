@@ -73,7 +73,7 @@ Flight readiness is determined through a strictly sequential, non-blocking 6-Gat
 | Gate 3: Passive Calib | ----------------------> |            STATE_DEVELOPMENT                     |
 +-----------------------+                         |            (Terminal State)                      |
            | Pass                                 |            - Zero Throttle (PWM = 0)             |
-           v                                      |            - Solid Amber LED Alert               |
+           v                                      |            - Solid Yellow LED Alert (`PALETTE_YELLOW`) |
 +-----------------------+     Incline > 10 deg    |            - Permanently Locked Until Hardware    |
 | Gate 4: Tilt Check    | ----------------------> |              Power-Cycle / Cold Reboot           |
 +-----------------------+                         |                                                  |
@@ -128,7 +128,7 @@ Flight readiness is determined through a strictly sequential, non-blocking 6-Gat
 If any of the 6 pre-flight gates fail or exceed their timeout period:
 - The FSM transitions immediately to `STATE_DEVELOPMENT`.
 - Motors are locked to absolute zero output (`PWM = 0`).
-- The status LED latches to solid amber (`RGB_LED_COLOR_AMBER`).
+- The status LED latches to solid yellow (`PALETTE_YELLOW`).
 - **No Automatic Retry / Recovery**: The system remains locked in `STATE_DEVELOPMENT` indefinitely. No periodic state recovery, automatic event clearing, or speculative retry is permitted. The developer or pilot must correct the hardware fault and execute a physical power-cycle or reset.
 
 ### B. Function-Local Gate Encapsulation
@@ -179,7 +179,7 @@ To enforce the 5-layer architecture and maintain a clean, declarative `app_start
 |---|---|---|
 | **Pre-Flight Evaluation** | Ad-hoc checks with loop re-entry | Strict 6-Gate sequential pipeline in `handle_state_preflight()` |
 | **Failover Action** | Transient debug warnings / retry | Immediate one-way transition to terminal `STATE_DEVELOPMENT` |
-| **Development Mode** | Temporary state with potential transitions | Terminal lock: zero throttle, amber LED, requires hard reboot |
+| **Development Mode** | Temporary state with potential transitions | Terminal lock: zero throttle, solid yellow LED, requires hard reboot |
 | **Battery Arming Policy** | Configurable via `REQUIRE_BATTERY_FOR_ARMING` | Strictly enforced: macro removed, $V_{\text{cell}} \ge 3.3\,\text{V}$ mandatory |
 | **NVS Calibration Init** | Executed centrally in `app_start()` | Encapsulated in `accel_gyro_preprocess_task` preamble |
 | **MicroSD File Setup** | Checked and formatted in `app_start()` | Encapsulated in `sd_logger_task` startup |

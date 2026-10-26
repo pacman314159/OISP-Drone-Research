@@ -70,7 +70,13 @@ enum SystemEventMasks : uint32_t {
   EVT_BATTERY_LOW               = (1 << 18),
 
   // Emergency / Fail-Safe Events
-  EVT_EMERGENCY_SHUTDOWN        = (1 << 19)
+  EVT_EMERGENCY_SHUTDOWN        = (1 << 19),
+
+  // Takeoff & In-Flight Transition Events
+  EVT_TAKEOFF_INITIATED         = (1 << 20), // Pilot advanced throttle or toggled arm switch to initiate takeoff
+  EVT_TAKEOFF_COMPLETE          = (1 << 21), // 5-second takeoff window satisfied with all safety guards intact
+  EVT_TAKEOFF_ABORT             = (1 << 22), // Pilot throttled down / disarmed back to ready
+  EVT_TAKEOFF_SAFETY_VIOLATION  = (1 << 23)  // Runaway rate (>150 dps), excessive tilt (>30 deg), or heading divergence
 };
 
 // =============================================================================
@@ -111,9 +117,3 @@ void fsm_set_event(uint32_t event_mask);
 void fsm_clear_event(uint32_t event_mask);
 void fsm_trigger_emergency();
 bool fsm_is_armed_allowed();
-bool sensor_data_stream_check();
-bool check_stationary_condition();
-bool check_passive_sensor_calibration();
-bool check_platform_tilt();
-bool check_power_initial_condition();
-bool check_rc_controller_signal();
