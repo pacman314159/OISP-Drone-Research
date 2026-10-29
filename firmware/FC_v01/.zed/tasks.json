@@ -14,6 +14,13 @@
     "reveal": "always"
   },
   {
+    "label": "PIO: Build Full",
+    "command": "pio run -j 4",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
     "label": "PIO: Upload",
     "command": "pio run -t upload -e fc-v01 -j 4",
     "use_new_terminal": false,
