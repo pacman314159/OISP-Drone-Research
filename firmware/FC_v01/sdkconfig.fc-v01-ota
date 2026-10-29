@@ -2177,7 +2177,6 @@ CONFIG_BT_CTRL_BLE_MIN_CONN_INTERVAL_ENABLE=y
 #
 # default:
 # CONFIG_RMT_SUPPRESS_DEPRECATE_WARN is not set
-# default:
 CONFIG_RMT_SKIP_LEGACY_CONFLICT_CHECK=y
 # end of Legacy RMT Driver Configurations
 
@@ -2193,7 +2192,6 @@ CONFIG_RMT_SKIP_LEGACY_CONFLICT_CHECK=y
 #
 # Legacy I2C Driver Configurations
 #
-# default:
 CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK=y
 # end of Legacy I2C Driver Configurations
 

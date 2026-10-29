@@ -27,7 +27,8 @@ void rc_receiver_task(void* arg){
 
     SYSVIEW_START(task_id);
 
-    bool ok = rx->update(channels, 30);
+    // Bounded timeout (5 ms << 20 ms task period) prevents scheduler overruns when RC is disconnected
+    bool ok = rx->update(channels, 5);
     uint32_t now_us = static_cast<uint32_t>(micros());
 
     if(ok && !channels.failsafe){

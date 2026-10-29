@@ -1,0 +1,49 @@
+[
+  {
+    "label": "PIO: Build",
+    "command": "pio run -e fc-v01 -j 4",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "PIO: Build OTA",
+    "command": "pio run -e fc-v01-ota -j 4",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "PIO: Upload",
+    "command": "pio run -t upload -e fc-v01 -j 4",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "PIO: Upload OTA",
+    "command": "pio run -e -t upload fc-v01-ota -j 4",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "PIO: Upload Monitor",
+    "command": "pio run -t upload -e fc-v01 -j 4; pio device monitor",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "PIO: Device Monitor",
+    "command": "pio device monitor",
+    "use_new_terminal": true,
+    "reveal": "always"
+  },
+  {
+    "label": "PIO: Generate compile_commands.json",
+    "command": "pio run -t compiledb -j 4",
+    "use_new_terminal": false,
+    "reveal": "always"
+  },
+]

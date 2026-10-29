@@ -10,6 +10,7 @@ references:
   - "[[System Architecture v01]]"
   - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
   - "[[0017-bmp180TwoStepI2cTransactionAndBaroDaqArchitecture]]"
+  - "[[0038-osalLayer3IpcDecouplingAndInterfaceTasksConsolidation]]"
 ---
 
 # Zettel 0000: Firmware 5-Layer Architectural Decision & Directory Layout

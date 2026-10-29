@@ -1,0 +1,26 @@
+{
+  "file_scan_exclusions": [
+    "...",
+    "**/compile_commands.json",
+    "**/.cache",
+    "**/graphify-out",
+    "**/.graphifyignore",
+    // "**/.pio",
+    "**/sdkconfig.*",
+    "**/documents",
+    "**/managed_components"
+  ],
+  "lsp": {
+    "clangd": {
+      "binary": {
+        "arguments": [
+          "-j=2",
+          "--background-index",
+          "--background-index-priority=background",
+          "--compile-commands-dir=D:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01",
+          "--query-driver=C:/Users/Admin/.platformio/packages/toolchain-xtensa-esp-elf/bin/*"
+        ]
+      }
+    }
+  }
+}

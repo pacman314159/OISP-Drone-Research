@@ -4,10 +4,11 @@
 #include "middleware/critical_section.h"
 #include "middleware/sysview_tracing.h"
 #include "drivers/telemetry/ble_driver.h"
+#include "core/interface/interface_tasks.h"
+#include "core/sensor/calib.h"
 
 SemaphoreHandle_t i2c0_mutex = nullptr;
 SemaphoreHandle_t i2c1_mutex = nullptr;
-SemaphoreHandle_t status_led_mutex = nullptr;
 SemaphoreHandle_t spi_bus_mutex = nullptr;
 SemaphoreHandle_t flash_mutex = nullptr;
 SemaphoreHandle_t ekf_state_mutex = nullptr;
@@ -15,11 +16,6 @@ TaskHandle_t app_task_handles[TASK_COUNT] = {nullptr};
 QueueHandle_t ota_data_queue = nullptr;
 QueueHandle_t led_cmd_queue = nullptr;
 QueueHandle_t calib_report_queue = nullptr;
-SensorCalibrationData calib_data = {};
-FlashStorageDriver*   calib_storage = nullptr;
-OtaStartPayload ota_start_payload = {0, 0, 0};
-volatile bool ota_abort_requested = false;
-volatile bool sd_stop_logging_requested = false;
 
 RingBuffer<Vec3<float>, RING_BUF_SIZE> accel_raw;
 RingBuffer<Vec3<float>, RING_BUF_SIZE> gyro_raw;
@@ -57,7 +53,7 @@ FcBleServerCallbacks ble_server_callbacks;
 void FcBleServerCallbacks::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc){
   set_ble_connected(true);
   if(desc != nullptr)
-    pServer->updateConnParams(desc->conn_handle, 6, 12, 0, 200);
+    pServer->updateConnParams(desc->conn_handle, 6, 12, 0, 500);
   Serial.println("BLE Client Connected!");
 }
 
@@ -139,9 +135,6 @@ bool init_ipc(){
   if(i2c1_mutex == nullptr)
     i2c1_mutex = xSemaphoreCreateMutex();
 
-  if(status_led_mutex == nullptr)
-    status_led_mutex = xSemaphoreCreateMutex();
-
   if(spi_bus_mutex == nullptr)
     spi_bus_mutex = xSemaphoreCreateMutex();
 
@@ -175,7 +168,6 @@ bool init_ipc(){
 
   return (i2c0_mutex != nullptr &&
           i2c1_mutex != nullptr &&
-          status_led_mutex != nullptr &&
           spi_bus_mutex != nullptr &&
           flash_mutex != nullptr &&
           ekf_state_mutex != nullptr &&
@@ -185,6 +177,3 @@ bool init_ipc(){
           motor_cmd_queue != nullptr &&
           s_btn_hold_timer != nullptr);
 }
-
-
-

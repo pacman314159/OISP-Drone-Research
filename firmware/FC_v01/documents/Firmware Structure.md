@@ -12,6 +12,9 @@ references:
   - "[[0004-simdMultiTypeSupportAndBuildIntegration]]"
   - "[[0032-dualCoreEkfStateEstimationAttitudeRingBufferArchitecture]]"
   - "[[0037-threeStateVerticalVelocityAltitudeEkfAndBaroAccelFusionArchitecture]]"
+  - "[[0040-fsmCalibrationTerminalStateAndRebootBoundaryDecision]]"
+  - "[[0041-seggerSystemViewExclusionForSetupAndCalibrationTasks]]"
+  - "[[0042-layer5ExclusiveTaskSuspensionAuthorityAndOtaDecoupling]]"
 ---
 
 # FC_v01 Firmware Architecture & Structure Specification
@@ -65,7 +68,7 @@ The codebase is organized into **5 decoupled structural layers**:
 - **Directory**: [`src/core/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core)
   - `src/core/sensor/`: Unified sensor Data Acquisition (DAQ) sampling loops, sensor preprocessing loops (calibration application and noise filtering), and sensor calibration routines ([`daq_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/daq_tasks.cpp), [`sensor_preprocess_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/sensor_preprocess_tasks.cpp), [`calib.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/calib.cpp), [`calib_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/calib_tasks.cpp)).
   - `src/core/control/`: Cascaded PID rate and attitude angle controllers, motor mixer ([`control_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/control/control_tasks.cpp)).
-  - `src/core/math/`: Linear algebra matrix engine ([`matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h)), 1st-order discrete low-pass filter algorithms ([`lpf.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/lpf.h)), 3D ellipsoid fitting ([`ellipsoid_fit.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/ellipsoid_fit.h)), and state estimators (AttitudeEKF & AltitudeEKF in [`estimators.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimators.h) and [`estimator_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimator_tasks.cpp)).
+  - `src/core/math/`: Linear algebra matrix engine ([`matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h)), 1st-order discrete low-pass filter algorithms ([`lpf.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/lpf.h)), 3D ellipsoid fitting ([`ellipsoid_fit.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/ellipsoid_fit.h)), and state estimators (AttitudeEKFEngine & AltitudeEKFEngine in [`estimators.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimators.h) and [`estimator_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimator_tasks.cpp)).
   - `src/core/telemetry/`: Telemetry streaming protocols and wireless OTA update management ([`ble_telem_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_telem_tasks.cpp), [`ble_ota_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_ota_tasks.cpp)).
   - `src/core/blackbox/`: High-frequency flight data storage and SD card snapshot logger ([`sd_logger_task.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.cpp), [`sd_logger_task.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.h)).
   - `src/core/interface/`: Human-machine and status indication abstractions (reserved for user buttons and status LEDs).
@@ -237,9 +240,11 @@ To maintain high readability and clean git diffs across developers, all C++ code
 | `[0033]` | PlatformIO Toolchain Package Pruning, Arduino Framework Scope, and Multi-Generation Dependency Audit | Section 1 (Platform & Build Environment), Section 2 (Layer 0 Entrypoint), Section 4 (BLE Telemetry & NimBLE Dependencies) |
 | `[0034]` | Motor Driver LEDC HAL Abstraction, Normalized [0.0, 1.0] PWM Mapping & Actuator Task Architecture | Section 1 (LEDC PWM HAL), Section 2 (Motor Driver), Section 3 (Actuator Task Config & IPC), Section 4 (Core Actuator Domain) |
 | `[0035]` | Emergency Motor Disarm, Mediator Orchestration & Law of Demeter Architectural Decision | Section 2 (Layer 5 App Arming Authority), Section 3 (Mediator motor_cmd_queue & Direct Notification), Section 4 (Layer 2 MotorDriver & Layer 4 Actuator Task) |
-
-
-
-
+| `[0036]` | Layer 4 Safety Domain Scoping, Universal SafetyStatus & Pre-Flight Gates Decoupling Specification | Section 2 (Layer 4 Safety Domain), Section 3 (Preflight Checks), Section 4 (FSM Safety Gating) |
+| `[0037]` | 3-State Vertical Velocity & Altitude Extended Kalman Filter (AltitudeEKFEngine), Dependency Injection & Layer 4 RTOS Task Architecture Specification | Section 3 (Altitude EKF Task & Math Engine), Section 4 (IPC alt_state & alt_timestamp) |
+| `[0038]` | Layer 3 OSAL & IPC Boundary Enforcement, Domain Struct Decoupling, and Interface Tasks Consolidation | Section 3 (Layer 4 Interface Tasks), Section 4 (Layer 3 IPC & OSAL Boundaries) |
+| `[0040]` | FSM Calibration Terminal State & Mandatory Reboot Boundary Architectural Decision | Section 2 (Layer 5 App Domain), Section 3 (FSM), Section 4 (Calibration Persistence & Lifecycle) |
+| `[0041]` | SEGGER SystemView Tracing Scope & Exclusion of Maintenance and Calibration Tasks | Section 3 (Timing & Tracing Guardrails), Section 4 (SystemView Tracing & Task Markers) |
+| `[0042]` | Layer 5 Exclusive Task Suspension Authority & Layer 4 OTA Decoupling Architecture | Section 2 (Layer 5 App Authority), Section 3 (Task Lifecycle), Section 4 (BLE OTA Architecture) |
 
 

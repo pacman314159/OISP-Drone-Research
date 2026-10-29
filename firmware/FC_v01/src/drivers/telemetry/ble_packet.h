@@ -20,6 +20,7 @@ using BleGyroPacket     = BleVec3Packet<float>;
 using BleAccelPacket    = BleVec3Packet<float>;
 using BleMagPacket      = BleVec3Packet<float>;
 using BleAttEulerPacket = BleVec3Packet<float>;
+using BleAltPacket      = BleVec3Packet<float>;
 
 // Barometer Raw & Filtered Telemetry Packet (8 Bytes Little-Endian)
 struct BleBaroPacket {
@@ -37,6 +38,8 @@ struct BleAttQuatPacket {
 
   BleAttQuatPacket() : timestamp(0), q{1.0f, 0.0f, 0.0f, 0.0f}{}
   BleAttQuatPacket(uint32_t ts, float w, float x, float y, float z) : timestamp(ts), q{w, x, y, z}{}
+  BleAttQuatPacket(uint32_t ts, const Vec4& quat) : timestamp(ts), q{quat.m[0], quat.m[1], quat.m[2], quat.m[3]}{}
+  BleAttQuatPacket(uint32_t ts, const float quat[4]) : timestamp(ts), q{quat[0], quat[1], quat[2], quat[3]}{}
 };
 
 // Power & Battery Telemetry Packet (20 Bytes Little-Endian, Millis Scale)
@@ -82,3 +85,4 @@ static_assert(sizeof(BleBaroPacket) == 8, "BleBaroPacket must be exactly 8 bytes
 static_assert(sizeof(BleAttQuatPacket) == 20, "BleAttQuatPacket must be exactly 20 bytes for FCDatMon stride S=20");
 static_assert(sizeof(BlePowerPacket) == 20, "BlePowerPacket must be exactly 20 bytes for FCDatMon stride S=20");
 static_assert(sizeof(BleRcPacket) == 28, "BleRcPacket must be exactly 28 bytes for FCDatMon stride S=28");
+static_assert(sizeof(BleAltPacket) == 16, "BleAltPacket must be exactly 16 bytes for FCDatMon stride S=16");

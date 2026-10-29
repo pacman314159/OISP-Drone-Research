@@ -2,7 +2,6 @@
 #include "core/sensor/sensor_preprocess_tasks.h"
 #include "core/sensor/calib.h"
 #include "core/math/lpf.h"
-#include "core/math/estimator_tasks.h"
 #include "config.h"
 #include "middleware/ipc.h"
 #include "middleware/critical_section.h"
@@ -18,7 +17,6 @@ void accel_gyro_preprocess_task(void* arg){
   if(flash != nullptr && flash->init("nvs")){
     if(calib_init(flash)){
       const SensorCalibrationData& cal = calib_get_data();
-      g_alt_ekf.set_reference_pressure(cal.baro_ref_pa);
       Serial.printf("[PREPROCESS] Calibration loaded: Gyro Bias [%.3f, %.3f, %.3f], Accel Bias [%.3f, %.3f, %.3f], Accel Scale [%.3f, %.3f, %.3f], Mag Bias [%.3f, %.3f, %.3f], Mag B0: %.3f G, Baro P0: %.2f Pa\n",
                     cal.gyro_bias.x, cal.gyro_bias.y, cal.gyro_bias.z,
                     cal.accel_bias.x, cal.accel_bias.y, cal.accel_bias.z,

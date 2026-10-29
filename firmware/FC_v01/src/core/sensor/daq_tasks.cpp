@@ -34,7 +34,7 @@ void accel_gyro_daq_task(void* arg){
     uint32_t ts_us = static_cast<uint32_t>(micros());
 
     if(xSemaphoreTake(i2c0_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTRUE){
-      bool success = mpu->get_all_data(accel, gyro, temp);
+      bool success = mpu->get_all_data(accel.m, gyro.m, temp);
       xSemaphoreGive(i2c0_mutex);
 
       if(success){
@@ -70,7 +70,7 @@ void mag_daq_task(void* arg){
     uint32_t ts_us = static_cast<uint32_t>(micros());
 
     if(xSemaphoreTake(i2c0_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTRUE){
-      bool success = hmc->get_all_data(mag);
+      bool success = hmc->get_all_data(mag.m);
       hmc->set_meas_mode(HMC_MODE_SINGLE);
       xSemaphoreGive(i2c0_mutex);
 

@@ -17,6 +17,7 @@ references:
   - "[[0015-bleOtaArchitectureHardeningAndResourceCleanup]]"
   - "[[0017-bmp180TwoStepI2cTransactionAndBaroDaqArchitecture]]"
   - "[[0018-sdCardLoggingRestorationAndUserButtonShutdown]]"
+  - "[[0038-osalLayer3IpcDecouplingAndInterfaceTasksConsolidation]]"
 ---
 
 # Zettel 0016: Layer 4 Core Directory Compaction, Submodule Consolidation & Task Renaming Specification

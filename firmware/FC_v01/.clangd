@@ -1,0 +1,17 @@
+CompileFlags:
+  Compiler: C:/Users/Admin/.platformio/packages/toolchain-xtensa-esp-elf/bin/xtensa-esp32s3-elf-g++.exe
+  Add:
+    - -isystemC:/Users/Admin/.platformio/packages/toolchain-xtensa-esp-elf/xtensa-esp-elf/include/c++/14.2.0
+    - -isystemC:/Users/Admin/.platformio/packages/toolchain-xtensa-esp-elf/xtensa-esp-elf/include/c++/14.2.0/xtensa-esp-elf/esp32s3
+    - -isystemC:/Users/Admin/.platformio/packages/toolchain-xtensa-esp-elf/xtensa-esp-elf/include/c++/14.2.0/backward
+    - -isystemC:/Users/Admin/.platformio/packages/toolchain-xtensa-esp-elf/lib/gcc/xtensa-esp-elf/14.2.0/include
+    - -isystemC:/Users/Admin/.platformio/packages/toolchain-xtensa-esp-elf/lib/gcc/xtensa-esp-elf/14.2.0/include-fixed
+    - -isystemC:/Users/Admin/.platformio/packages/toolchain-xtensa-esp-elf/xtensa-esp-elf/include
+    - -Wno-unknown-warning-option
+    - -Wno-unused-command-line-argument
+  Remove:
+    - -mlongcalls
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion
+    - -fno-jump-tables
+    - -Wno-old-style-declaration

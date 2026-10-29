@@ -94,6 +94,8 @@ static BleTelemetryChannel<BleAttQuatPacket, BLE_ATT_QUAT_SAMPLES_PER_PACKET>
   s_ch_att_quat(BLE_TELEM_MASK_ATT_QUAT);
 static BleTelemetryChannel<BleAttEulerPacket, BLE_ATT_EULER_SAMPLES_PER_PACKET>
   s_ch_att_euler(BLE_TELEM_MASK_ATT_EULER);
+static BleTelemetryChannel<BleAltPacket, BLE_ALT_SAMPLES_PER_PACKET>
+  s_ch_alt(BLE_TELEM_MASK_ALT);
 
 // =============================================================================
 // UNIFIED BLE TELEMETRY DISPATCHER TASK (100 HZ EVALUATION CADENCE)
@@ -151,6 +153,9 @@ void ble_telem_task(void* arg){
 
     if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_ATT_EULER) != 0)
       s_ch_att_euler.process(att_euler, att_timestamp, now, timeout_ticks);
+
+    if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_ALT) != 0)
+      s_ch_alt.process(alt_state, alt_timestamp, now, timeout_ticks);
 
     SYSVIEW_END(task_id);
   }

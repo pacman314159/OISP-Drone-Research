@@ -30,9 +30,12 @@ public:
   bool write_sector(const uint8_t* sector_data, size_t count = 512);
   void flush();
   void close();
+  void unmount();
   bool is_open() const;
   uint32_t get_bytes_written() const;
   void reset_file_pointer_to_data_start();
+  uint64_t get_total_bytes();
+  uint64_t get_free_bytes();
 
 private:
   uint16_t find_highest_log_id(const char* dir_path);

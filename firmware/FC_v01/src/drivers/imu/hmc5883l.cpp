@@ -85,7 +85,9 @@ bool HMC5883L::set_meas_mode(HmcMeasMode meas){
   return _i2c.write_reg(_dev_addr, REG_MODE, reg);
 }
 
-bool HMC5883L::get_all_data_raw(Vec3<int16_t>& mag_raw_msb){
+bool HMC5883L::get_all_data_raw(int16_t mag_raw_msb[3]){
+  if(mag_raw_msb == nullptr) return false;
+
   uint8_t raw_buf[6];
   if(!_i2c.read_reg_multi(_dev_addr, REG_DATA_X_MSB, raw_buf, 6)) return false;
 
@@ -93,21 +95,29 @@ bool HMC5883L::get_all_data_raw(Vec3<int16_t>& mag_raw_msb){
   _mag_raw_z = static_cast<int16_t>((raw_buf[2] << 8) | raw_buf[3]);
   _mag_raw_y = static_cast<int16_t>((raw_buf[4] << 8) | raw_buf[5]);
 
-  mag_raw_msb.x = _mag_raw_x;
-  mag_raw_msb.y = _mag_raw_y;
-  mag_raw_msb.z = _mag_raw_z;
+  mag_raw_msb[0] = _mag_raw_x;
+  mag_raw_msb[1] = _mag_raw_y;
+  mag_raw_msb[2] = _mag_raw_z;
 
   return true;
 }
 
-bool HMC5883L::get_all_data(Vec3<float>& mag){
-  Vec3<int16_t> mag_raw_msb;
+bool HMC5883L::get_all_data(float mag[3]){
+  if(mag == nullptr) return false;
+
+  int16_t mag_raw_msb[3];
   if(!get_all_data_raw(mag_raw_msb)) return false;
 
-  mag.x = static_cast<float>(mag_raw_msb.x);
-  mag.y = static_cast<float>(mag_raw_msb.y);
-  mag.z = static_cast<float>(mag_raw_msb.z);
-  mag *= _inv_mag_sens;
+  mag[0] = static_cast<float>(mag_raw_msb[0]);
+  mag[1] = static_cast<float>(mag_raw_msb[1]);
+  mag[2] = static_cast<float>(mag_raw_msb[2]);
+#if (ENABLE_SIMD_ACCELERATION)
+  hal_simd::scale(mag, _inv_mag_sens, mag, 3);
+#else
+  mag[0] *= _inv_mag_sens;
+  mag[1] *= _inv_mag_sens;
+  mag[2] *= _inv_mag_sens;
+#endif
 
   return true;
 }

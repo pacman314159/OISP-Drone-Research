@@ -7,33 +7,32 @@
 #include "drivers/telemetry/ble_driver.h"
 #include "drivers/telemetry/ble_ota_packet.h"
 #include "drivers/led/ws2812.h"
-#include "app/app.h"
 
 void ble_ota_task(void* arg){
-  (void)arg;
   const uint32_t task_id = TASK_BLE_OTA_ID;
   (void)task_id;
-  Serial.printf("[BLE_OTA] Task started. Listening for OTA trigger (%lu ms window)...\n", static_cast<unsigned long>(OTA_BOOT_WINDOW_TIMEOUT_MS));
+  const bool immediate_start = (arg != nullptr);
 
-  uint32_t notified = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(OTA_BOOT_WINDOW_TIMEOUT_MS));
+  if(!immediate_start){
+    Serial.printf("[BLE_OTA] Task started. Listening for OTA trigger (%lu ms window)...\n", static_cast<unsigned long>(OTA_BOOT_WINDOW_TIMEOUT_MS));
 
-  if(notified == 0){
-    Serial.printf("[BLE_OTA] %lu ms boot window expired without OTA trigger. Terminating OTA task.\n", static_cast<unsigned long>(OTA_BOOT_WINDOW_TIMEOUT_MS));
-    set_ble_ota_active(false);
-    app_task_handles[TASK_BLE_OTA_ID] = nullptr;
-    if(ota_data_queue != nullptr){
-      vQueueDelete(ota_data_queue);
-      ota_data_queue = nullptr;
+    uint32_t notified = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(OTA_BOOT_WINDOW_TIMEOUT_MS));
+
+    if(notified == 0){
+      Serial.printf("[BLE_OTA] %lu ms boot window expired without OTA trigger. Terminating OTA task.\n", static_cast<unsigned long>(OTA_BOOT_WINDOW_TIMEOUT_MS));
+      set_ble_ota_active(false);
+      app_task_handles[TASK_BLE_OTA_ID] = nullptr;
+      if(ota_data_queue != nullptr){
+        vQueueDelete(ota_data_queue);
+        ota_data_queue = nullptr;
+      }
+      vTaskDelete(NULL);
+      return;
     }
-    vTaskDelete(NULL);
-    return;
   }
 
   Serial.println("[BLE_OTA] OTA trigger received! Entering OTA Update Mode...");
   set_ble_ota_active(true);
-
-  app_suspend_all_tasks();
-  Serial.println("[BLE_OTA] All flight tasks suspended.");
 
   const esp_partition_t* running = esp_ota_get_running_partition();
   const esp_partition_t* update_partition = esp_ota_get_next_update_partition(NULL);
@@ -162,6 +161,10 @@ void ble_ota_task(void* arg){
 
     total_written += chunk.length;
 
+    // Yield briefly every ~4 KB flash sector boundary to prevent NimBLE stack & IDLE watchdog starvation
+    if((total_written % 4096) < sizeof(chunk.data))
+      vTaskDelay(pdMS_TO_TICKS(1));
+
     if(fw_size > 0){
       uint8_t percent = static_cast<uint8_t>((static_cast<uint64_t>(total_written) * 100) / fw_size);
       if(percent >= last_percent + 5 || percent == 100){
@@ -186,4 +189,22 @@ void ble_ota_task(void* arg){
   }
   vTaskDelay(pdMS_TO_TICKS(reboot_delay_ms));
   esp_restart();
+}
+
+bool spawn_ble_ota_task(bool immediate_start){
+  if(app_task_handles[TASK_BLE_OTA_ID] != nullptr) return true;
+  if(ota_data_queue == nullptr)
+    ota_data_queue = xQueueCreate(OTA_DATA_QUEUE_DEPTH, sizeof(OtaDataChunk));
+  if(ota_data_queue == nullptr) return false;
+
+  BaseType_t ret = xTaskCreatePinnedToCore(
+    ble_ota_task,
+    TASK_BLE_OTA_NAME,
+    TASK_BLE_OTA_STACK_SIZE,
+    immediate_start ? reinterpret_cast<void*>(1) : nullptr,
+    TASK_BLE_OTA_PRIORITY,
+    &app_task_handles[TASK_BLE_OTA_ID],
+    TASK_BLE_OTA_CORE
+  );
+  return (ret == pdPASS);
 }

@@ -10,9 +10,14 @@ void sysview_init_markers(){
   SEGGER_SYSVIEW_NameResource(TASK_POWER_DAQ_ID + 1,             TASK_POWER_DAQ_NAME);
   SEGGER_SYSVIEW_NameResource(TASK_RC_RECEIVER_ID + 1,          TASK_RC_RECEIVER_NAME);
   SEGGER_SYSVIEW_NameResource(TASK_BLE_TELEM_ID + 1,             TASK_BLE_TELEM_NAME);
+  SEGGER_SYSVIEW_NameResource(TASK_SD_LOGGER_ID + 1,             TASK_SD_LOGGER_NAME);
+  SEGGER_SYSVIEW_NameResource(TASK_BLE_OTA_ID + 1,               TASK_BLE_OTA_NAME);
+  SEGGER_SYSVIEW_NameResource(TASK_FSM_ID + 1,                   TASK_FSM_NAME);
+  SEGGER_SYSVIEW_NameResource(TASK_STATUS_LED_ID + 1,            TASK_STATUS_LED_NAME);
   SEGGER_SYSVIEW_NameResource(TASK_EKF_ROLL_PITCH_ID + 1,        TASK_EKF_ROLL_PITCH_NAME);
   SEGGER_SYSVIEW_NameResource(TASK_EKF_YAW_ID + 1,               TASK_EKF_YAW_NAME);
   SEGGER_SYSVIEW_NameResource(TASK_EKF_ALTITUDE_ID + 1,          TASK_EKF_ALTITUDE_NAME);
+  SEGGER_SYSVIEW_NameResource(TASK_MOTOR_ID + 1,                 TASK_MOTOR_NAME);
 }
 
 #endif

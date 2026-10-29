@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "config.h"
-#include "src/core/math/matrix.h"
+#include "platforms/hal/hal_simd.h"
 
 // Conditional HAL abstraction selector (Sync when SYSTEM_I2C0_MODE_ASYNC is false)
 #if (!SYSTEM_I2C0_MODE_ASYNC)
@@ -72,8 +72,8 @@ public:
   bool set_accel_range(AccelRange range);
 
   // Synchronous multi-byte burst raw read & converted data
-  bool get_all_data_raw(Vec3<int16_t>& accel_raw_msb, Vec3<int16_t>& gyro_raw_msb, int16_t& temp_raw_msb);
-  bool get_all_data(Vec3<float>& accel, Vec3<float>& gyro, float& temp);
+  bool get_all_data_raw(int16_t accel_raw_msb[3], int16_t gyro_raw_msb[3], int16_t& temp_raw_msb);
+  bool get_all_data(float accel[3], float gyro[3], float& temp);
 
   // Raw data getters
   int16_t get_raw_accel_x(){ return _accel_raw_x; }

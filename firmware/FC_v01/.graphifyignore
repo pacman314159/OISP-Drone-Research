@@ -1,0 +1,20 @@
+# Graphify ignore patterns for FC_v01 firmware
+# Exclude vendor components and third-party libraries (95%+ noise)
+managed_components/
+.pio/
+build/
+logs/
+graphify-out/
+.cache/
+.vscode/
+
+# Audio and binary assets from vendor components (e.g. esp-sr)
+*.wav
+*.mp3
+*.bin
+*.elf
+*.hex
+*.tar
+*.gz
+*.zip
+*.pyc

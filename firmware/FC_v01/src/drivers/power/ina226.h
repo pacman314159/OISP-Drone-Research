@@ -78,6 +78,14 @@ struct PowerSample {
   float shunt_uv;   // Shunt voltage in microvolts (uV)
 };
 
+// Power & Battery Measurement Data Structure (Millis Scale)
+struct PowerMeasurement {
+  float voltage_mv; // Bus voltage in millivolts (mV)
+  float current_ma; // Current in milliamps (mA)
+  float power_mw;   // Power in milliwatts (mW)
+  float energy_mah; // Accumulated energy in milliamp-hours (mAh)
+};
+
 class INA226 {
 
 public:

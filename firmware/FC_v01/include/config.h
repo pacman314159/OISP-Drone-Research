@@ -15,6 +15,7 @@ constexpr float MATH_PI    = 3.14159265358979323846f;
 #ifndef RAD_TO_DEG
 #define RAD_TO_DEG (57.295779513082320876f) // Multiplier to convert radians to degrees (180 / pi)
 #endif
+constexpr float STANDARD_GRAVITY_MSS = 9.80665f; // Standard acceleration due to gravity (m/s^2)
 
 // =============================================================================
 // SYSTEM & ARCHITECTURE FEATURE FLAGS
@@ -289,7 +290,6 @@ constexpr float EKF_DEFAULT_R_MAG      = 0.2f;     // Environmental magnetic noi
 // =============================================================================
 // EXTENDED KALMAN FILTER (EKF) VERTICAL VELOCITY & ALTITUDE ESTIMATION CONFIGURATION
 // =============================================================================
-constexpr float STANDARD_GRAVITY_MSS            = 9.80665f;  // Standard acceleration of gravity g (m/s^2)
 constexpr float BARO_SEA_LEVEL_PRESSURE_PA      = 101325.0f; // Standard atmospheric sea-level pressure P0 fallback (Pa)
 constexpr float EKF_ALT_DEFAULT_Q_POS_VAR       = 1e-4f;     // Altitude process noise variance (m^2)
 constexpr float EKF_ALT_DEFAULT_Q_VEL_VAR       = 1e-3f;     // Vertical velocity process noise variance ((m/s)^2)
@@ -313,6 +313,7 @@ constexpr uint8_t     BLE_ATT_QUAT_SAMPLES_PER_PACKET  = 25; // 25 samples x 20B
 constexpr uint8_t     BLE_ATT_EULER_SAMPLES_PER_PACKET = 31; // 31 samples x 16B = 496B payload
 constexpr uint8_t     BLE_POWER_SAMPLES_PER_PACKET     = 25; // 25 samples x 20B = 500B payload
 constexpr uint8_t     BLE_RC_SAMPLES_PER_PACKET        = 17; // 17 samples x 28B = 476B payload
+constexpr uint8_t     BLE_ALT_SAMPLES_PER_PACKET       = 31; // 31 samples x 16B = 496B payload
 
 enum TelemTimestampUnit {
   TIMESTAMP_UNIT_MICROSECONDS,
@@ -334,6 +335,7 @@ constexpr const char* BLE_CHAR_ATT_QUAT_UUID        = "0d3b6a9c-2e4f-4a8b-9d1e-5
 constexpr const char* BLE_CHAR_ATT_EULER_UUID       = "6e1c4a8b-0f2d-4e5a-9b3c-7d9a1e3f5b7c";
 constexpr const char* BLE_CHAR_POWER_UUID           = "3e5a7b1c-9d2f-4e8a-0b3c-6f1a8d2e4c5b";
 constexpr const char* BLE_CHAR_RC_CHANNELS_UUID     = "5b8c1a2e-4f9a-4c72-9e3d-8b1a2c3d4e5f";
+constexpr const char* BLE_CHAR_ALT_UUID             = "8f1a2c3d-4e5b-4c6d-9e7f-0a1b2c3d4e5f";
 
 // BLE OTA Service (Dual-bank firmware update support)
 constexpr const char* BLE_SERVICE_OTA_UUID          = "23408888-1f40-4cd8-9b89-ca8d45f8a5b0";
@@ -356,7 +358,8 @@ enum BleTelemBitmask : uint16_t {
   BLE_TELEM_MASK_ATT_QUAT    = (1 << 8),
   BLE_TELEM_MASK_ATT_EULER   = (1 << 9),
   BLE_TELEM_MASK_POWER       = (1 << 10),
-  BLE_TELEM_MASK_RC_CHANNELS = (1 << 11)
+  BLE_TELEM_MASK_RC_CHANNELS = (1 << 11),
+  BLE_TELEM_MASK_ALT         = (1 << 12)
 };
 
 // Multi-line commentable/uncommentable BLE telemetry mask interface
@@ -374,6 +377,7 @@ constexpr uint16_t ACTIVE_BLE_TELEM_MASK =
     | BLE_TELEM_MASK_ATT_EULER
     // | BLE_TELEM_MASK_POWER
     | BLE_TELEM_MASK_RC_CHANNELS
+    | BLE_TELEM_MASK_ALT
     ;
 
 // =============================================================================
@@ -392,7 +396,8 @@ enum LogPacketType : uint8_t {
   PKT_TYPE_ATT_QUAT  = 0x07,
   PKT_TYPE_ATT_EULER = 0x08,
   PKT_TYPE_POWER     = 0x09,
-  PKT_TYPE_RC        = 0x0A
+  PKT_TYPE_RC        = 0x0A,
+  PKT_TYPE_ALT       = 0x0B
 };
 
 enum LogPacketBitmask : uint16_t {
@@ -406,7 +411,8 @@ enum LogPacketBitmask : uint16_t {
   LOG_MASK_ATT_QUAT  = (1 << 6),
   LOG_MASK_ATT_EULER = (1 << 7),
   LOG_MASK_POWER     = (1 << 8),
-  LOG_MASK_RC        = (1 << 9)
+  LOG_MASK_RC        = (1 << 9),
+  LOG_MASK_ALT       = (1 << 10)
 };
 
 // Multi-line commentable/uncommentable SD logging mask interface
@@ -417,11 +423,12 @@ constexpr uint16_t ACTIVE_SD_LOG_PACKETS_MASK =
     | LOG_MASK_MAG_RAW
     | LOG_MASK_MAG_FILT
     | LOG_MASK_BARO_RAW
-    | LOG_MASK_BARO_FILT
+    // | LOG_MASK_BARO_FILT // Disabled: avoids duplicate baro logging (reads identical pressure ring buffer as BARO_RAW)
     // | LOG_MASK_ATT_QUAT
     // | LOG_MASK_ATT_EULER
     // | LOG_MASK_POWER
     // | LOG_MASK_RC
+    // | LOG_MASK_ALT
     ;
 
 enum LogLimitMode : uint8_t {

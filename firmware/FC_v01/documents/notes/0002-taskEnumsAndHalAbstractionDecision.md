@@ -8,6 +8,7 @@ tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#freertos", "#
 references:
   - "[[0000-firmwareStructureLayerDecision]]"
   - "[[0001-taskConfigMiddlewareIsrDecision]]"
+  - "[[0038-osalLayer3IpcDecouplingAndInterfaceTasksConsolidation]]"
 ---
 
 # Zettel 0002: System 4 Priority Levels, Enum Task Config, Target-Agnostic HAL, Explicit Typing, Deterministic Delays & Centralized IPC

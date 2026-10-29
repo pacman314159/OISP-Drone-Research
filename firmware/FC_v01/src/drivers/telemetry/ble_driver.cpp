@@ -16,6 +16,9 @@ extern "C" bool bleInUse(void){
   return true;
 }
 
+OtaStartPayload ota_start_payload = {0, 0, 0};
+volatile bool   ota_abort_requested = false;
+
 static NimBLECharacteristic* p_gyro_raw_char   = nullptr;
 static NimBLECharacteristic* p_gyro_filt_char  = nullptr;
 static NimBLECharacteristic* p_accel_raw_char  = nullptr;
@@ -28,6 +31,7 @@ static NimBLECharacteristic* p_att_quat_char   = nullptr;
 static NimBLECharacteristic* p_att_euler_char  = nullptr;
 static NimBLECharacteristic* p_power_char      = nullptr;
 static NimBLECharacteristic* p_rc_channels_char = nullptr;
+static NimBLECharacteristic* p_alt_char         = nullptr;
 static NimBLECharacteristic* p_ota_control_char = nullptr;
 static NimBLECharacteristic* p_ota_data_char    = nullptr;
 static bool ble_connected                       = false;
@@ -49,6 +53,12 @@ void set_ble_ota_active(bool active){
   ble_ota_active = active;
 }
 
+static BleOtaTriggerCallback s_ota_trigger_cb = nullptr;
+
+void set_ble_ota_trigger_callback(BleOtaTriggerCallback cb){
+  s_ota_trigger_cb = cb;
+}
+
 class OtaControlCallbacks : public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic* pCharacteristic) override{
     std::string val = pCharacteristic->getValue();
@@ -66,10 +76,12 @@ class OtaControlCallbacks : public NimBLECharacteristicCallbacks {
         ota_start_payload.crc32_checksum = 0;
       }
       ota_abort_requested = false;
-      if(app_task_handles[TASK_BLE_OTA_ID] != nullptr){
-        xTaskNotifyGive(app_task_handles[TASK_BLE_OTA_ID]);
+      if(s_ota_trigger_cb != nullptr && s_ota_trigger_cb()){
+        if(app_task_handles[TASK_BLE_OTA_ID] != nullptr)
+          xTaskNotifyGive(app_task_handles[TASK_BLE_OTA_ID]);
+        Serial.println("[BLE_OTA] OTA authorized by Layer 5 coordinator.");
       }else{
-        Serial.println("[BLE_OTA] OTA trigger rejected: Boot window expired.");
+        Serial.println("[BLE_OTA] OTA trigger rejected: System not authorized for OTA update (requires DEVELOPMENT mode).");
         uint8_t err_resp = OTA_RESP_ERR_ABORT;
         send_ble_ota_response(&err_resp, sizeof(err_resp));
       }
@@ -93,6 +105,10 @@ class OtaControlCallbacks : public NimBLECharacteristicCallbacks {
       }
       if(app_task_handles[TASK_BLE_OTA_ID] != nullptr)
         xTaskNotifyGive(app_task_handles[TASK_BLE_OTA_ID]);
+    }else if(cmd == OTA_CMD_REBOOT){
+      Serial.println("[BLE_OTA] Remote reboot command received! Restarting MCU...");
+      vTaskDelay(pdMS_TO_TICKS(100));
+      esp_restart();
     }
   }
 };
@@ -109,7 +125,7 @@ class OtaDataCallbacks : public NimBLECharacteristicCallbacks {
     s_incoming_ota_chunk.length = static_cast<uint16_t>(val.length() > sizeof(s_incoming_ota_chunk.data) ? sizeof(s_incoming_ota_chunk.data) : val.length());
     memcpy(s_incoming_ota_chunk.data, val.data(), s_incoming_ota_chunk.length);
 
-    if(xQueueSend(ota_data_queue, &s_incoming_ota_chunk, pdMS_TO_TICKS(100)) != pdTRUE){
+    if(xQueueSend(ota_data_queue, &s_incoming_ota_chunk, pdMS_TO_TICKS(500)) != pdTRUE){
       Serial.println("[BLE_OTA] Error: ota_data_queue overflow! Aborting session.");
       ota_abort_requested = true;
       if(app_task_handles[TASK_BLE_OTA_ID] != nullptr)
@@ -169,6 +185,9 @@ bool ble_driver_init(){
   if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_RC_CHANNELS) != 0)
     p_rc_channels_char = pTelemetryService->createCharacteristic(BLE_CHAR_RC_CHANNELS_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
 
+  if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_ALT) != 0)
+    p_alt_char = pTelemetryService->createCharacteristic(BLE_CHAR_ALT_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+
   pTelemetryService->start();
 
   // Initialize OTA GATT Service & Characteristics
@@ -212,6 +231,7 @@ static NimBLECharacteristic* get_char_by_mask(uint16_t mask_bit){
     case BLE_TELEM_MASK_ATT_EULER:   return p_att_euler_char;
     case BLE_TELEM_MASK_POWER:       return p_power_char;
     case BLE_TELEM_MASK_RC_CHANNELS: return p_rc_channels_char;
+    case BLE_TELEM_MASK_ALT:         return p_alt_char;
     default:                         return nullptr;
   }
 }

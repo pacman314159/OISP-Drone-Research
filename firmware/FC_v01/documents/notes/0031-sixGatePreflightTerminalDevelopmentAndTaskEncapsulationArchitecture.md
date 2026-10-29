@@ -18,7 +18,7 @@ references:
   - "[[0027-preflightSensorDataStreamCheckFsmArchitecture]]"
   - "[[0028-ina226PowerModuleI2c1DaqAndBatteryMonitoringArchitecture]]"
   - "[[0030-rmtHardwarePpmDecodingFsIa6bAndBleTelemetryArchitecture]]"
-  - "[[0032-rcReceiverCommandBlackboxSdCardLoggingArchitecture]]"
+  - "[[0045-rcReceiverCommandBlackboxSdCardLoggingArchitecture]]"
 ---
 
 # Zettel 0031: Six-Gate Pre-Flight Safety Pipeline, Terminal Development Mode, Subsystem Task Encapsulation & Battery Enforcement Architecture

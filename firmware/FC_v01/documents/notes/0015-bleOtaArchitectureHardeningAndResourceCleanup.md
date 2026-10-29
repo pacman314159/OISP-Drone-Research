@@ -78,3 +78,8 @@ To elevate BLE OTA throughput from ~14 KB/s to 60–90 KB/s without risking queu
   - Max speed of ~50 KB/s is achieved when the flight controller board is placed in close proximity to the host computer / Bluetooth transceiver.
   - Throughput is sensitive to distance and physical orientation due to Link Layer packet retransmissions and RF path loss on the PCB antenna.
   - Operationally, ~50 KB/s provides an optimal trade-off of rapid flashing convenience without requiring complex compression overhead.
+
+---
+
+## 4. Cross-References & Traceability
+- Extended by `[[0039-onDemandBleOtaInDevelopmentStateAndDependencyInversionArchitecture]]`: Adds on-demand OTA triggering in DEVELOPMENT mode without manual reset button cycles.

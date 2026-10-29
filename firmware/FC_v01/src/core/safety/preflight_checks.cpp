@@ -138,11 +138,13 @@ SafetyStatus check_stationary_condition(){
   uint32_t current_time_ms = millis();
   if(check_start_ms == 0) check_start_ms = current_time_ms;
 
+  if(accel_raw.empty() || gyro_raw.empty()) return SafetyStatus::PENDING;
+
   Vec3<float> current_raw_accel = accel_raw.front();
   Vec3<float> current_raw_gyro  = gyro_raw.front();
 
   Vec3<float> delta_gyro  = current_raw_gyro - last_raw_gyro;
-  Vec3<float> delta_accel = current_raw_accel - last_raw_accel;
+  Vec3<float> delta_accel = (current_raw_accel - last_raw_accel) * STANDARD_GRAVITY_MSS; // Convert delta from g to m/s^2
 
   last_raw_gyro  = current_raw_gyro;
   last_raw_accel = current_raw_accel;
@@ -182,6 +184,8 @@ SafetyStatus check_passive_sensor_calibration(bool is_stationary){
 
   // Only evaluate when drone is verified stationary
   if(!is_stationary) return SafetyStatus::PENDING;
+
+  if(gyro.empty() || accel.empty() || mag.empty()) return SafetyStatus::PENDING;
 
   Vec3<float> filt_gyro  = gyro.front();
   Vec3<float> filt_accel = accel.front();

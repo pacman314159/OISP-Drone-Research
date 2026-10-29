@@ -1,4 +1,8 @@
 #include "drivers/storage/sd_card_driver.h"
+#include <Arduino.h>
+#include <SPI.h>
+#include <FS.h>
+#include <SD.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <cstring>
@@ -10,18 +14,46 @@ SDCardDriver::SDCardDriver(HAL_SPI& spi_bus, int cs_pin, int cd_pin)
 
 SDCardDriver::~SDCardDriver(){
   close();
+  unmount();
+}
+
+bool SDCardDriver::is_card_inserted(){
+  if(_cd_pin < 0) return true;
+  pinMode(_cd_pin, INPUT_PULLUP);
+  return (digitalRead(_cd_pin) == LOW);
 }
 
 bool SDCardDriver::init(){
   if(_mounted) return true;
-  if(!_spi.is_card_inserted(_cd_pin)) return false;
+  if(!is_card_inserted()) return false;
 
-  _mounted = _spi.mount_fatfs(_cs_pin, _cd_pin, SD_MOUNT_POINT, SD_SPI_FREQ_HZ);
+  pinMode(_cs_pin, OUTPUT);
+  digitalWrite(_cs_pin, HIGH);
+
+  SPIClass* native_spi = static_cast<SPIClass*>(_spi.get_native_handle());
+  if(native_spi == nullptr) return false;
+
+  _mounted = SD.begin(static_cast<uint8_t>(_cs_pin), *native_spi, SD_SPI_FREQ_HZ, SD_MOUNT_POINT);
   return _mounted;
 }
 
-bool SDCardDriver::is_card_inserted(){
-  return _spi.is_card_inserted(_cd_pin);
+void SDCardDriver::unmount(){
+  if(_mounted){
+    SD.end();
+    _mounted = false;
+  }
+}
+
+uint64_t SDCardDriver::get_total_bytes(){
+  if(!_mounted) return 0;
+  return SD.totalBytes();
+}
+
+uint64_t SDCardDriver::get_free_bytes(){
+  if(!_mounted) return 0;
+  uint64_t total = SD.totalBytes();
+  uint64_t used  = SD.usedBytes();
+  return (total > used) ? (total - used) : 0;
 }
 
 uint16_t SDCardDriver::find_highest_log_id(const char* dir_path){

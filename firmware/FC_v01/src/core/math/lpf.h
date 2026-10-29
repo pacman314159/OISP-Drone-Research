@@ -3,10 +3,9 @@
 #include <cmath>
 #include "config.h"
 #include "matrix.h"
-#include <Arduino.h>
 
 #ifndef TWO_PI
-#define TWO_PI 2.0f * 3.1415926535897932384626433832795
+constexpr float TWO_PI = 2.0f * MATH_PI;
 #endif
 
 // =============================================================================
@@ -22,52 +21,72 @@
 //   B = (T * omega_c - 2.0f) / (T * omega_c + 2.0f)
 // =============================================================================
 
-struct LowPassFilter1stOrder {
+class LowPassFilter1stOrder {
+public:
   float a;            // LPF input gain coefficient A
   float b;            // LPF feedback gain coefficient B
   Vec3<float> x_prev; // Previous input vector x[i-1]
   Vec3<float> y_prev; // Previous output vector y[i-1]
   bool initialized;   // First sample initialization flag
-};
 
-inline void lpf_init(LowPassFilter1stOrder* filter, float sample_freq_hz, float cutoff_freq_hz){
-  if(filter == nullptr) return;
-
-  filter->x_prev = Vec3<float>{0.0f, 0.0f, 0.0f};
-  filter->y_prev = Vec3<float>{0.0f, 0.0f, 0.0f};
-  filter->initialized = false;
-
-  if(sample_freq_hz <= 0.0f || cutoff_freq_hz <= 0.0f){
-    filter->a = 1.0f;
-    filter->b = 0.0f;
-    return;
+  LowPassFilter1stOrder(){
+    reset();
+    a = 1.0f;
+    b = 0.0f;
   }
 
-  const float dt = 1.0f / sample_freq_hz; // seconds
-  const float omega_c = TWO_PI * cutoff_freq_hz; // rad/s
-  const float dt_omega = dt * omega_c;
+  LowPassFilter1stOrder(float sample_freq_hz, float cutoff_freq_hz){
+    init(sample_freq_hz, cutoff_freq_hz);
+  }
 
-  filter->a = dt_omega / (dt_omega + 2.0f);
-  filter->b = (dt_omega - 2.0f) / (dt_omega + 2.0f);
+  void reset(){
+    x_prev = Vec3<float>{0.0f, 0.0f, 0.0f};
+    y_prev = Vec3<float>{0.0f, 0.0f, 0.0f};
+    initialized = false;
+  }
+
+  void init(float sample_freq_hz, float cutoff_freq_hz){
+    reset();
+
+    if(sample_freq_hz <= 0.0f || cutoff_freq_hz <= 0.0f){
+      a = 1.0f;
+      b = 0.0f;
+      return;
+    }
+
+    const float dt = 1.0f / sample_freq_hz;        // seconds
+    const float omega_c = TWO_PI * cutoff_freq_hz; // rad/s
+    const float dt_omega = dt * omega_c;
+
+    a = dt_omega / (dt_omega + 2.0f);
+    b = (dt_omega - 2.0f) / (dt_omega + 2.0f);
+  }
+
+  Vec3<float> apply(const Vec3<float>& x_curr){
+    if(!initialized){
+      x_prev = x_curr;
+      y_prev = x_curr;
+      initialized = true;
+      return x_curr;
+    }
+
+    // Leverages Vec3<T> (Matrix<T, 3, 1>) overloaded operators with internal SIMD acceleration
+    Vec3<float> y_curr = (x_curr + x_prev) * a - y_prev * b;
+
+    x_prev = x_curr;
+    y_prev = y_curr;
+
+    return y_curr;
+  }
+};
+
+// Backwards-compatible C-style inline forwarding functions
+inline void lpf_init(LowPassFilter1stOrder* filter, float sample_freq_hz, float cutoff_freq_hz){
+  if(filter != nullptr) filter->init(sample_freq_hz, cutoff_freq_hz);
 }
 
 inline Vec3<float> lpf_apply(LowPassFilter1stOrder* filter, const Vec3<float>& x_curr){
-  if(filter == nullptr) return x_curr;
-
-  if(!filter->initialized){
-    filter->x_prev = x_curr;
-    filter->y_prev = x_curr;
-    filter->initialized = true;
-    return x_curr;
-  }
-
-  // Leverages Vec3<T> (Matrix<T, 3, 1>) overloaded operators with internal SIMD acceleration
-  Vec3<float> y_curr = (x_curr + filter->x_prev) * filter->a - filter->y_prev * filter->b;
-
-  filter->x_prev = x_curr;
-  filter->y_prev = y_curr;
-
-  return y_curr;
+  return (filter != nullptr) ? filter->apply(x_curr) : x_curr;
 }
 
 // =============================================================================

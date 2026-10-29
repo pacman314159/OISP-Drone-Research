@@ -6,9 +6,9 @@
 // STATE ESTIMATOR
 // =============================================================================
 
-class AttitudeEKF {
+class AttitudeEKFEngine {
 public:
-  AttitudeEKF();
+  AttitudeEKFEngine();
 
   void reset();
   void predict(float dt, const Vec3<float>& gyro_deg_s); // dt in s, gyro in deg/s
@@ -37,9 +37,9 @@ private:
 // VERTICAL VELOCITY & ALTITUDE ESTIMATOR
 // =============================================================================
 
-class AltitudeEKF {
+class AltitudeEKFEngine {
 public:
-  AltitudeEKF();
+  AltitudeEKFEngine();
 
   void reset();
   void set_reference_pressure(float p0_pa);                                // Ground reference pressure P0 (Pa)

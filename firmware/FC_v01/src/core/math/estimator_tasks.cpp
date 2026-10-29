@@ -5,10 +5,7 @@
 #include "middleware/ipc.h"
 #include "middleware/critical_section.h"
 #include "middleware/sysview_tracing.h"
-
-// Global EKF Instances
-AttitudeEKF g_ekf;
-AltitudeEKF g_alt_ekf;
+#include "core/sensor/calib.h"
 
 // =============================================================================
 // LAYER 4 FREERTOS TASK RUNNERS (DUAL-TASK ARCHITECTURE - OPTION B)
@@ -16,6 +13,7 @@ AltitudeEKF g_alt_ekf;
 
 // High-Speed Pilot Task (500 Hz): Gyro Integration & Gravity Accel Update
 void ekf_roll_pitch_task(void* arg){
+  AttitudeEKFEngine* ekf = static_cast<AttitudeEKFEngine*>(arg);
   const uint32_t task_id = TASK_EKF_ROLL_PITCH_ID;
   const TickType_t period_ticks = pdMS_TO_TICKS(1000 / TASK_EKF_ROLL_PITCH_FREQ_HZ);
 
@@ -28,7 +26,7 @@ void ekf_roll_pitch_task(void* arg){
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
-    if(accel.empty() || gyro.empty() || filtered_accel_gyro_timestamp.empty()) continue;
+    if(ekf == nullptr || accel.empty() || gyro.empty() || filtered_accel_gyro_timestamp.empty()) continue;
 
     SYSVIEW_START(task_id); //=========================================================================
 
@@ -41,11 +39,11 @@ void ekf_roll_pitch_task(void* arg){
     if(dt <= 0.0f || dt > 0.05f) dt = 1.0f / static_cast<float>(TASK_EKF_ROLL_PITCH_FREQ_HZ);
 
     if(xSemaphoreTake(ekf_state_mutex, pdMS_TO_TICKS(5)) == pdTRUE){
-      g_ekf.predict(dt, g_sample);
-      g_ekf.update_accel(a_sample);
+      ekf->predict(dt, g_sample);
+      ekf->update_accel(a_sample);
 
-      Vec4 q = g_ekf.get_quaternion();
-      Vec3<float> euler = g_ekf.get_euler_angles();
+      Vec4 q = ekf->get_quaternion();
+      Vec3<float> euler = ekf->get_euler_angles();
 
       xSemaphoreGive(ekf_state_mutex);
 
@@ -60,6 +58,7 @@ void ekf_roll_pitch_task(void* arg){
 
 // Low-Speed Navigator Task (100 Hz): Heading Magnetometer Update
 void ekf_yaw_task(void* arg){
+  AttitudeEKFEngine* ekf = static_cast<AttitudeEKFEngine*>(arg);
   const uint32_t task_id = TASK_EKF_YAW_ID;
   const TickType_t period_ticks = pdMS_TO_TICKS(1000 / TASK_EKF_YAW_FREQ_HZ);
 
@@ -72,7 +71,7 @@ void ekf_yaw_task(void* arg){
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
-    if(mag.empty() || filtered_mag_timestamp.empty()) continue;
+    if(ekf == nullptr || mag.empty() || filtered_mag_timestamp.empty()) continue;
 
     uint32_t ts_us = filtered_mag_timestamp.front();
     if(ts_us == last_mag_ts_us) continue; // Skip redundant updates if no new sample
@@ -83,7 +82,7 @@ void ekf_yaw_task(void* arg){
     last_mag_ts_us = ts_us;
 
     if(xSemaphoreTake(ekf_state_mutex, pdMS_TO_TICKS(5)) == pdTRUE){
-      g_ekf.update_mag(m_sample);
+      ekf->update_mag(m_sample);
       xSemaphoreGive(ekf_state_mutex);
     }
 
@@ -93,6 +92,7 @@ void ekf_yaw_task(void* arg){
 
 // Medium-Speed Vertical Velocity & Altitude Task (100 Hz): Accel + Quat Predict, Baro Update
 void ekf_altitude_task(void* arg){
+  AltitudeEKFEngine* alt_ekf = static_cast<AltitudeEKFEngine*>(arg);
   const uint32_t task_id = TASK_EKF_ALTITUDE_ID;
   const TickType_t period_ticks = pdMS_TO_TICKS(1000 / TASK_EKF_ALTITUDE_FREQ_HZ);
 
@@ -106,7 +106,7 @@ void ekf_altitude_task(void* arg){
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
-    if(accel.empty() || att_quat.empty() || filtered_accel_gyro_timestamp.empty()) continue;
+    if(alt_ekf == nullptr || accel.empty() || att_quat.empty() || filtered_accel_gyro_timestamp.empty()) continue;
 
     SYSVIEW_START(task_id); //=========================================================================
 
@@ -118,27 +118,30 @@ void ekf_altitude_task(void* arg){
     last_predict_ts_us = ts_us;
     if(dt <= 0.0f || dt > 0.05f) dt = 1.0f / static_cast<float>(TASK_EKF_ALTITUDE_FREQ_HZ);
 
-    if(xSemaphoreTake(ekf_state_mutex, pdMS_TO_TICKS(5)) == pdTRUE){
-      // 1. Predict Step (100 Hz): Quaternion-projected inertial acceleration
-      g_alt_ekf.predict(dt, a_sample, q_sample);
-
-      // 2. Barometer Update Step (50 Hz): Non-blocking check for fresh pressure reading
-      if(!pressure.empty() && !pressure_timestamp.empty()){
-        uint32_t baro_ts = pressure_timestamp.front();
-        if(baro_ts != last_baro_ts_us){
-          last_baro_ts_us = baro_ts;
-          float p = pressure.front();
-          g_alt_ekf.update_baro(p);
-        }
-      }
-
-      Vec3<float> output = g_alt_ekf.get_output_vector();
-      xSemaphoreGive(ekf_state_mutex);
-
-      // 3. Publish to Layer 3 IPC ring buffers
-      alt_state.push(output);
-      alt_timestamp.push(ts_us);
+    // Check for ground reference pressure updates (Option A: from calibration / READY state)
+    float target_p0 = calib_data.baro_ref_pa;
+    if(target_p0 > 0.0f && fabsf(target_p0 - alt_ekf->get_reference_pressure()) > 0.01f){
+      alt_ekf->set_reference_pressure(target_p0);
     }
+
+    // 1. Predict Step (100 Hz): Quaternion-projected inertial acceleration
+    alt_ekf->predict(dt, a_sample, q_sample);
+
+    // 2. Barometer Update Step (50 Hz): Non-blocking check for fresh pressure reading
+    if(!pressure.empty() && !pressure_timestamp.empty()){
+      uint32_t baro_ts = pressure_timestamp.front();
+      if(baro_ts != last_baro_ts_us){
+        last_baro_ts_us = baro_ts;
+        float p = pressure.front();
+        alt_ekf->update_baro(p);
+      }
+    }
+
+    Vec3<float> output = alt_ekf->get_output_vector();
+
+    // 3. Publish to Layer 3 IPC ring buffers
+    alt_state.push(output);
+    alt_timestamp.push(ts_us);
 
     SYSVIEW_END(task_id); //=========================================================================
   }

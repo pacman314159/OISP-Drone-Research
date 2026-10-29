@@ -2,10 +2,8 @@
 #include "core/sensor/calib.h"
 #include "core/sensor/calib_tasks.h"
 #include "core/math/ellipsoid_fit.h"
-#include "core/math/estimator_tasks.h"
 #include "config.h"
 #include "middleware/ipc.h"
-#include "middleware/sysview_tracing.h"
 
 // =============================================================================
 // SINGULAR CALIBRATION TASKS
@@ -53,8 +51,6 @@ void task_calib_gyro(void* arg){
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
-    SYSVIEW_START(TASK_CALIB_GYRO_ID);
-
     if(!gyro_raw.empty()){
       sum_gyro += gyro_raw.front();
       sample_count++;
@@ -73,8 +69,6 @@ void task_calib_gyro(void* arg){
     }
 
     if(sample_count >= target_samples) completed = true;
-
-    SYSVIEW_END(TASK_CALIB_GYRO_ID);
   }
 
   // Calculate average zero-rate bias offset and commit to Flash NVS
@@ -141,8 +135,6 @@ void task_calib_baro(void* arg){
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
-    SYSVIEW_START(TASK_CALIB_BARO_ID);
-
     if(!pressure.empty()){
       uint32_t current_ts = pressure_timestamp.front();
       if(current_ts != last_baro_ts){
@@ -168,18 +160,12 @@ void task_calib_baro(void* arg){
     }
 
     if(sample_count >= target_samples) completed = true;
-
-    SYSVIEW_END(TASK_CALIB_BARO_ID);
   }
 
   // Calculate ground reference P0 and commit to Flash NVS
   float avg_p0 = (sample_count > 0) ? static_cast<float>(sum_pressure / static_cast<double>(sample_count)) : BARO_SEA_LEVEL_PRESSURE_PA;
   calib_get_data().baro_ref_pa = avg_p0;
   bool saved = calib_save_to_nvs();
-  if(xSemaphoreTake(ekf_state_mutex, pdMS_TO_TICKS(10)) == pdTRUE){
-    g_alt_ekf.set_reference_pressure(avg_p0);
-    xSemaphoreGive(ekf_state_mutex);
-  }
   Serial.printf("[CALIB_BARO] Ground Reference P0: %.2f Pa. Saved to NVS: %s\n",
                 avg_p0, saved ? "SUCCESS" : "FAILED");
 
@@ -255,8 +241,6 @@ void task_calib_accel(void* arg){
     TickType_t now = xTaskGetTickCount();
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
-
-    SYSVIEW_START(TASK_CALIB_ACCEL_ID);
 
     loop_counter++;
 
@@ -384,8 +368,6 @@ void task_calib_accel(void* arg){
       };
       xQueueSend(calib_report_queue, &msg, 0);
     }
-
-    SYSVIEW_END(TASK_CALIB_ACCEL_ID);
   }
 
   // Phase 2: Iterative 6-Parameter Axis-Aligned Ellipsoid Fit (SIMD Adam)
@@ -414,8 +396,6 @@ void task_calib_accel(void* arg){
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
-    SYSVIEW_START(TASK_CALIB_ACCEL_ID);
-
     // Compute time-sliced Adam optimization epochs
     opt_done = ellipsoid_fit_6param_step(fit_state, accel_cloud, CALIB_ACCEL_SAMPLE_COUNT,
                                          CALIB_ACCEL_EPOCHS_PER_CYCLE, CALIB_ACCEL_ORIENTATIONS_COUNT);
@@ -431,8 +411,6 @@ void task_calib_accel(void* arg){
       };
       xQueueSend(calib_report_queue, &solver_msg, 0);
     }
-
-    SYSVIEW_END(TASK_CALIB_ACCEL_ID);
   }
 
   // Phase 3: Extract parameters, package 6-DOF model, and save to Flash NVS
@@ -519,8 +497,6 @@ void task_calib_mag(void* arg){
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
-    SYSVIEW_START(TASK_CALIB_MAG_ID);
-
     loop_counter++;
 
     // Ingest latest un-filtered raw measurement from ipc.h
@@ -566,8 +542,6 @@ void task_calib_mag(void* arg){
                       cloud_count, CALIB_MAG_MIN_SAMPLES);
       }
     }
-
-    SYSVIEW_END(TASK_CALIB_MAG_ID);
   }
 
   // Phase 2: Iterative 3D Rotated Ellipsoid Fit Numerical Optimization (SIMD Adam)
@@ -595,8 +569,6 @@ void task_calib_mag(void* arg){
     if((now - last_wake_time) > (period_ticks * 2)) last_wake_time = now;
     vTaskDelayUntil(&last_wake_time, period_ticks);
 
-    SYSVIEW_START(TASK_CALIB_MAG_ID);
-
     // Compute time-sliced Adam optimization epochs
     opt_done = ellipsoid_fit_9param_step(fit_state, mag_cloud, cloud_count,
                                          CALIB_MAG_EPOCHS_PER_CYCLE, CALIB_MAG_MIN_SAMPLES);
@@ -612,8 +584,6 @@ void task_calib_mag(void* arg){
       };
       xQueueSend(calib_report_queue, &solver_msg, 0);
     }
-
-    SYSVIEW_END(TASK_CALIB_MAG_ID);
   }
 
   // Phase 3: Extract parameters, package unit sphere matrix, and save to Flash NVS

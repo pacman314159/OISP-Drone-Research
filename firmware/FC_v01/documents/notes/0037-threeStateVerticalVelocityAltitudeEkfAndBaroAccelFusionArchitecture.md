@@ -1,6 +1,6 @@
 ---
 id: "0037"
-title: 3-State Vertical Velocity & Altitude Extended Kalman Filter (AltitudeEKF), Nonlinear Baro Observation & Layer 4 RTOS Task Architecture Specification
+title: 3-State Vertical Velocity & Altitude Extended Kalman Filter (AltitudeEKFEngine), Dependency Injection & Layer 4 RTOS Task Architecture Specification
 author: Drone Research Team / Developer
 date: 2026-10-26
 time: 08:00:00 +07:00
@@ -9,6 +9,7 @@ references:
   - "[[0000-firmwareStructureLayerDecision]]"
   - "[[0001-taskConfigMiddlewareIsrDecision]]"
   - "[[0002-taskEnumsAndHalAbstractionDecision]]"
+  - "[[0006-taskCreationConfigEnumsAndTaskArgsPassingDecision]]"
   - "[[0017-bmp180TwoStepI2cTransactionAndBaroDaqArchitecture]]"
   - "[[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]]"
   - "[[0022-unifiedPressureRingBufferSensorVariableConsolidationAndAttitudeTaskRemoval]]"
@@ -19,7 +20,7 @@ references:
   - "[[0036-layer4SafetyDomainAndPreflightGatesDecoupling]]"
 ---
 
-# Zettel 0037: 3-State Vertical Velocity & Altitude Extended Kalman Filter (AltitudeEKF), Nonlinear Baro Observation & Layer 4 RTOS Task Architecture Specification
+# Zettel 0037: 3-State Vertical Velocity & Altitude Extended Kalman Filter (AltitudeEKFEngine), Dependency Injection & Layer 4 RTOS Task Architecture Specification
 
 ## 1. Metadata & Scope
 - **ID**: `0037`
@@ -27,7 +28,7 @@ references:
 - **Date**: 2026-10-26
 - **Time**: 08:00:00 +07:00
 - **Status**: Approved & Implemented
-- **References**: `[Note 0000]`, `[Note 0001]`, `[Note 0002]`, `[Note 0017]`, `[Note 0022]`, `[Note 0026]`, `[Note 0032]`, `[Note 0036]`
+- **References**: `[Note 0000]`, `[Note 0001]`, `[Note 0002]`, `[Note 0006]`, `[Note 0017]`, `[Note 0022]`, `[Note 0026]`, `[Note 0032]`, `[Note 0036]`
 
 ---
 
@@ -103,7 +104,7 @@ From offline statistical processing of flight blackbox dataset `LOG_0032.BIN` ($
 
 ---
 
-## 5. RTOS Task Topology & Inter-Process Communication
+## 5. RTOS Task Topology, Inter-Process Communication & Dependency Injection
 1. **Centralized Task Parameters (`include/config.h`)**:
    - `TASK_EKF_ALTITUDE_NAME = "EKF_ALTITUDE"`
    - `TASK_EKF_ALTITUDE_ID` in `enum TaskIDs`
@@ -111,26 +112,41 @@ From offline statistical processing of flight blackbox dataset `LOG_0032.BIN` ($
    - `TASK_EKF_ALTITUDE_PRIORITY = 2` (Medium priority, Core math domain)
    - `TASK_EKF_ALTITUDE_FREQ_HZ = 100` (10 ms cadence)
    - `TASK_EKF_ALTITUDE_STACK_SIZE = 4096`
-2. **Layer 3 Middleware IPC (`src/middleware/ipc.h`, `ipc.cpp`)**:
+2. **Layer 5 Dependency Injection ([Note 0006])**:
+   - EKF calculation engines (`AttitudeEKFEngine` and `AltitudeEKFEngine`) are instantiated statically in Layer 5 (`src/app/app.cpp`).
+   - Pointers (`&att_ekf_engine`, `&alt_ekf_engine`) are passed into FreeRTOS tasks via `void* arg` during `xTaskCreatePinnedToCore`.
+   - Global `extern` instances spanning across layers are eliminated entirely.
+3. **Layer 3 Middleware IPC (`src/middleware/ipc.h`, `ipc.cpp`)**:
    - `RingBuffer<Vec3<float>, RING_BUF_SIZE> alt_state;` (`[z, v_z, a_z_inertial]`)
    - `RingBuffer<uint32_t, RING_BUF_SIZE> alt_timestamp;`
-   - Thread safety guaranteed via `ekf_state_mutex`.
-3. **Ground Reference Calibration Lifecycle (Option A)**:
-   - **Active Calibration (`task_calib_baro`)**: Averages 150 pressure samples ($3\,\text{s}$ at $50\,\text{Hz}$), saves `baro_ref_pa` to Flash NVS, and updates `g_alt_ekf.set_reference_pressure(p0)`.
-   - **Pre-Flight Launch Pad Readiness (`handle_state_ready`)**: Captures local stationary ground pressure upon entering `READY` state, dynamically resetting altitude state to $0.0\,\text{m}$ AGL right before takeoff.
+   - Thread safety guaranteed via lock-free ring buffer design; `AltitudeEKFEngine` is strictly thread-confined to `ekf_altitude_task`, requiring zero mutex synchronization and eliminating lock contention with the 500 Hz attitude loop.
+4. **Ground Reference Calibration Lifecycle (Option A - Pure IPC Decoupled)**:
+   - **Active Calibration (`task_calib_baro`)**: Averages 150 pressure samples ($3\,\text{s}$ at $50\,\text{Hz}$), commits `calib_data.baro_ref_pa` to Flash NVS.
+   - **Pre-Flight Launch Pad Readiness (`handle_state_ready`)**: Captures local stationary ground pressure upon entering `READY` state, updating `calib_data.baro_ref_pa`.
+   - **Estimator Ingestion**: `ekf_altitude_task` samples `calib_data.baro_ref_pa` at 100 Hz, calling `alt_ekf->set_reference_pressure(p0)` when changes are observed, seamlessly resetting altitude state to $0.0\,\text{m}$ AGL right before takeoff without cross-layer coupling.
+
+5. **Telemetry & Blackbox Downlink Integration**:
+   - **BLE Telemetry Streaming ([Note 0010], [Note 0021])**: Added `BLE_CHAR_ALT_UUID`, `BleAltPacket` (16 bytes: `ts` + `[z, vz, az_inertial]`), and `BLE_TELEM_MASK_ALT` into `ble_telem_task()`.
+   - **SD Card Blackbox Logging ([Note 0018])**: Defined `PktAlt` (20 bytes: `type` 0x0B + `timestamp_us` + 3-byte pad + `Vec3<float> state`) logged into `sd_logger_task()` via `LOG_MASK_ALT`.
+   - **Offline Decoding**: Updated `analyzers/universal_flight_analyzer.py` to decode `PKT_TYPE_ALT` records into `log_data.alt_state`.
 
 ---
 
 ## 6. Verification & Traceability
 - **Mathematical Replay (`verify_altitude_ekf.py`)**: Replayed 15,404 samples ($30.81\,\text{s}$) of real flight blackbox data from `LOG_0032.BIN`. Verified $24.15\%$ peak-to-peak variance reduction over raw hypsometric baro altitude, zero velocity drift ($\bar{v}_z = -0.0177\,\text{m/s}$), and residual accelerometer bias estimation ($\bar{b}_{a,z} = 0.0108\,\text{m/s}^2$).
 - **File Modifications**:
-  - `include/config.h`: Added task enums and EKF altitude noise constants.
-  - `src/middleware/ipc.h`, `ipc.cpp`: Added `baro_ref_pa` to `SensorCalibrationData` and declared `alt_state`, `alt_timestamp`.
-  - `src/middleware/sysview_tracing.cpp`: Registered SystemView trace marker.
-  - `src/core/sensor/calib.cpp`: Added NVS default reset and bounds validation.
-  - `src/core/sensor/calib_tasks.cpp`: Completed `task_calib_baro` averaging and NVS save.
-  - `src/core/sensor/sensor_preprocess_tasks.cpp`: Seeded `g_alt_ekf` from NVS on boot.
-  - `src/core/math/estimators.h`, `estimators.cpp`: Implemented `AltitudeEKF` class.
-  - `src/core/math/estimator_tasks.h`, `estimator_tasks.cpp`: Implemented `ekf_altitude_task` (100 Hz).
-  - `src/app/app.cpp`: Spawned `ekf_altitude_task`.
-  - `src/app/fsm.cpp`: Integrated live ground pressure calibration in `handle_state_ready()` and state transition.
+   - `include/config.h`: Added task enums, EKF altitude noise constants, `BLE_TELEM_MASK_ALT`, `BLE_CHAR_ALT_UUID`, `PKT_TYPE_ALT`, and `LOG_MASK_ALT`.
+   - `src/middleware/ipc.h`, `ipc.cpp`: Added `baro_ref_pa` to `SensorCalibrationData` and declared `alt_state`, `alt_timestamp`.
+   - `src/middleware/sysview_tracing.cpp`: Registered SystemView trace marker.
+   - `src/core/sensor/calib.cpp`: Added NVS default reset and bounds validation.
+   - `src/core/sensor/calib_tasks.cpp`: Completed `task_calib_baro` averaging and NVS save.
+   - `src/core/sensor/sensor_preprocess_tasks.cpp`: Loads calibration data from NVS on boot.
+   - `src/core/math/estimators.h`, `estimators.cpp`: Implemented `AttitudeEKFEngine` and `AltitudeEKFEngine`.
+   - `src/core/math/estimator_tasks.h`, `estimator_tasks.cpp`: Implemented `ekf_roll_pitch_task`, `ekf_yaw_task`, and `ekf_altitude_task` (100 Hz) receiving engine instances via `void* arg`.
+   - `src/app/app.cpp`: Statically instantiated EKF engines and passed via `void* arg` to tasks.
+   - `src/app/fsm.cpp`: Integrated live ground pressure calibration in `handle_state_ready()` and state transition via `calib_data.baro_ref_pa`.
+   - `src/drivers/telemetry/ble_packet.h`: Added `BleAltPacket` (16 bytes).
+   - `src/drivers/telemetry/ble_driver.cpp`: Registered `p_alt_char` characteristic and subscription dispatch.
+   - `src/core/telemetry/ble_telem_tasks.cpp`: Added `s_ch_alt` telemetry channel.
+   - `src/core/blackbox/sd_logger_task.cpp`: Added `PktAlt` (20 bytes) logging logic for `LOG_MASK_ALT`.
+   - `analyzers/universal_flight_analyzer.py`: Added `PKT_TYPE_ALT` parser.

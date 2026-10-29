@@ -8,10 +8,11 @@
 #include "middleware/sysview_tracing.h"
 #include "drivers/led/ws2812.h"
 #include "core/interface/user_button.h"
+#include "core/interface/interface_tasks.h"
 #include "core/sensor/calib_tasks.h"
 #include "core/sensor/calib.h"
 #include "core/safety/preflight_checks.h"
-#include "core/math/estimator_tasks.h"
+#include "core/blackbox/sd_logger_task.h"
 
 // =============================================================================
 // INTERNAL FSM STATE & SYNCHRONIZATION
@@ -69,19 +70,14 @@ static const TransitRule TRANSITION_RULES[] = {
     "Rule_Preflight_To_Calib"
   },
 
-  // 3. CALIB -> PREFLIGHT (Calibration finished successfully or aborted)
-  {
-    CALIB,
-    PREFLIGHT,
-    EVT_CALIB_COMPLETE,
-    EVT_NONE,
-    MatchPolicy::ANY,
-    EVT_EMERGENCY_SHUTDOWN | EVT_CALIB_FAILED,
-    MatchPolicy::ANY,
-    "Rule_Calib_To_Preflight"
-  },
+  // Architectural Design Decision (Zettel 0040):
+  // No transition rule exists from CALIB back to PREFLIGHT or normal flight states.
+  // Calibration permanently modifies persistent sensor bias/scale calibration in Flash NVS.
+  // To guarantee deterministic state, flush sensor preprocessing pipelines, and prevent
+  // stale calibration data leakage into flight loops, exiting CALIB requires a clean system
+  // reboot (either via AUTO_REBOOT_AFTER_CALIBRATION or a manual power-cycle/reset).
 
-  // 4. PREFLIGHT -> READY (All 6 Mandatory Safety Gates Passed; No Fail Blockers)
+  // 3. PREFLIGHT -> READY (All 6 Mandatory Safety Gates Passed; No Fail Blockers)
   {
     PREFLIGHT,
     READY,
@@ -230,10 +226,7 @@ static void fsm_on_state_transition(SystemState from, SystemState to){
       if(!pressure.empty()){
         float p_ground = pressure.front();
         if(p_ground >= SENSOR_STREAM_BARO_MIN_PA && p_ground <= SENSOR_STREAM_BARO_MAX_PA){
-          if(xSemaphoreTake(ekf_state_mutex, pdMS_TO_TICKS(10)) == pdTRUE){
-            g_alt_ekf.set_reference_pressure(p_ground);
-            xSemaphoreGive(ekf_state_mutex);
-          }
+          calib_data.baro_ref_pa = p_ground;
           s_ready_baro_calibrated = true;
           Serial.printf("[FSM] READY Transition: Calibrated barometer ground reference P0 to %.2f Pa (Option A)\n", p_ground);
         }
@@ -463,6 +456,9 @@ static void handle_state_calib(uint32_t loop_count){
     }
 
     case CALIB_SUBSTATE_DONE: {
+      // Architectural Design Decision (Zettel 0040): Terminal calibration state.
+      // System intentionally remains in CALIB until rebooted to ensure a deterministic cold-boot
+      // with newly written NVS calibration parameters and flush all estimator/filter buffers.
       if constexpr(AUTO_REBOOT_AFTER_CALIBRATION){
         Serial.println("[FSM_CALIB] AUTO_REBOOT enabled. Rebooting in 2.0 seconds...");
         vTaskDelay(pdMS_TO_TICKS(2000));
@@ -472,6 +468,8 @@ static void handle_state_calib(uint32_t loop_count){
     }
 
     case CALIB_SUBSTATE_FAILED: {
+      // Architectural Design Decision (Zettel 0040): Terminal calibration failure state.
+      // Drone holds in CALIB with visual error LED cue until manually reset or power-cycled.
       break;
     }
   }
@@ -542,10 +540,7 @@ static void handle_state_ready(){
   if(!s_ready_baro_calibrated && !pressure.empty()){
     float p_ground = pressure.front();
     if(p_ground >= SENSOR_STREAM_BARO_MIN_PA && p_ground <= SENSOR_STREAM_BARO_MAX_PA){
-      if(xSemaphoreTake(ekf_state_mutex, pdMS_TO_TICKS(10)) == pdTRUE){
-        g_alt_ekf.set_reference_pressure(p_ground);
-        xSemaphoreGive(ekf_state_mutex);
-      }
+      calib_data.baro_ref_pa = p_ground;
       s_ready_baro_calibrated = true;
       Serial.printf("[FSM] READY State: Calibrated barometer ground reference P0 to %.2f Pa (Option A)\n", p_ground);
     }

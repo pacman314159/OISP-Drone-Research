@@ -3,9 +3,10 @@
 
 // OTA Protocol Commands & Status Response Codes
 enum OtaCommandCode : uint8_t {
-  OTA_CMD_START = 0x01,
-  OTA_CMD_END   = 0x02,
-  OTA_CMD_ABORT = 0x03
+  OTA_CMD_START  = 0x01,
+  OTA_CMD_END    = 0x02,
+  OTA_CMD_ABORT  = 0x03,
+  OTA_CMD_REBOOT = 0x04
 };
 
 enum OtaResponseCode : uint8_t {
@@ -40,3 +41,11 @@ struct OtaEndPayload {
 
 constexpr uint16_t OTA_CHUNK_EOF_MARKER   = 0x0000;
 constexpr uint16_t OTA_CHUNK_ABORT_MARKER = 0xFFFE;
+
+struct OtaDataChunk {
+  uint16_t length;
+  uint8_t  data[512];
+};
+
+extern OtaStartPayload ota_start_payload;
+extern volatile bool   ota_abort_requested;

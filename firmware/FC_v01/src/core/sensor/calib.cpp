@@ -1,4 +1,8 @@
 #include "core/sensor/calib.h"
+#include "middleware/ipc.h"
+
+SensorCalibrationData calib_data = {};
+FlashStorageDriver*   calib_storage = nullptr;
 
 static constexpr const char* CALIB_NAMESPACE = "sensor_calib";
 static constexpr const char* CALIB_KEY       = "calib_data";

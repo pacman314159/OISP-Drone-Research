@@ -16,6 +16,7 @@ references:
   - "[[0025-rotEllipsoidMagCalibSimdAdamEkfUnitSphereStackLifecycle]]"
   - "[[0026-sixPointAccelCalibSimdEllipsoidFitFsmLedArchitecture]]"
   - "[[0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture]]"
+  - "[[0038-osalLayer3IpcDecouplingAndInterfaceTasksConsolidation]]"
 ---
 
 # Zettel 0023: FSM-Centric Sensor Calibration Orchestration and RGB LED Status Architecture Specification
@@ -43,7 +44,7 @@ In previous iterations, RGB LED feedback was scattered across ad-hoc modules (di
 ## 3. Core Architectural Decisions
 
 ### Rule 1: RGB LED Command Queue & Standalone Color Palette
-- The WS2812 driver is driven by a dedicated, low-priority pattern worker: `TASK_STATUS_LED` (`src/core/interface/led_task.cpp`).
+- The WS2812 driver is driven by a dedicated, low-priority pattern worker: `TASK_STATUS_LED` (`src/core/interface/interface_tasks.cpp`).
 - The worker listens asynchronously to `led_cmd_queue` (`QueueHandle_t`), sleeping on `portMAX_DELAY` for static states (`LED_PATTERN_OFF`, `LED_PATTERN_SOLID`) and using 20 ms ticks for animated states (`LED_PATTERN_BLINK_SLOW`, `LED_PATTERN_BLINK_FAST`, `LED_PATTERN_BREATHE`, `LED_PATTERN_FLASH_BURST`).
 - A 14-color standalone palette (`PaletteColorId`) provides discrete visual identifiers:
   - `PALETTE_CYAN`: Gyroscope

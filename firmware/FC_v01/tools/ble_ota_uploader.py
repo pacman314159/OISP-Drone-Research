@@ -29,9 +29,10 @@ BLE_CHAR_OTA_DATA_UUID    = "2340888a-1f40-4cd8-9b89-ca8d45f8a5b0"
 DEFAULT_DEVICE_NAME       = "FC_v02"
 
 # Protocol OpCodes
-CMD_OTA_START = 0x01
-CMD_OTA_END   = 0x02
-CMD_OTA_ABORT = 0x03
+CMD_OTA_START  = 0x01
+CMD_OTA_END    = 0x02
+CMD_OTA_ABORT  = 0x03
+CMD_OTA_REBOOT = 0x04
 
 RESP_OK         = 0x00
 RESP_READY_DATA = 0x01
@@ -129,7 +130,7 @@ class BleOtaUploader:
         print(f"[*] Firmware Binary: {self.bin_path}")
         print(f"[*] Image Size: {fw_size:,} bytes ({fw_size / 1024:.2f} KB)")
         print(f"[*] CRC32: 0x{crc32_val:08X}")
-        print(f"[*] Scanning for BLE device '{self.device_name}' (listening window is 10s after FC boot)...")
+        print(f"[*] Scanning for BLE device '{self.device_name}' (listening in 10s boot window or DEVELOPMENT mode)...")
 
         device = None
         scan_attempts = 0
@@ -144,8 +145,7 @@ class BleOtaUploader:
 
         if not device:
             print("\n[!] Error: Flight Controller not found!", file=sys.stderr)
-            print("[!] Remember: The OTA window only listens for 10 seconds after FC boot/power-on.", file=sys.stderr)
-            print("[!] Please power-cycle / reset the FC, and run this upload immediately.", file=sys.stderr)
+            print("[!] Ensure FC is powered on and either within the 10-second boot window or in DEVELOPMENT mode.", file=sys.stderr)
             return False
 
         print(f"[+] Found FC device: {device.name} ({device.address})")
@@ -246,6 +246,13 @@ class BleOtaUploader:
                     pass
                 print("[*] Abort signal dispatched. Flight Controller is safely rolling back.")
                 return False
+            except Exception as e:
+                print(f"\n[!] BLE Communication Error during transfer: {e}", file=sys.stderr)
+                if self.error_occurred and self.error_message:
+                    print(f"[!] Flight Controller reported: {self.error_message}", file=sys.stderr)
+                elif not client.is_connected:
+                    print("[!] Flight Controller disconnected during transfer (link supervision timeout or MCU reset).", file=sys.stderr)
+                return False
 
             if self.error_occurred:
                 print(f"[!] Update Failed: {self.error_message}", file=sys.stderr)
@@ -258,6 +265,28 @@ class BleOtaUploader:
             return True
 
 
+async def run_reboot(device_name=DEFAULT_DEVICE_NAME):
+    print(f"[*] Scanning for BLE device '{device_name}' to issue remote reboot...")
+    device = await BleakScanner.find_device_by_filter(
+        lambda d, adv: (d.name and device_name in d.name) or (adv.local_name and device_name in adv.local_name),
+        timeout=5.0
+    )
+    if not device:
+        print("[!] Error: Flight Controller not found for reboot.", file=sys.stderr)
+        return False
+    print(f"[+] Found FC device: {device.name} ({device.address}). Connecting...")
+    async with BleakClient(device, timeout=8.0) as client:
+        if not client.is_connected:
+            print("[!] Error: Failed to connect to BLE device.", file=sys.stderr)
+            return False
+        payload = struct.pack("<B", CMD_OTA_REBOOT)
+        print("[*] Dispatching CMD_OTA_REBOOT...")
+        await client.write_gatt_char(BLE_CHAR_OTA_CONTROL_UUID, payload, response=False)
+        await asyncio.sleep(0.3)
+        print("[+] Flight Controller remote reboot dispatched successfully!")
+        return True
+
+
 def main():
     parser = argparse.ArgumentParser(description="Upload firmware to FC_v01/FC_v02 via BLE OTA")
     parser.add_argument("binary", nargs="?", help="Path to firmware.bin (optional, will auto-detect if omitted)")
@@ -265,8 +294,18 @@ def main():
     parser.add_argument("--name", default=DEFAULT_DEVICE_NAME, help=f"BLE device name (default: {DEFAULT_DEVICE_NAME})")
     parser.add_argument("--chunk", type=int, default=DEFAULT_CHUNK_SIZE, help=f"Chunk size in bytes (default: {DEFAULT_CHUNK_SIZE})")
     parser.add_argument("--window", type=int, default=DEFAULT_WINDOW_SIZE, help=f"Pipelined chunk window size before requiring ACK (default: {DEFAULT_WINDOW_SIZE}, set 1 for unpipelined)")
+    parser.add_argument("--reboot", action="store_true", help="Send remote reboot command to Flight Controller over BLE")
 
     args = parser.parse_args()
+
+    if args.reboot:
+        try:
+            success = asyncio.run(run_reboot(device_name=args.name))
+        except KeyboardInterrupt:
+            print("\n[!] Program interrupted by user. Exiting.")
+            sys.exit(130)
+        sys.exit(0 if success else 1)
+
     bin_arg = args.bin_flag if args.bin_flag else args.binary
     target_bin = find_firmware_binary(bin_arg)
 

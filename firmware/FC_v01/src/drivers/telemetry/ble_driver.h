@@ -14,3 +14,7 @@ bool send_ble_stream_notification(uint16_t mask_bit, const uint8_t* data, size_t
 bool send_ble_ota_response(const uint8_t* data, size_t len); // len: bytes
 bool is_ble_ota_active();
 void set_ble_ota_active(bool active);
+
+// OTA Trigger Authorization Callback (Dependency Inversion per [Note 0039])
+typedef bool (*BleOtaTriggerCallback)();
+void set_ble_ota_trigger_callback(BleOtaTriggerCallback cb);

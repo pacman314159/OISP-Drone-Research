@@ -2,7 +2,7 @@
 #include <cmath>
 #include "config.h"
 
-AttitudeEKF::AttitudeEKF(){
+AttitudeEKFEngine::AttitudeEKFEngine(){
   _earth_bx = EKF_EARTH_BX;
   _earth_bz = EKF_EARTH_BZ;
 
@@ -23,13 +23,13 @@ AttitudeEKF::AttitudeEKF(){
   reset();
 }
 
-void AttitudeEKF::reset(){
+void AttitudeEKFEngine::reset(){
   _x = Matrix<float, 7, 1>::zeros();
   _x(0, 0) = 1.0f; // Unit quaternion [q0, q1, q2, q3] = [1, 0, 0, 0], zero gyro biases
   _P_cov = Matrix<float, 7, 7>::identity() * 0.01f;
 }
 
-void AttitudeEKF::normalize_quaternion(){
+void AttitudeEKFEngine::normalize_quaternion(){
   Vec4 q{_x(0, 0), _x(1, 0), _x(2, 0), _x(3, 0)};
   q.normalize(); // Accelerated via hal_simd::dot_product and hal_simd::scale in matrix.h
   _x(0, 0) = q[0];
@@ -38,7 +38,7 @@ void AttitudeEKF::normalize_quaternion(){
   _x(3, 0) = q[3];
 }
 
-void AttitudeEKF::predict(float dt, const Vec3<float>& gyro_deg_s){
+void AttitudeEKFEngine::predict(float dt, const Vec3<float>& gyro_deg_s){
   float q0 = _x(0, 0), q1 = _x(1, 0), q2 = _x(2, 0), q3 = _x(3, 0);
   float dt2 = dt * 0.5f;
 
@@ -73,7 +73,7 @@ void AttitudeEKF::predict(float dt, const Vec3<float>& gyro_deg_s){
   _P_cov = (F_mat * _P_cov * F_mat.transpose()) + _Q_cov;
 }
 
-void AttitudeEKF::update_accel(const Vec3<float>& accel_g){
+void AttitudeEKFEngine::update_accel(const Vec3<float>& accel_g){
   Vec3<float> z_a = accel_g;
   z_a.normalize();
 
@@ -106,7 +106,7 @@ void AttitudeEKF::update_accel(const Vec3<float>& accel_g){
   normalize_quaternion();
 }
 
-void AttitudeEKF::update_mag(const Vec3<float>& mag_unit){
+void AttitudeEKFEngine::update_mag(const Vec3<float>& mag_unit){
   float q0 = _x(0, 0), q1 = _x(1, 0), q2 = _x(2, 0), q3 = _x(3, 0);
   float bx = _earth_bx, bz = _earth_bz;
 
@@ -137,7 +137,7 @@ void AttitudeEKF::update_mag(const Vec3<float>& mag_unit){
   normalize_quaternion();
 }
 
-Vec4 AttitudeEKF::get_quaternion() const {
+Vec4 AttitudeEKFEngine::get_quaternion() const {
   Vec4 q;
   q[0] = _x(0, 0);
   q[1] = _x(1, 0);
@@ -146,7 +146,7 @@ Vec4 AttitudeEKF::get_quaternion() const {
   return q;
 }
 
-Vec3<float> AttitudeEKF::get_euler_angles() const {
+Vec3<float> AttitudeEKFEngine::get_euler_angles() const {
   float q0 = _x(0, 0), q1 = _x(1, 0), q2 = _x(2, 0), q3 = _x(3, 0);
 
   // Roll (phi): rotation about body X-axis (-180 to +180 deg)
@@ -164,7 +164,7 @@ Vec3<float> AttitudeEKF::get_euler_angles() const {
   return Vec3<float>(roll, pitch, yaw);
 }
 
-Vec3<float> AttitudeEKF::get_gyro_bias() const {
+Vec3<float> AttitudeEKFEngine::get_gyro_bias() const {
   return Vec3<float>(_x(4, 0), _x(5, 0), _x(6, 0));
 }
 
@@ -172,7 +172,7 @@ Vec3<float> AttitudeEKF::get_gyro_bias() const {
 // LAYER 4 FLIGHT CORE & ALGORITHMS - VERTICAL VELOCITY & ALTITUDE ESTIMATOR
 // =============================================================================
 
-AltitudeEKF::AltitudeEKF(){
+AltitudeEKFEngine::AltitudeEKFEngine(){
   _p0_pa = BARO_SEA_LEVEL_PRESSURE_PA;
   _R_baro = EKF_ALT_DEFAULT_R_BARO_PA_VAR + EKF_ALT_DEFAULT_R_BARO_MARGIN;
 
@@ -184,14 +184,14 @@ AltitudeEKF::AltitudeEKF(){
   reset();
 }
 
-void AltitudeEKF::reset(){
+void AltitudeEKFEngine::reset(){
   _x = Matrix<float, 3, 1>::zeros();
   _P_cov = Matrix<float, 3, 3>::identity() * 0.1f;
   _P_cov(2, 2) = 0.01f;
   _az_inertial = 0.0f;
 }
 
-void AltitudeEKF::set_reference_pressure(float p0_pa){
+void AltitudeEKFEngine::set_reference_pressure(float p0_pa){
   if(p0_pa < SENSOR_STREAM_BARO_MIN_PA || p0_pa > SENSOR_STREAM_BARO_MAX_PA) return;
   _p0_pa = p0_pa;
   _x(0, 0) = 0.0f; // Reset altitude z = 0.0 m AGL
@@ -201,7 +201,7 @@ void AltitudeEKF::set_reference_pressure(float p0_pa){
   _P_cov(0, 1) = _P_cov(1, 0) = 0.0f;
 }
 
-void AltitudeEKF::predict(float dt, const Vec3<float>& accel_g, const Vec4& quat){
+void AltitudeEKFEngine::predict(float dt, const Vec3<float>& accel_g, const Vec4& quat){
   if(dt <= 0.0f || dt > 0.1f) return;
 
   float q0 = quat[0], q1 = quat[1], q2 = quat[2], q3 = quat[3];
@@ -236,7 +236,7 @@ void AltitudeEKF::predict(float dt, const Vec3<float>& accel_g, const Vec4& quat
   _P_cov = (F_mat * _P_cov * F_mat.transpose()) + _Q_cov;
 }
 
-void AltitudeEKF::update_baro(float pressure_pa){
+void AltitudeEKFEngine::update_baro(float pressure_pa){
   if(pressure_pa < SENSOR_STREAM_BARO_MIN_PA || pressure_pa > SENSOR_STREAM_BARO_MAX_PA) return;
 
   // Guard altitude ratio for numerical stability in barometric formula
@@ -283,4 +283,3 @@ void AltitudeEKF::update_baro(float pressure_pa){
   _P_cov(0, 2) = _P_cov(2, 0) = 0.5f * (_P_cov(0, 2) + _P_cov(2, 0));
   _P_cov(1, 2) = _P_cov(2, 1) = 0.5f * (_P_cov(1, 2) + _P_cov(2, 1));
 }
-

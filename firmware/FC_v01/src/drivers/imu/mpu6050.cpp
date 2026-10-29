@@ -113,10 +113,11 @@ bool MPU6050::enable_bypass(){
   return _i2c.write_reg(_dev_addr, REG_INT_CFG, int_cfg);
 }
 
-bool MPU6050::get_all_data_raw(Vec3<int16_t>& accel_raw_msb, Vec3<int16_t>& gyro_raw_msb, int16_t& temp_raw_msb){
+bool MPU6050::get_all_data_raw(int16_t accel_raw_msb[3], int16_t gyro_raw_msb[3], int16_t& temp_raw_msb){
+  if(accel_raw_msb == nullptr || gyro_raw_msb == nullptr) return false;
+
   uint8_t raw_buf[14];
-  if(!_i2c.read_reg_multi(_dev_addr, REG_ACCEL_X, raw_buf, 14))
-    return false;
+  if(!_i2c.read_reg_multi(_dev_addr, REG_ACCEL_X, raw_buf, 14)) return false;
 
   _accel_raw_x = static_cast<int16_t>((raw_buf[0] << 8) | raw_buf[1]);
   _accel_raw_y = static_cast<int16_t>((raw_buf[2] << 8) | raw_buf[3]);
@@ -126,35 +127,48 @@ bool MPU6050::get_all_data_raw(Vec3<int16_t>& accel_raw_msb, Vec3<int16_t>& gyro
   _gyro_raw_y  = static_cast<int16_t>((raw_buf[10] << 8) | raw_buf[11]);
   _gyro_raw_z  = static_cast<int16_t>((raw_buf[12] << 8) | raw_buf[13]);
 
-  accel_raw_msb.x = _accel_raw_x;
-  accel_raw_msb.y = _accel_raw_y;
-  accel_raw_msb.z = _accel_raw_z;
+  accel_raw_msb[0] = _accel_raw_x;
+  accel_raw_msb[1] = _accel_raw_y;
+  accel_raw_msb[2] = _accel_raw_z;
 
-  gyro_raw_msb.x = _gyro_raw_x;
-  gyro_raw_msb.y = _gyro_raw_y;
-  gyro_raw_msb.z = _gyro_raw_z;
+  gyro_raw_msb[0] = _gyro_raw_x;
+  gyro_raw_msb[1] = _gyro_raw_y;
+  gyro_raw_msb[2] = _gyro_raw_z;
 
   temp_raw_msb = _temp_raw;
 
   return true;
 }
 
-bool MPU6050::get_all_data(Vec3<float>& accel, Vec3<float>& gyro, float& temp){
-  Vec3<int16_t> accel_raw, gyro_raw;
+bool MPU6050::get_all_data(float accel[3], float gyro[3], float& temp){
+  if(accel == nullptr || gyro == nullptr) return false;
+
+  int16_t accel_raw[3], gyro_raw[3];
   int16_t temp_raw = 0;
 
-  if(!get_all_data_raw(accel_raw, gyro_raw, temp_raw))
-    return false;
+  if(!get_all_data_raw(accel_raw, gyro_raw, temp_raw)) return false;
 
-  accel.x = static_cast<float>(accel_raw.x);
-  accel.y = static_cast<float>(accel_raw.y);
-  accel.z = static_cast<float>(accel_raw.z);
-  accel *= _inv_accel_sens;
+  accel[0] = static_cast<float>(accel_raw[0]);
+  accel[1] = static_cast<float>(accel_raw[1]);
+  accel[2] = static_cast<float>(accel_raw[2]);
+#if (ENABLE_SIMD_ACCELERATION)
+  hal_simd::scale(accel, _inv_accel_sens, accel, 3);
+#else
+  accel[0] *= _inv_accel_sens;
+  accel[1] *= _inv_accel_sens;
+  accel[2] *= _inv_accel_sens;
+#endif
 
-  gyro.x = static_cast<float>(gyro_raw.x);
-  gyro.y = static_cast<float>(gyro_raw.y);
-  gyro.z = static_cast<float>(gyro_raw.z);
-  gyro *= _inv_gyro_sens;
+  gyro[0] = static_cast<float>(gyro_raw[0]);
+  gyro[1] = static_cast<float>(gyro_raw[1]);
+  gyro[2] = static_cast<float>(gyro_raw[2]);
+#if (ENABLE_SIMD_ACCELERATION)
+  hal_simd::scale(gyro, _inv_gyro_sens, gyro, 3);
+#else
+  gyro[0] *= _inv_gyro_sens;
+  gyro[1] *= _inv_gyro_sens;
+  gyro[2] *= _inv_gyro_sens;
+#endif
 
   temp = (static_cast<float>(temp_raw) / 340.0f) + 36.53f;
 

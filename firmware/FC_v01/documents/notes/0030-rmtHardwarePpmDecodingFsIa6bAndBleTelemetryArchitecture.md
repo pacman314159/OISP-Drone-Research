@@ -11,16 +11,16 @@ references:
   - "[[0002-taskEnumsAndHalAbstractionDecision]]"
   - "[[0006-taskCreationConfigEnumsAndTaskArgsPassingDecision]]"
   - "[[0009-distinctBleGattCharacteristicUuidIsolation]]"
-  - "[[0010-bleTelemetryMinPacketFrequencyAndDualTriggerFlushes]]"
-  - "[[0011-variableBleTelemetryPacketParsingAndZeroHandshakeDesign]]"
-  - "[[0012-ws2812RgbLedExternalHardwareIsolationAndCentralizedMutexEncapsulationRule]]"
-  - "[[0016-layer4CoreDirectoryCompactionAndSubmoduleConsolidation]]"
+  - "[[0010-bleMinimumPacketFrequencyAndDualTriggerFlush]]"
+  - "[[0011-variableBleTelemetryParsingAndZeroHandshakeDesign]]"
+  - "[[0012-ws2812HardwareIsolationAndMutexEncapsulationRule]]"
+  - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
   - "[[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]]"
   - "[[0021-bleTelemetryDispatcherConsolidationAndSubscriptionGating]]"
   - "[[0027-preflightSensorDataStreamCheckFsmArchitecture]]"
   - "[[0029-unificationOfInterTaskRingBufferSizeConstant]]"
   - "[[0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture]]"
-  - "[[0032-rcReceiverCommandBlackboxSdCardLoggingArchitecture]]"
+  - "[[0045-rcReceiverCommandBlackboxSdCardLoggingArchitecture]]"
 ---
 
 # Zettel 0030: ESP32-S3 Hardware RMT PPM Receiver Decoding (Flysky FS-iA6B), Layer 1-4 Decoupled Architecture & BLE Real-Time Telemetry Pipeline
