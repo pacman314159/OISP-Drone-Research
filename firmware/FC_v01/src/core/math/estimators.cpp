@@ -40,22 +40,22 @@ void AttitudeEKFEngine::normalize_quaternion(){
 
 void AttitudeEKFEngine::predict(float dt, const Vec3<float>& gyro_deg_s){
   float q0 = _x(0, 0), q1 = _x(1, 0), q2 = _x(2, 0), q3 = _x(3, 0);
-  float dt2 = dt * 0.5f;
+  float dt2 = dt * 0.5f; // s (half step)
 
   // Convert angular rates to rad/s using DEG_TO_RAD (MATH_PI / 180.0f) and subtract estimated gyro biases
-  float wx = (gyro_deg_s.x * DEG_TO_RAD) - _x(4, 0);
-  float wy = (gyro_deg_s.y * DEG_TO_RAD) - _x(5, 0);
-  float wz = (gyro_deg_s.z * DEG_TO_RAD) - _x(6, 0);
+  float wx = (gyro_deg_s.x * DEG_TO_RAD) - _x(4, 0); // rad/s
+  float wy = (gyro_deg_s.y * DEG_TO_RAD) - _x(5, 0); // rad/s
+  float wz = (gyro_deg_s.z * DEG_TO_RAD) - _x(6, 0); // rad/s
 
   // 1. State Vector Propagation via SIMD Matrix Multiplication (hal_simd::mat_mul_f32)
   // Discrete kinematic transition: q_{k+1} = (I_{4x4} + 0.5 * dt * Omega(w)) * q_k
-  Matrix<float, 4, 4> A = Matrix<float, 4, 4>::identity();
+  Matrix<float, 4, 4> A = Matrix<float, 4, 4>::identity(); // quaternion transition (dimensionless)
   A(0, 1) = -dt2 * wx; A(0, 2) = -dt2 * wy; A(0, 3) = -dt2 * wz;
   A(1, 0) =  dt2 * wx; A(1, 2) =  dt2 * wz; A(1, 3) = -dt2 * wy;
   A(2, 0) =  dt2 * wy; A(2, 1) = -dt2 * wz; A(2, 3) =  dt2 * wx;
   A(3, 0) =  dt2 * wz; A(3, 1) =  dt2 * wy; A(3, 2) = -dt2 * wx;
 
-  Vec4 q{q0, q1, q2, q3};
+  Vec4 q{q0, q1, q2, q3}; // unit quat (dimensionless)
   Vec4 q_pred = A * q; // Accelerated via hal_simd::mat_mul_f32 in matrix.h
   _x(0, 0) = q_pred[0];
   _x(1, 0) = q_pred[1];
@@ -63,7 +63,7 @@ void AttitudeEKFEngine::predict(float dt, const Vec3<float>& gyro_deg_s){
   _x(3, 0) = q_pred[3];
 
   // 2. State Transition Jacobian Matrix F_mat (7x7)
-  Matrix<float, 7, 7> F_mat = Matrix<float, 7, 7>::identity();
+  Matrix<float, 7, 7> F_mat = Matrix<float, 7, 7>::identity(); // state transition Jacobian (mixed units)
   F_mat(0, 1) = -dt2 * wx; F_mat(0, 2) = -dt2 * wy; F_mat(0, 3) = -dt2 * wz; F_mat(0, 4) =  dt2 * q1; F_mat(0, 5) =  dt2 * q2; F_mat(0, 6) =  dt2 * q3;
   F_mat(1, 0) =  dt2 * wx; F_mat(1, 2) =  dt2 * wz; F_mat(1, 3) = -dt2 * wy; F_mat(1, 4) = -dt2 * q0; F_mat(1, 5) =  dt2 * q3; F_mat(1, 6) = -dt2 * q2;
   F_mat(2, 0) =  dt2 * wy; F_mat(2, 1) = -dt2 * wz; F_mat(2, 3) =  dt2 * wx; F_mat(2, 4) = -dt2 * q3; F_mat(2, 5) = -dt2 * q0; F_mat(2, 6) =  dt2 * q1;
@@ -74,12 +74,12 @@ void AttitudeEKFEngine::predict(float dt, const Vec3<float>& gyro_deg_s){
 }
 
 void AttitudeEKFEngine::update_accel(const Vec3<float>& accel_g){
-  Vec3<float> z_a = accel_g;
-  z_a.normalize();
+  Vec3<float> z_a = accel_g; // g
+  z_a.normalize();           // -> dimensionless unit vector
 
   float q0 = _x(0, 0), q1 = _x(1, 0), q2 = _x(2, 0), q3 = _x(3, 0);
 
-  // 1. Observation Model: Expected Gravity Vector in Body Frame
+  // 1. Observation Model: Expected Gravity Vector in Body Frame (dimensionless unit vector)
   Vec3<float> h_a(
     2.0f * (q1 * q3 - q0 * q2),
     2.0f * (q0 * q1 + q2 * q3),
@@ -87,19 +87,19 @@ void AttitudeEKFEngine::update_accel(const Vec3<float>& accel_g){
   );
 
   // 2. Accelerometer Measurement Jacobian Ha (3x7)
-  Matrix<float, 3, 7> Ha = Matrix<float, 3, 7>::zeros();
+  Matrix<float, 3, 7> Ha = Matrix<float, 3, 7>::zeros(); // measurement Jacobian (dimensionless)
   Ha(0, 0) = -2.0f * q2; Ha(0, 1) =  2.0f * q3; Ha(0, 2) = -2.0f * q0; Ha(0, 3) =  2.0f * q1;
   Ha(1, 0) =  2.0f * q1; Ha(1, 1) =  2.0f * q0; Ha(1, 2) =  2.0f * q3; Ha(1, 3) =  2.0f * q2;
   Ha(2, 0) =  2.0f * q0; Ha(2, 1) = -2.0f * q1; Ha(2, 2) = -2.0f * q2; Ha(2, 3) =  2.0f * q3;
 
   // 3. Innovation & Gain: S = Ha * P * Ha^T + Ra, K = P * Ha^T * S^-1
-  Vec3<float> y_a = z_a - h_a;
+  Vec3<float> y_a = z_a - h_a; // innovation (dimensionless)
   Matrix<float, 7, 3> Ha_T = Ha.transpose();
-  Matrix<float, 3, 3> S = (Ha * _P_cov * Ha_T) + _Ra_cov;
-  Matrix<float, 7, 3> K = _P_cov * Ha_T * S.inverse3x3();
+  Matrix<float, 3, 3> S = (Ha * _P_cov * Ha_T) + _Ra_cov; // innovation covariance (dimensionless^2)
+  Matrix<float, 7, 3> K = _P_cov * Ha_T * S.inverse3x3(); // Kalman gain (dimensionless)
 
   // 4. State & Covariance Update
-  Matrix<float, 7, 1> delta_x = K * static_cast<const Matrix<float, 3, 1>&>(y_a);
+  Matrix<float, 7, 1> delta_x = K * static_cast<const Matrix<float, 3, 1>&>(y_a); // state correction
   _x += delta_x;
   _P_cov = (Matrix<float, 7, 7>::identity() - (K * Ha)) * _P_cov;
 
@@ -110,7 +110,7 @@ void AttitudeEKFEngine::update_mag(const Vec3<float>& mag_unit){
   float q0 = _x(0, 0), q1 = _x(1, 0), q2 = _x(2, 0), q3 = _x(3, 0);
   float bx = _earth_bx, bz = _earth_bz;
 
-  // 1. Observation Model: Expected Magnetic Field Vector in Body Frame
+  // 1. Observation Model: Expected Magnetic Field Vector in Body Frame (dimensionless unit vector)
   Vec3<float> h_m(
     bx * (q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3) + 2.0f * bz * (q1 * q3 - q0 * q2),
     2.0f * bx * (q1 * q2 - q0 * q3) + 2.0f * bz * (q0 * q1 + q2 * q3),
@@ -118,19 +118,19 @@ void AttitudeEKFEngine::update_mag(const Vec3<float>& mag_unit){
   );
 
   // 2. Magnetometer Measurement Jacobian Hm (3x7)
-  Matrix<float, 3, 7> Hm = Matrix<float, 3, 7>::zeros();
+  Matrix<float, 3, 7> Hm = Matrix<float, 3, 7>::zeros(); // measurement Jacobian (dimensionless)
   Hm(0, 0) =  2.0f * bx * q0 - 2.0f * bz * q2; Hm(0, 1) =  2.0f * bx * q1 + 2.0f * bz * q3; Hm(0, 2) = -2.0f * bx * q2 - 2.0f * bz * q0; Hm(0, 3) = -2.0f * bx * q3 + 2.0f * bz * q1;
   Hm(1, 0) = -2.0f * bx * q3 + 2.0f * bz * q1; Hm(1, 1) =  2.0f * bx * q2 + 2.0f * bz * q0; Hm(1, 2) =  2.0f * bx * q1 + 2.0f * bz * q3; Hm(1, 3) = -2.0f * bx * q0 + 2.0f * bz * q2;
   Hm(2, 0) =  2.0f * bx * q2 + 2.0f * bz * q0; Hm(2, 1) =  2.0f * bx * q3 - 2.0f * bz * q1; Hm(2, 2) =  2.0f * bx * q0 - 2.0f * bz * q2; Hm(2, 3) =  2.0f * bx * q1 + 2.0f * bz * q3;
 
   // 3. Innovation & Gain: S = Hm * P * Hm^T + Rm, K = P * Hm^T * S^-1
-  Vec3<float> y_m = mag_unit - h_m;
+  Vec3<float> y_m = mag_unit - h_m; // innovation (dimensionless)
   Matrix<float, 7, 3> Hm_T = Hm.transpose();
-  Matrix<float, 3, 3> S = (Hm * _P_cov * Hm_T) + _Rm_cov;
-  Matrix<float, 7, 3> K = _P_cov * Hm_T * S.inverse3x3();
+  Matrix<float, 3, 3> S = (Hm * _P_cov * Hm_T) + _Rm_cov; // innovation covariance (dimensionless^2)
+  Matrix<float, 7, 3> K = _P_cov * Hm_T * S.inverse3x3(); // Kalman gain (dimensionless)
 
   // 4. State & Covariance Update
-  Matrix<float, 7, 1> delta_x = K * static_cast<const Matrix<float, 3, 1>&>(y_m);
+  Matrix<float, 7, 1> delta_x = K * static_cast<const Matrix<float, 3, 1>&>(y_m); // state correction
   _x += delta_x;
   _P_cov = (Matrix<float, 7, 7>::identity() - (K * Hm)) * _P_cov;
 
@@ -153,7 +153,7 @@ Vec3<float> AttitudeEKFEngine::get_euler_angles() const {
   float roll = atan2f(2.0f * (q0 * q1 + q2 * q3), q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3) * RAD_TO_DEG;
 
   // Pitch (theta): rotation about body Y-axis (-90 to +90 deg, clamped)
-  float sin_pitch = -2.0f * (q1 * q3 - q0 * q2);
+  float sin_pitch = -2.0f * (q1 * q3 - q0 * q2); // dimensionless
   if(sin_pitch > 1.0f) sin_pitch = 1.0f;
   if(sin_pitch < -1.0f) sin_pitch = -1.0f;
   float pitch = asinf(sin_pitch) * RAD_TO_DEG;
@@ -204,7 +204,7 @@ void AltitudeEKFEngine::set_reference_pressure(float p0_pa){
 void AltitudeEKFEngine::predict(float dt, const Vec3<float>& accel_g, const Vec4& quat){
   if(dt <= 0.0f || dt > 0.1f) return;
 
-  float q0 = quat[0], q1 = quat[1], q2 = quat[2], q3 = quat[3];
+  float q0 = quat[0], q1 = quat[1], q2 = quat[2], q3 = quat[3]; // unit quat (dimensionless)
 
   // Direction of inertial Z axis in body frame: r3(q) = [2(q1*q3 - q0*q2), 2(q0*q1 + q2*q3), q0^2 - q1^2 - q2^2 + q3^2]^T
   Vec3<float> r3(
@@ -214,14 +214,14 @@ void AltitudeEKFEngine::predict(float dt, const Vec3<float>& accel_g, const Vec4
   );
 
   // Kinematic upward vertical acceleration (m/s^2) in Z-Up convention
-  float az_proj_g = r3.dot(accel_g);
-  float az_raw = (az_proj_g - 1.0f) * STANDARD_GRAVITY_MSS;
+  float az_proj_g = r3.dot(accel_g); // g (unit-vector projection of accel)
+  float az_raw = (az_proj_g - 1.0f) * STANDARD_GRAVITY_MSS; // m/s^2
 
   // Bias-corrected inertial vertical acceleration: a_z_inertial = a_z_raw - b_a,z
-  _az_inertial = az_raw - _x(2, 0);
+  _az_inertial = az_raw - _x(2, 0); // m/s^2
 
   // 1. Kinematic state propagation
-  float dt2 = 0.5f * dt * dt;
+  float dt2 = 0.5f * dt * dt; // s^2
   _x(0, 0) += (_x(1, 0) * dt) + (_az_inertial * dt2);
   _x(1, 0) += _az_inertial * dt;
   // _x(2, 0) accelerometer bias remains constant in prediction
@@ -240,26 +240,26 @@ void AltitudeEKFEngine::update_baro(float pressure_pa){
   if(pressure_pa < SENSOR_STREAM_BARO_MIN_PA || pressure_pa > SENSOR_STREAM_BARO_MAX_PA) return;
 
   // Guard altitude ratio for numerical stability in barometric formula
-  float ratio = 1.0f - (_x(0, 0) / 44330.0f);
+  float ratio = 1.0f - (_x(0, 0) / 44330.0f); // dimensionless (altitude ratio)
   if(ratio < 0.1f) ratio = 0.1f;
 
   // 1. Nonlinear observation model: h(x) = P0 * (1 - z/44330)^5.255
-  float h_baro = _p0_pa * powf(ratio, 5.255f);
+  float h_baro = _p0_pa * powf(ratio, 5.255f); // Pa
 
   // 2. Analytical measurement Jacobian H = [H0, 0, 0]:
   // H0 = dh/dz = -(5.255 * P0 / 44330) * (1 - z/44330)^4.255
-  float H0 = -(5.255f * _p0_pa / 44330.0f) * powf(ratio, 4.255f);
+  float H0 = -(5.255f * _p0_pa / 44330.0f) * powf(ratio, 4.255f); // Pa/m
 
   // 3. Scalar innovation & innovation covariance S = H0^2 * P00 + R_baro
-  float y = pressure_pa - h_baro;
-  float S = (H0 * H0 * _P_cov(0, 0)) + _R_baro;
+  float y = pressure_pa - h_baro; // Pa (pressure innovation)
+  float S = (H0 * H0 * _P_cov(0, 0)) + _R_baro; // Pa^2
   if(S < 1e-6f) return;
 
   // 4. Kalman gain vector K = P * H^T * S^-1 = (H0 / S) * [P00, P10, P20]^T
-  float H0_div_S = H0 / S;
-  float K0 = H0_div_S * _P_cov(0, 0);
-  float K1 = H0_div_S * _P_cov(1, 0);
-  float K2 = H0_div_S * _P_cov(2, 0);
+  float H0_div_S = H0 / S; // 1/(Pa*m)
+  float K0 = H0_div_S * _P_cov(0, 0); // m/Pa
+  float K1 = H0_div_S * _P_cov(1, 0); // (m/s)/Pa
+  float K2 = H0_div_S * _P_cov(2, 0); // (m/s^2)/Pa
 
   // 5. State update: x = x + K * y
   _x(0, 0) += K0 * y;

@@ -133,6 +133,12 @@ From offline statistical processing of flight blackbox dataset `LOG_0032.BIN` ($
 ---
 
 ## 6. Verification & Traceability
+
+> [!WARNING] Experimental Verification Status Clarification
+> - **Verification Status**: **PENDING DEVELOPER EMPIRICAL VERIFICATION**.
+> - **Note on Derived Metrics**: The theoretical mathematical replay metrics listed below (such as the $24.15\%$ peak-to-peak variance reduction, velocity drift bounds, and estimated accelerometer bias) originate from offline test-script projections (`verify_altitude_ekf.py`) on preliminary flight data. They have **not yet been authoritatively verified or benchmarked on live hardware by the lead developer**.
+> - **Action Required**: Treat these values as design-target hypotheses until real-time in-flight execution traces and verified blackbox logs are officially captured, processed, and endorsed by the developer.
+
 - **Mathematical Replay (`verify_altitude_ekf.py`)**: Replayed 15,404 samples ($30.81\,\text{s}$) of real flight blackbox data from `LOG_0032.BIN`. Verified $24.15\%$ peak-to-peak variance reduction over raw hypsometric baro altitude, zero velocity drift ($\bar{v}_z = -0.0177\,\text{m/s}$), and residual accelerometer bias estimation ($\bar{b}_{a,z} = 0.0108\,\text{m/s}^2$).
 - **File Modifications**:
    - `include/config.h`: Added task enums, EKF altitude noise constants, `BLE_TELEM_MASK_ALT`, `BLE_CHAR_ALT_UUID`, `PKT_TYPE_ALT`, and `LOG_MASK_ALT`.

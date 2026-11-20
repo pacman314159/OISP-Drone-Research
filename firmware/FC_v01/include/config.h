@@ -31,8 +31,8 @@ constexpr bool ENABLE_SIMD_ACCELERATION = true;  // Hardware SIMD Vector Math Ac
 // I2C Buses Pins
 constexpr int I2C0_SCL_PIN      = 14;
 constexpr int I2C0_SDA_PIN      = 21;
-constexpr int I2C1_SCL_PIN      = 20;
-constexpr int I2C1_SDA_PIN      = 19;
+constexpr int I2C1_SCL_PIN      = 20;   // RESERVED: I2C1 has no device (INA226 removed, 0052); C11 = keep + reserve
+constexpr int I2C1_SDA_PIN      = 19;   // RESERVED: see I2C1_SCL_PIN
 
 // Primary Sensor IMU Bus Mapping
 constexpr int IMU_SCL_PIN       = I2C0_SCL_PIN;
@@ -86,20 +86,12 @@ constexpr int RGB_LED_PIN       = 2;  // WS2812 Single RGB Status LED on PCB v02
 // =============================================================================
 // I2C Bus Operating Modes & Frequencies
 constexpr bool     SYSTEM_I2C0_MODE_ASYNC       = false;
-constexpr bool     SYSTEM_I2C1_MODE_ASYNC       = false;
+constexpr bool     SYSTEM_I2C1_MODE_ASYNC       = false;   // RESERVED: I2C1 has no device (C11)
 constexpr uint32_t I2C_FREQ_HZ                  = 400000;
 
 // SPI Bus Frequencies
 constexpr uint32_t SPI_BUS_DEFAULT_FREQ_HZ     = 10000000; // 10 MHz Default SPI Bus
 constexpr uint32_t SD_SPI_FREQ_HZ              = 20000000; // 20 MHz High-Speed SD Card SPI Bus
-
-// INA226 Power Module Hardware & Calibration (0.5 mOhm Shunt on I2C1 Bus)
-constexpr uint8_t  INA226_I2C_ADDR             = 0x40;
-constexpr float    INA226_SHUNT_RESISTOR_OHM   = 0.0005f; // 0.5 mOhm (0.0005 Ohm)
-constexpr float    INA226_CURRENT_LSB_MA       = 5.0f;    // 5 mA per LSB (millis scale)
-constexpr float    INA226_POWER_LSB_MW         = 125.0f;  // 125 mW per LSB (millis scale)
-constexpr float    INA226_VOLTAGE_LSB_MV       = 1.25f;   // 1.25 mV per LSB (millis scale)
-constexpr uint16_t INA226_CALIBRATION_VAL      = 2048;    // 0x0800 (exact integer for 0.5mOhm & 5mA LSB)
 
 // BMP180 Barometer Hardware Settings
 constexpr uint8_t  BMP180_DEFAULT_OSS          = 2;       // BMP_OSS_HIGH_RES (13.5 ms conversion, 50 Hz compatible)
@@ -130,7 +122,6 @@ constexpr const char* TASK_CALIB_GYRO_NAME            = "CALIB_GYRO";
 constexpr const char* TASK_CALIB_ACCEL_NAME           = "CALIB_ACCEL";
 constexpr const char* TASK_CALIB_MAG_NAME             = "CALIB_MAG";
 constexpr const char* TASK_CALIB_BARO_NAME            = "CALIB_BARO";
-constexpr const char* TASK_POWER_DAQ_NAME             = "POWER_DAQ";
 constexpr const char* TASK_RC_RECEIVER_NAME          = "RC_RECEIVER";
 constexpr const char* TASK_EKF_ROLL_PITCH_NAME       = "EKF_ROLL_PITCH";
 constexpr const char* TASK_EKF_YAW_NAME              = "EKF_YAW";
@@ -153,7 +144,6 @@ enum TaskIDs : uint32_t {
   TASK_CALIB_ACCEL_ID,
   TASK_CALIB_MAG_ID,
   TASK_CALIB_BARO_ID,
-  TASK_POWER_DAQ_ID,
   TASK_RC_RECEIVER_ID,
   TASK_EKF_ROLL_PITCH_ID,
   TASK_EKF_YAW_ID,
@@ -178,7 +168,6 @@ enum TaskCores : int32_t {
   TASK_CALIB_ACCEL_CORE           = tskNO_AFFINITY,
   TASK_CALIB_MAG_CORE             = tskNO_AFFINITY,
   TASK_CALIB_BARO_CORE            = tskNO_AFFINITY,
-  TASK_POWER_DAQ_CORE             = tskNO_AFFINITY,
   TASK_RC_RECEIVER_CORE           = tskNO_AFFINITY,
   TASK_EKF_ROLL_PITCH_CORE        = tskNO_AFFINITY,
   TASK_EKF_YAW_CORE               = tskNO_AFFINITY,
@@ -202,7 +191,6 @@ enum TaskPriorities : UBaseType_t {
   TASK_CALIB_ACCEL_PRIORITY           = 1, // Low priority iterative accel calib worker
   TASK_CALIB_MAG_PRIORITY             = 1, // Low priority iterative mag calib worker
   TASK_CALIB_BARO_PRIORITY            = 1, // Low priority singular baro calib worker
-  TASK_POWER_DAQ_PRIORITY             = 2, // Medium priority sensor DAQ (50 Hz)
   TASK_RC_RECEIVER_PRIORITY           = 2, // Medium priority RC PPM receiver DAQ (50 Hz)
   TASK_EKF_ROLL_PITCH_PRIORITY        = 3, // Realtime pilot attitude loop (500 Hz)
   TASK_EKF_YAW_PRIORITY               = 2, // Medium priority navigator loop (100 Hz)
@@ -226,7 +214,6 @@ enum TaskFrequenciesHz : uint32_t {
   TASK_CALIB_ACCEL_FREQ_HZ           = 200, // 200 Hz interactive sampling
   TASK_CALIB_MAG_FREQ_HZ             = 100, // 100 Hz interactive sampling
   TASK_CALIB_BARO_FREQ_HZ            = 50,  // 50 Hz singular sampling
-  TASK_POWER_DAQ_FREQ_HZ             = 50,
   TASK_RC_RECEIVER_FREQ_HZ           = 50,
   TASK_EKF_ROLL_PITCH_FREQ_HZ        = 500,
   TASK_EKF_YAW_FREQ_HZ               = 100,
@@ -250,7 +237,6 @@ enum TaskSizesBytes : uint32_t {
   TASK_CALIB_ACCEL_STACK_SIZE           = 12288,
   TASK_CALIB_MAG_STACK_SIZE             = 20480,
   TASK_CALIB_BARO_STACK_SIZE            = 4096,
-  TASK_POWER_DAQ_STACK_SIZE             = 4096,
   TASK_RC_RECEIVER_STACK_SIZE           = 4096,
   TASK_EKF_ROLL_PITCH_STACK_SIZE        = 8192,
   TASK_EKF_YAW_STACK_SIZE               = 4096,
@@ -311,7 +297,6 @@ constexpr uint8_t     BLE_MAG_SAMPLES_PER_PACKET       = 31; // 31 samples x 16B
 constexpr uint8_t     BLE_BARO_SAMPLES_PER_PACKET      = 63; // 63 samples x 8B = 504B payload
 constexpr uint8_t     BLE_ATT_QUAT_SAMPLES_PER_PACKET  = 25; // 25 samples x 20B = 500B payload
 constexpr uint8_t     BLE_ATT_EULER_SAMPLES_PER_PACKET = 31; // 31 samples x 16B = 496B payload
-constexpr uint8_t     BLE_POWER_SAMPLES_PER_PACKET     = 25; // 25 samples x 20B = 500B payload
 constexpr uint8_t     BLE_RC_SAMPLES_PER_PACKET        = 17; // 17 samples x 28B = 476B payload
 constexpr uint8_t     BLE_ALT_SAMPLES_PER_PACKET       = 31; // 31 samples x 16B = 496B payload
 
@@ -333,7 +318,6 @@ constexpr const char* BLE_CHAR_BARO_RAW_UUID        = "d4e7a2b9-3c81-4f5e-9a62-8
 constexpr const char* BLE_CHAR_BARO_FILT_UUID       = "c4a6e8b1-3d5f-4a7c-8e2b-0f1a3c5e7b9d";
 constexpr const char* BLE_CHAR_ATT_QUAT_UUID        = "0d3b6a9c-2e4f-4a8b-9d1e-5f7a9c1b3e5f";
 constexpr const char* BLE_CHAR_ATT_EULER_UUID       = "6e1c4a8b-0f2d-4e5a-9b3c-7d9a1e3f5b7c";
-constexpr const char* BLE_CHAR_POWER_UUID           = "3e5a7b1c-9d2f-4e8a-0b3c-6f1a8d2e4c5b";
 constexpr const char* BLE_CHAR_RC_CHANNELS_UUID     = "5b8c1a2e-4f9a-4c72-9e3d-8b1a2c3d4e5f";
 constexpr const char* BLE_CHAR_ALT_UUID             = "8f1a2c3d-4e5b-4c6d-9e7f-0a1b2c3d4e5f";
 
@@ -341,8 +325,7 @@ constexpr const char* BLE_CHAR_ALT_UUID             = "8f1a2c3d-4e5b-4c6d-9e7f-0
 constexpr const char* BLE_SERVICE_OTA_UUID          = "23408888-1f40-4cd8-9b89-ca8d45f8a5b0";
 constexpr const char* BLE_CHAR_OTA_CONTROL_UUID     = "23408889-1f40-4cd8-9b89-ca8d45f8a5b0";
 constexpr const char* BLE_CHAR_OTA_DATA_UUID        = "2340888a-1f40-4cd8-9b89-ca8d45f8a5b0";
-constexpr uint32_t    OTA_BOOT_WINDOW_TIMEOUT_MS    = 10000; // Boot listening window: 10000 ms (10s)
-constexpr size_t      OTA_DATA_QUEUE_DEPTH          = 32;    // Pipelined OTA queue depth (~16.5 KB SRAM, reclaimed after boot window)
+constexpr size_t      OTA_DATA_QUEUE_DEPTH          = 32;    // Pipelined OTA queue depth (~16.5 KB SRAM, allocated on-demand in DEVELOPMENT mode)
 
 // BLE Telemetry Bitmask & Single Source-of-Truth
 enum BleTelemBitmask : uint16_t {
@@ -357,7 +340,6 @@ enum BleTelemBitmask : uint16_t {
   BLE_TELEM_MASK_BARO_FILT   = (1 << 7),
   BLE_TELEM_MASK_ATT_QUAT    = (1 << 8),
   BLE_TELEM_MASK_ATT_EULER   = (1 << 9),
-  BLE_TELEM_MASK_POWER       = (1 << 10),
   BLE_TELEM_MASK_RC_CHANNELS = (1 << 11),
   BLE_TELEM_MASK_ALT         = (1 << 12)
 };
@@ -375,7 +357,6 @@ constexpr uint16_t ACTIVE_BLE_TELEM_MASK =
     // | BLE_TELEM_MASK_BARO_FILT
     // | BLE_TELEM_MASK_ATT_QUAT
     | BLE_TELEM_MASK_ATT_EULER
-    // | BLE_TELEM_MASK_POWER
     | BLE_TELEM_MASK_RC_CHANNELS
     | BLE_TELEM_MASK_ALT
     ;
@@ -395,7 +376,6 @@ enum LogPacketType : uint8_t {
   PKT_TYPE_BARO_FILT = 0x06,
   PKT_TYPE_ATT_QUAT  = 0x07,
   PKT_TYPE_ATT_EULER = 0x08,
-  PKT_TYPE_POWER     = 0x09,
   PKT_TYPE_RC        = 0x0A,
   PKT_TYPE_ALT       = 0x0B
 };
@@ -410,7 +390,6 @@ enum LogPacketBitmask : uint16_t {
   LOG_MASK_BARO_FILT = (1 << 5),
   LOG_MASK_ATT_QUAT  = (1 << 6),
   LOG_MASK_ATT_EULER = (1 << 7),
-  LOG_MASK_POWER     = (1 << 8),
   LOG_MASK_RC        = (1 << 9),
   LOG_MASK_ALT       = (1 << 10)
 };
@@ -426,7 +405,6 @@ constexpr uint16_t ACTIVE_SD_LOG_PACKETS_MASK =
     // | LOG_MASK_BARO_FILT // Disabled: avoids duplicate baro logging (reads identical pressure ring buffer as BARO_RAW)
     // | LOG_MASK_ATT_QUAT
     // | LOG_MASK_ATT_EULER
-    // | LOG_MASK_POWER
     // | LOG_MASK_RC
     // | LOG_MASK_ALT
     ;
@@ -486,16 +464,10 @@ constexpr uint16_t RC_ARM_SWITCH_THRESHOLD_US       = 1500;   // Ch5 Aux1 arm sw
 constexpr uint32_t SENSOR_STREAM_IMU_TIMEOUT_US     = 50000;   // 50 ms maximum latency for 500 Hz IMU (accel/gyro)
 constexpr uint32_t SENSOR_STREAM_MAG_TIMEOUT_US     = 100000;  // 100 ms maximum latency for 100 Hz Magnetometer
 constexpr uint32_t SENSOR_STREAM_BARO_TIMEOUT_US    = 200000;  // 200 ms maximum latency for 50 Hz Barometer
-constexpr uint32_t SENSOR_STREAM_POWER_TIMEOUT_US   = 200000;  // 200 ms maximum latency for 50 Hz Power DAQ
 constexpr uint32_t SENSOR_STREAM_HEALTHY_TIME_MS    = 500;     // Continuous healthy streaming required (500 ms)
 constexpr uint32_t SENSOR_STREAM_STARTUP_TIMEOUT_MS = 2500;    // Maximum time allowed for all sensor streams to be ready (2.5 s)
 constexpr float    SENSOR_STREAM_BARO_MIN_PA        = 30000.0f;  // Minimum valid atmospheric pressure (300 hPa)
 constexpr float    SENSOR_STREAM_BARO_MAX_PA        = 120000.0f; // Maximum valid atmospheric pressure (1200 hPa)
-
-// Preflight Battery Health & Arming Voltage Thresholds (Millis scale)
-constexpr float    BATTERY_CELL_MIN_VOLTAGE_MV      = 3300.0f; // 3.3V per cell minimum arming threshold
-constexpr float    BATTERY_CELL_WARN_VOLTAGE_MV     = 3500.0f; // 3.5V per cell warning threshold
-constexpr float    BATTERY_CELL_MAX_VOLTAGE_MV      = 4200.0f; // 4.20V per cell maximum (LiHV)
 
 // =============================================================================
 // INTERACTIVE ACTIVE SENSOR CALIBRATION PARAMETERS

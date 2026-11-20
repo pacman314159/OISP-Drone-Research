@@ -13,6 +13,7 @@
 #include "core/sensor/calib.h"
 #include "core/safety/preflight_checks.h"
 #include "core/blackbox/sd_logger_task.h"
+#include "app/app.h"
 
 // =============================================================================
 // INTERNAL FSM STATE & SYNCHRONIZATION
@@ -77,16 +78,16 @@ static const TransitRule TRANSITION_RULES[] = {
   // stale calibration data leakage into flight loops, exiting CALIB requires a clean system
   // reboot (either via AUTO_REBOOT_AFTER_CALIBRATION or a manual power-cycle/reset).
 
-  // 3. PREFLIGHT -> READY (All 6 Mandatory Safety Gates Passed; No Fail Blockers)
+  // 3. PREFLIGHT -> READY (All 5 Mandatory Safety Gates Passed; No Fail Blockers)
   {
     PREFLIGHT,
     READY,
     EVT_SENSOR_STREAM_OK | EVT_STATIONARY_MET | EVT_PASSIVE_CALIB_PASS |
-    EVT_TILT_CHECK_PASS | EVT_BATTERY_VOLTAGE_OK | EVT_RC_SIGNAL_OK,
+    EVT_TILT_CHECK_PASS | EVT_RC_SIGNAL_OK,
     EVT_NONE,
     MatchPolicy::ALL,
     EVT_EMERGENCY_SHUTDOWN | EVT_SENSOR_STREAM_FAIL | EVT_STATIONARY_FAIL |
-    EVT_PASSIVE_CALIB_FAIL | EVT_TILT_CHECK_FAIL | EVT_BATTERY_LOW | EVT_RC_SIGNAL_FAIL,
+    EVT_PASSIVE_CALIB_FAIL | EVT_TILT_CHECK_FAIL | EVT_RC_SIGNAL_FAIL,
     MatchPolicy::ANY,
     "Rule_Preflight_To_Ready"
   },
@@ -96,7 +97,7 @@ static const TransitRule TRANSITION_RULES[] = {
     PREFLIGHT,
     DEVELOPMENT,
     EVT_SENSOR_STREAM_FAIL | EVT_STATIONARY_FAIL | EVT_PASSIVE_CALIB_FAIL |
-    EVT_TILT_CHECK_FAIL | EVT_BATTERY_LOW | EVT_RC_SIGNAL_FAIL,
+    EVT_TILT_CHECK_FAIL | EVT_RC_SIGNAL_FAIL,
     EVT_NONE,
     MatchPolicy::ANY,
     EVT_NONE,
@@ -111,7 +112,7 @@ static const TransitRule TRANSITION_RULES[] = {
     EVT_TAKEOFF_INITIATED,
     EVT_NONE,
     MatchPolicy::ANY,
-    EVT_EMERGENCY_SHUTDOWN | EVT_RC_SIGNAL_FAIL | EVT_BATTERY_LOW,
+    EVT_EMERGENCY_SHUTDOWN | EVT_RC_SIGNAL_FAIL,
     MatchPolicy::ANY,
     "Rule_Ready_To_Takeoff"
   },
@@ -497,7 +498,7 @@ static void handle_state_preflight(){
     return;
   }
 
-  // Evaluate 6 mandatory pre-flight safety gates
+  // Evaluate 5 mandatory pre-flight safety gates
   SafetyStatus stream_status = check_sensor_data_stream();
   update_gate_event(stream_status, EVT_SENSOR_STREAM_OK, EVT_SENSOR_STREAM_FAIL);
 
@@ -510,9 +511,6 @@ static void handle_state_preflight(){
 
   SafetyStatus tilt_status = check_platform_tilt();
   update_gate_event(tilt_status, EVT_TILT_CHECK_PASS, EVT_TILT_CHECK_FAIL);
-
-  SafetyStatus power_status = check_power_initial_condition();
-  update_gate_event(power_status, EVT_BATTERY_VOLTAGE_OK, EVT_BATTERY_LOW);
 
   SafetyStatus rc_status = check_rc_controller_signal();
   update_gate_event(rc_status, EVT_RC_SIGNAL_OK, EVT_RC_SIGNAL_FAIL);
@@ -704,10 +702,11 @@ static void handle_state_postflight(){
   static bool s_postflight_actions_done = false;
   if(!s_postflight_actions_done){
     s_postflight_actions_done = true;
-    Serial.println("[FSM] Entered POSTFLIGHT! Shutting down SD card logger safely...");
+    Serial.println("[FSM] Entered POSTFLIGHT! Requesting SD card logger shutdown...");
     sd_stop_logging_requested = true;
-    if(app_task_handles[TASK_SD_LOGGER_ID] != nullptr)
-      xTaskNotifyGive(app_task_handles[TASK_SD_LOGGER_ID]);
+    TaskHandle_t sd_handle = ipc_get_task(TASK_SD_LOGGER_ID);
+    if(sd_handle != nullptr)
+      xTaskNotifyGive(sd_handle);
   }
   evaluate_state_transitions();
 }
@@ -750,14 +749,16 @@ void fsm_clear_event(uint32_t event_mask){
 
 void fsm_trigger_emergency(){
   fsm_set_event(EVT_EMERGENCY_SHUTDOWN);
-  if(app_task_handles[TASK_MOTOR_ID] != nullptr)
-    xTaskNotify(app_task_handles[TASK_MOTOR_ID], NOTIFY_MOTOR_EMERGENCY_STOP, eSetBits);
+  TaskHandle_t motor_handle = ipc_get_task(TASK_MOTOR_ID);
+  if(motor_handle != nullptr)
+    xTaskNotify(motor_handle, NOTIFY_MOTOR_EMERGENCY_STOP, eSetBits);
   if(motor_cmd_queue != nullptr){
     MotorCommand cmd = MOTOR_CMD_EMERGENCY_STOP;
     xQueueSendToFront(motor_cmd_queue, &cmd, 0);
   }
-  if(app_task_handles[TASK_FSM_ID] != nullptr)
-    xTaskNotifyGive(app_task_handles[TASK_FSM_ID]);
+  TaskHandle_t fsm_handle = ipc_get_task(TASK_FSM_ID);
+  if(fsm_handle != nullptr)
+    xTaskNotifyGive(fsm_handle);
 }
 
 bool fsm_is_armed_allowed(){
@@ -767,6 +768,13 @@ bool fsm_is_armed_allowed(){
 // =============================================================================
 // FSM CORE 100 HZ TASK RUNNER
 // =============================================================================
+static void service_worker_halt_requests(){
+  if(!sd_logger_halt_requested) return;
+  sd_logger_halt_requested = false;
+  app_halt_task(TASK_SD_LOGGER_ID);
+  Serial.println("[FSM] SD logger halted by Layer 5 authority.");
+}
+
 void fsm_task(void* arg){
   const TickType_t period_ticks = pdMS_TO_TICKS(1000 / TASK_FSM_FREQ_HZ);
   TickType_t last_wake_time = xTaskGetTickCount();
@@ -789,6 +797,8 @@ void fsm_task(void* arg){
     if((btn_evts & BTN_EVT_LONG_HOLD) != 0) fsm_set_event(EVT_BTN_LONG_HOLD);
     
     loop_count++;
+
+    service_worker_halt_requests();
 
     switch(s_current_state){
       case UNINIT:      handle_state_uninit();                  break;

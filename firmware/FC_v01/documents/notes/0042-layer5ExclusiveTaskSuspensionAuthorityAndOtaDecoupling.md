@@ -36,7 +36,13 @@ Under previous revisions, `ble_ota_tasks.cpp` (Layer 4) directly imported `app/a
 ## 3. Core Architectural Decision: Layer 5 Exclusive Lifecycle Authority
 
 ### 3.1 Principle of Exclusive Layer 5 Authority
-- **No Worker Task May Suspend the System**: Under zero circumstances may any Layer 4 task (`ble_ota_task`, `sd_logger_task`, etc.) call `app_suspend_all_tasks()` or `vTaskSuspend()` on foreign task handles.
+- **No Worker Task May Suspend the System**: Under zero circumstances may any Layer 4 task (`ble_ota_task`, `sd_logger_task`, etc.) call `app_suspend_all_tasks()`, or `vTaskSuspend()`/`vTaskDelete()` on a foreign (non-`nullptr`) task handle.
+- **No task changes its own scheduling state.** A Layer 4 task must never call `vTaskSuspend(nullptr)` or `vTaskDelete(nullptr)`. Self-suspension is a lifecycle decision, and lifecycle decisions belong to Layer 5. ("Foreign handle" in the original wording was read as a loophole; it is not one.)
+- **Request-then-park protocol.** If a Layer 4 worker can no longer perform its function it MUST:
+  1. report the condition through its own public request API (for the SD logger: `sd_request_halt()` in `src/core/blackbox/sd_logger_task.h`, setting `sd_logger_halt_requested`);
+  2. park itself with an indefinite block — `for(;;) xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);` — leaving its handle valid and the task in the Blocked state;
+  3. never resume, never delete, never suspend.
+- **Layer 5 acts.** `fsm.cpp` polls `sd_logger_halt_requested` once per FSM tick and calls `app_halt_task(TASK_SD_LOGGER_ID)` (`src/app/app.cpp`), which calls `vTaskSuspend(handle)` and then clears `app_task_handles[task_id]` so no stale handle survives into `app_suspend_all_tasks()`.
 - **Layer 5 Sole Authority**: Only Layer 5 instances (`src/app/app.cpp` and `src/app/fsm.cpp`) hold the authority to inspect global FSM state, evaluate flight readiness, and orchestrate task suspension.
 
 ### 3.2 Authorization & Suspension Gating Pattern
@@ -93,3 +99,4 @@ sequenceDiagram
 ## 5. Architectural Invariants
 1. `src/core/telemetry/ble_ota_tasks.cpp` must never `#include "app/app.h"`.
 2. All global task suspensions prior to flash rewriting must be executed inside Layer 5 prior to worker task activation.
+3. No task suspends, resumes, or deletes itself: a Layer 4 worker reports the condition through its request API and parks in an indefinite block, while Layer 5 performs the scheduling transition. *Amended 2026-11-18: this supersedes any earlier reading of §3.1 that treated `nullptr` (self) as exempt from the foreign-handle prohibition.*

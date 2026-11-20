@@ -140,6 +140,7 @@ void ekf_altitude_task(void* arg){
     Vec3<float> output = alt_ekf->get_output_vector();
 
     // 3. Publish to Layer 3 IPC ring buffers
+    // Serial.printf("%.4f, %.4f, %.4f\n", output[0], output[1], output[2]);
     alt_state.push(output);
     alt_timestamp.push(ts_us);
 

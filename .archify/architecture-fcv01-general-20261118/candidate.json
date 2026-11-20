@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FC_v01 Flight Controller — General Architecture",
+    "locale": "en",
+    "output": ".archify/architecture-fcv01-general-20261118/fcv01-general-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/pacman314159/OISP-Drone-Research.git",
+      "provider": "github",
+      "link_mode": "local-only",
+      "revision": "727aefe2ff1572aa588d58ec6c1a71bf6e6dd629"
+    }
+  },
+  "components": [
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "app_start",
+      "sublabel": "init buses · spawn 16 tasks",
+      "tag": "Layer 5",
+      "pos": [40, 40],
+      "size": [170, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/app/app.cpp", "line": 78, "end_line": 135, "label": "app_start" }
+      ]
+    },
+    {
+      "id": "fsm",
+      "type": "backend",
+      "label": "FSM_MAIN · 100 Hz",
+      "sublabel": "12 flight states · event masks",
+      "tag": "Layer 5",
+      "pos": [280, 40],
+      "size": [200, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/app/fsm.h", "line": 9, "end_line": 25, "label": "system states" },
+        { "path": "firmware/FC_v01/src/app/fsm.cpp", "line": 500, "end_line": 520, "label": "preflight gates" }
+      ]
+    },
+    {
+      "id": "pre",
+      "type": "backend",
+      "label": "Preprocess · 500 Hz",
+      "sublabel": "calib + LPF · 500 / 100 Hz",
+      "tag": "Layer 4",
+      "pos": [40, 180],
+      "size": [180, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/core/sensor/sensor_preprocess_tasks.cpp", "line": 12, "end_line": 70, "label": "accel/gyro" }
+      ]
+    },
+    {
+      "id": "ekf",
+      "type": "backend",
+      "label": "EKF estimators",
+      "sublabel": "attitude 500 · yaw/alt 100 Hz",
+      "tag": "Layer 4",
+      "pos": [250, 180],
+      "size": [190, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/core/math/estimator_tasks.cpp", "line": 15, "end_line": 57, "label": "roll/pitch" },
+        { "path": "firmware/FC_v01/src/core/math/estimator_tasks.cpp", "line": 94, "end_line": 148, "label": "altitude" }
+      ]
+    },
+    {
+      "id": "ctrl",
+      "type": "backend",
+      "label": "Control law",
+      "sublabel": "empty file · INDI spec only",
+      "tag": "reserved",
+      "pos": [470, 180],
+      "size": [190, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/core/control/control_tasks.cpp", "line": 1, "end_line": 1, "label": "placeholder" },
+        { "path": "firmware/FC_v01/src/core/actuator/motor_tasks.cpp", "line": 57, "end_line": 93, "label": "TODO block" }
+      ]
+    },
+    {
+      "id": "motor",
+      "type": "backend",
+      "label": "Motor task · 250 Hz",
+      "sublabel": "arm / disarm only · mixer TODO",
+      "tag": "Layer 4",
+      "pos": [690, 180],
+      "size": [180, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/core/actuator/motor_tasks.cpp", "line": 13, "end_line": 97, "label": "task loop" }
+      ]
+    },
+    {
+      "id": "safety",
+      "type": "security",
+      "label": "Pre-flight gates",
+      "sublabel": "6 checks before READY",
+      "tag": "Layer 4",
+      "pos": [900, 180],
+      "size": [200, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/core/safety/preflight_checks.h", "line": 7, "end_line": 12, "label": "gate APIs" },
+        { "path": "firmware/FC_v01/src/core/safety/preflight_checks.cpp", "line": 249, "end_line": 275, "label": "power gate 5/6" }
+      ]
+    },
+    {
+      "id": "ipc",
+      "type": "messagebus",
+      "label": "Layer 3 — shared IPC",
+      "sublabel": "static ring buffers · queues · mutexes · critical sections",
+      "pos": [40, 310],
+      "size": [720, 54],
+      "sources": [
+        { "path": "firmware/FC_v01/src/middleware/ipc.h", "line": 17, "end_line": 93, "label": "IPC registry" }
+      ]
+    },
+    {
+      "id": "daq",
+      "type": "backend",
+      "label": "Sensor & power DAQ",
+      "sublabel": "IMU 500 · mag 100 · baro/pwr 50",
+      "tag": "Layer 4",
+      "pos": [40, 440],
+      "size": [200, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/core/sensor/daq_tasks.cpp", "line": 13, "end_line": 49, "label": "accel/gyro" },
+        { "path": "firmware/FC_v01/src/core/sensor/daq_tasks.cpp", "line": 51, "end_line": 85, "label": "mag" },
+        { "path": "firmware/FC_v01/src/core/sensor/daq_tasks.cpp", "line": 87, "end_line": 233, "label": "baro + power" }
+      ]
+    },
+    {
+      "id": "rcrx",
+      "type": "backend",
+      "label": "RC receiver · 50 Hz",
+      "sublabel": "RMT PPM decode → rc_data",
+      "tag": "Layer 4",
+      "pos": [260, 440],
+      "size": [190, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/core/telemetry/rc_receiver_task.cpp", "line": 9, "end_line": 57, "label": "rc task" }
+      ]
+    },
+    {
+      "id": "support",
+      "type": "backend",
+      "label": "Telemetry & blackbox",
+      "sublabel": "BLE 100 Hz · SD log 100 Hz · OTA",
+      "tag": "Layer 4",
+      "pos": [480, 440],
+      "size": [230, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/core/telemetry/ble_telem_tasks.cpp", "line": 17, "end_line": 62, "label": "stream batching" },
+        { "path": "firmware/FC_v01/src/core/blackbox/sd_logger_task.cpp", "line": 11, "end_line": 27, "label": "log packets" }
+      ]
+    },
+    {
+      "id": "gcs",
+      "type": "external",
+      "label": "FCDatMon",
+      "sublabel": "BLE ground station",
+      "pos": [960, 440],
+      "size": [200, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/drivers/telemetry/ble_driver.h", "line": 5, "end_line": 11, "label": "GATT driver" }
+      ]
+    },
+    {
+      "id": "drvsense",
+      "type": "backend",
+      "label": "Sensor drivers",
+      "sublabel": "MPU6050 · HMC5883L · BMP180 · INA226",
+      "tag": "Layer 2",
+      "pos": [40, 580],
+      "size": [220, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/drivers/imu/mpu6050.h", "line": 15, "end_line": 36, "label": "IMU driver" }
+      ]
+    },
+    {
+      "id": "drvio",
+      "type": "backend",
+      "label": "I/O drivers",
+      "sublabel": "Motor · SD · NVS · NimBLE · WS2812",
+      "tag": "Layer 2",
+      "pos": [560, 580],
+      "size": [260, 62],
+      "sources": [
+        { "path": "firmware/FC_v01/src/drivers/motor/motor_driver.h", "line": 10, "end_line": 27, "label": "motor" },
+        { "path": "firmware/FC_v01/src/drivers/telemetry/ble_driver.h", "line": 5, "end_line": 11, "label": "BLE" }
+      ]
+    },
+    {
+      "id": "hal",
+      "type": "backend",
+      "label": "Layer 1 — Platform HAL",
+      "sublabel": "HAL_I2C · HAL_SPI · HAL_Flash · HAL_PWM · HAL_PulseRX/TX · hal_simd",
+      "pos": [40, 710],
+      "size": [900, 54],
+      "sources": [
+        { "path": "firmware/FC_v01/src/platforms/hal/hal_i2c.h", "line": 6, "end_line": 22, "label": "HAL_I2C" }
+      ]
+    },
+    {
+      "id": "hw_imu",
+      "type": "external",
+      "label": "MPU6050",
+      "sublabel": "6-DOF · I2C0",
+      "pos": [40, 820],
+      "size": [160, 56],
+      "sources": [
+        { "path": "firmware/FC_v01/src/app/app.cpp", "line": 36, "end_line": 45, "label": "bus wiring" }
+      ]
+    },
+    {
+      "id": "hw_mag",
+      "type": "external",
+      "label": "HMC5883L",
+      "sublabel": "mag · I2C0",
+      "pos": [220, 820],
+      "size": [150, 56],
+      "sources": [
+        { "path": "firmware/FC_v01/src/app/app.cpp", "line": 40, "end_line": 42, "label": "bus wiring" }
+      ]
+    },
+    {
+      "id": "hw_baro",
+      "type": "external",
+      "label": "BMP180",
+      "sublabel": "baro · I2C0",
+      "pos": [390, 820],
+      "size": [150, 56],
+      "sources": [
+        { "path": "firmware/FC_v01/src/app/app.cpp", "line": 42, "end_line": 42, "label": "bus wiring" }
+      ]
+    },
+    {
+      "id": "hw_rc",
+      "type": "external",
+      "label": "FS-iA6B",
+      "sublabel": "PPM receiver",
+      "pos": [560, 820],
+      "size": [150, 56],
+      "sources": [
+        { "path": "firmware/FC_v01/src/app/app.cpp", "line": 50, "end_line": 51, "label": "RX wiring" }
+      ]
+    },
+    {
+      "id": "hw_esc",
+      "type": "external",
+      "label": "4× ESC",
+      "sublabel": "BLDC motors",
+      "pos": [730, 820],
+      "size": [150, 56],
+      "sources": [
+        { "path": "firmware/FC_v01/src/app/app.cpp", "line": 107, "end_line": 109, "label": "ESC init" }
+      ]
+    },
+    {
+      "id": "hw_store",
+      "type": "external",
+      "label": "microSD + NVS",
+      "sublabel": "SPI · internal flash",
+      "pos": [900, 820],
+      "size": [170, 56],
+      "sources": [
+        { "path": "firmware/FC_v01/src/app/app.cpp", "line": 53, "end_line": 57, "label": "storage" }
+      ]
+    }
+  ],
+  "connections": [
+    { "id": "app-spawns-fsm", "from": "app", "to": "fsm", "label": "spawns" },
+    {
+      "id": "fsm-runs-gates",
+      "from": "fsm",
+      "to": "safety",
+      "label": "runs 6 gates",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [[380, 148], [1000, 148]]
+    },
+    { "id": "hal-imu", "from": "hw_imu", "to": "hal", "label": "I2C0", "variant": "emphasis" },
+    { "id": "hal-mag", "from": "hw_mag", "to": "hal", "label": "I2C0" },
+    { "id": "hal-baro", "from": "hw_baro", "to": "hal", "label": "I2C0" },
+    { "id": "hal-rc", "from": "hw_rc", "to": "hal", "label": "PPM" },
+    { "id": "hal-esc", "from": "hw_esc", "to": "hal", "label": "PWM" },
+    { "id": "hal-store", "from": "hw_store", "to": "hal", "label": "SPI" },
+    { "id": "hal-to-drvsense", "from": "hal", "to": "drvsense", "label": "bus ops", "variant": "emphasis" },
+    { "id": "hal-to-drvio", "from": "hal", "to": "drvio", "label": "bus ops" },
+    { "id": "drvsense-to-daq", "from": "drvsense", "to": "daq", "label": "samples", "variant": "emphasis" },
+    { "id": "drvio-to-rcrx", "from": "drvio", "to": "rcrx", "label": "PPM frames" },
+    { "id": "daq-push", "from": "daq", "to": "ipc", "label": "raw", "variant": "emphasis" },
+    { "id": "rc-push", "from": "rcrx", "to": "ipc", "label": "rc" },
+    { "id": "ipc-support", "from": "ipc", "to": "support", "label": "streams", "variant": "dashed" },
+    { "id": "ipc-pre", "from": "ipc", "to": "pre", "label": "raw", "variant": "emphasis" },
+    { "id": "pre-ipc", "from": "pre", "to": "ipc", "label": "filtered", "variant": "emphasis" },
+    { "id": "ipc-ekf", "from": "ipc", "to": "ekf", "label": "filtered", "variant": "emphasis" },
+    { "id": "ekf-ipc", "from": "ekf", "to": "ipc", "label": "quat + alt", "variant": "emphasis" },
+    { "id": "ipc-ctrl", "from": "ipc", "to": "ctrl", "label": "state" },
+    { "id": "ctrl-ipc", "from": "ctrl", "to": "ipc", "label": "INDI cmd", "variant": "dashed" },
+    { "id": "ipc-motor", "from": "ipc", "to": "motor", "label": "cmd" },
+    { "id": "motor-drvio", "from": "motor", "to": "drvio", "label": "motor cmd" },
+    { "id": "support-drvio", "from": "support", "to": "drvio", "label": "SD · BLE writes", "variant": "dashed" },
+    { "id": "drvio-gcs", "from": "drvio", "to": "gcs", "label": "BLE notify", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Layering",
+      "items": [
+        "Includes flow downward only: app → core → middleware → drivers → HAL",
+        "FreeRTOS tasks live only in Layer 4 (src/core) and Layer 5 (src/app)",
+        "No per-loop heap use: ring buffers are fixed-size statics and log packets are packed structs"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Timing budget",
+      "items": [
+        "IMU DAQ, accel/gyro preprocess and roll/pitch EKF all run at 500 Hz (2 ms period)",
+        "Motor 250 Hz · FSM, mag preprocess, yaw/alt EKF, BLE and SD log 100 Hz · RC and power 50 Hz",
+        "vTaskDelayUntil with an overrun reset guard; SystemView brackets every task body"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Shared state",
+      "items": [
+        "Layer 3 owns every mutex, queue and ring buffer (ipc.h / ipc.cpp)",
+        "Producers push samples into ring buffers; consumers snapshot — no shared mutable sample structs",
+        "I2C0: MPU6050 + HMC5883L + BMP180 · I2C1: INA226, each guarded by its own bus mutex"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Where it stops today",
+      "items": [
+        "No control law is compiled: control_tasks.cpp is a one-line placeholder",
+        "Motor task only arms and disarms; INDI output → quad-X mixer is a commented TODO at lines 57–93",
+        "LANDING is bypassed — FLIGHT goes straight to POSTFLIGHT on a 3 s button hold"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "How to read it",
+      "items": [
+        "Arrows show data ownership (who writes or reads a buffer), not direct function calls",
+        "Telemetry and blackbox run at priority 1 and never block the 500 Hz sensor path"
+      ]
+    }
+  ]
+}

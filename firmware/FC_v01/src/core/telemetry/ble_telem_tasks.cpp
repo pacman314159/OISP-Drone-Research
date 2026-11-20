@@ -86,8 +86,6 @@ static BleTelemetryChannel<BleBaroPacket, BLE_BARO_SAMPLES_PER_PACKET>
   s_ch_baro_raw(BLE_TELEM_MASK_BARO_RAW);
 static BleTelemetryChannel<BleBaroPacket, BLE_BARO_SAMPLES_PER_PACKET>
   s_ch_baro_filt(BLE_TELEM_MASK_BARO_FILT);
-static BleTelemetryChannel<BlePowerPacket, BLE_POWER_SAMPLES_PER_PACKET>
-  s_ch_power(BLE_TELEM_MASK_POWER);
 static BleTelemetryChannel<BleRcPacket, BLE_RC_SAMPLES_PER_PACKET>
   s_ch_rc(BLE_TELEM_MASK_RC_CHANNELS);
 static BleTelemetryChannel<BleAttQuatPacket, BLE_ATT_QUAT_SAMPLES_PER_PACKET>
@@ -141,9 +139,6 @@ void ble_telem_task(void* arg){
 
     if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_BARO_FILT) != 0)
       s_ch_baro_filt.process(pressure, pressure_timestamp, now, timeout_ticks);
-
-    if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_POWER) != 0)
-      s_ch_power.process(power_data, power_timestamp, now, timeout_ticks);
 
     if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_RC_CHANNELS) != 0)
       s_ch_rc.process(rc_data, rc_timestamp, now, timeout_ticks);

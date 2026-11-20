@@ -1,29 +1,12 @@
 #pragma once
 #include <cstdint>
 #include "platforms/hal/hal_pulse.h"
+#include "ipc_types.h"   // PaletteColorId / LedCommand contract (C15)
 
 struct Color {
   uint8_t r;
   uint8_t g;
   uint8_t b;
-};
-
-enum PaletteColorId : uint8_t {
-  PALETTE_OFF = 0,
-  PALETTE_RED,
-  PALETTE_GREEN,
-  PALETTE_BLUE,       // Barometer
-  PALETTE_CYAN,       // Gyroscope
-  PALETTE_MAGENTA,    // Magnetometer
-  PALETTE_YELLOW,
-  PALETTE_ORANGE,     // Accelerometer
-  PALETTE_PURPLE,
-  PALETTE_LIME,
-  PALETTE_TEAL,
-  PALETTE_PINK,
-  PALETTE_AMBER,
-  PALETTE_WHITE,
-  PALETTE_COUNT
 };
 
 Color get_palette_color(PaletteColorId id);
@@ -41,7 +24,7 @@ private:
   void encode_and_transmit(uint8_t r, uint8_t g, uint8_t b);
 
 public:
-  explicit WS2812(HAL_PulseTX& tx) : pulse_tx(tx) {}
+  explicit WS2812(HAL_PulseTX& tx) : pulse_tx(tx){}
 
   bool init(int gpio_pin);
   void set_rgb(uint8_t r, uint8_t g, uint8_t b);

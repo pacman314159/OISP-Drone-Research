@@ -4,8 +4,7 @@
 #include "middleware/critical_section.h"
 #include "middleware/sysview_tracing.h"
 #include "drivers/telemetry/ble_driver.h"
-#include "core/interface/interface_tasks.h"
-#include "core/sensor/calib.h"
+#include "drivers/telemetry/ble_ota_packet.h"
 
 SemaphoreHandle_t i2c0_mutex = nullptr;
 SemaphoreHandle_t i2c1_mutex = nullptr;
@@ -21,12 +20,10 @@ RingBuffer<Vec3<float>, RING_BUF_SIZE> accel_raw;
 RingBuffer<Vec3<float>, RING_BUF_SIZE> gyro_raw;
 RingBuffer<Vec3<float>, RING_BUF_SIZE> mag_raw;
 RingBuffer<float, RING_BUF_SIZE>       pressure;
-RingBuffer<PowerMeasurement, RING_BUF_SIZE> power_data;
 
 RingBuffer<uint32_t, RING_BUF_SIZE>    raw_accel_gyro_timestamp;
 RingBuffer<uint32_t, RING_BUF_SIZE>    raw_mag_timestamp;
 RingBuffer<uint32_t, RING_BUF_SIZE>    pressure_timestamp;
-RingBuffer<uint32_t, RING_BUF_SIZE>    power_timestamp;
 
 RingBuffer<Vec3<float>, RING_BUF_SIZE> accel;
 RingBuffer<Vec3<float>, RING_BUF_SIZE> gyro;
@@ -48,33 +45,44 @@ RingBuffer<uint32_t, RING_BUF_SIZE>    alt_timestamp;
 IndiControllerOutput indi_output = {};
 QueueHandle_t motor_cmd_queue = nullptr;
 
-FcBleServerCallbacks ble_server_callbacks;
+// ---------------------------------------------------------------------------
+// BLE OTA transport sink (audit item C3)
+//
+// Layer 2 (src/drivers/telemetry/ble_driver.cpp) reports what happened on the
+// BLE link. Layer 3 owns the queue, the abort flag and the wake-up, so the
+// driver never touches IPC globals and Layer 2 stops including middleware/ipc.h.
+// ---------------------------------------------------------------------------
+static bool on_ble_ota_event(uint8_t evt, const uint8_t* data, uint16_t len){
+  OtaDataChunk chunk = {};
 
-void FcBleServerCallbacks::onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc){
-  set_ble_connected(true);
-  if(desc != nullptr)
-    pServer->updateConnParams(desc->conn_handle, 6, 12, 0, 500);
-  Serial.println("BLE Client Connected!");
-}
-
-void FcBleServerCallbacks::onDisconnect(NimBLEServer* pServer){
-  set_ble_connected(false);
-
-  if(is_ble_ota_active()){
-    Serial.println("[BLE_OTA] Connection lost during active OTA! Triggering abort...");
+  if(evt == BLE_OTA_EVT_ABORT){
     ota_abort_requested = true;
     if(ota_data_queue != nullptr){
-      OtaDataChunk abort_chunk = {};
-      abort_chunk.length = OTA_CHUNK_ABORT_MARKER;
-      xQueueSend(ota_data_queue, &abort_chunk, 0);
+      chunk.length = OTA_CHUNK_ABORT_MARKER;
+      xQueueSend(ota_data_queue, &chunk, 0);
     }
     if(app_task_handles[TASK_BLE_OTA_ID] != nullptr)
       xTaskNotifyGive(app_task_handles[TASK_BLE_OTA_ID]);
+    return true;
   }
 
-  Serial.println("BLE Client Disconnected!");
-  if(!is_ble_ota_active())
-    NimBLEDevice::startAdvertising();
+  if(ota_data_queue == nullptr) return false;
+
+  TickType_t timeout = pdMS_TO_TICKS(500); // matches the previous driver-side wait
+
+  if(evt == BLE_OTA_EVT_EOF){
+    chunk.length = OTA_CHUNK_EOF_MARKER;
+    timeout = pdMS_TO_TICKS(100);
+    if(data != nullptr && len >= sizeof(uint32_t))
+      memcpy(chunk.data, data, sizeof(uint32_t));
+  }else{
+    if(len > sizeof(chunk.data)) len = static_cast<uint16_t>(sizeof(chunk.data));
+    chunk.length = len;
+    if(data != nullptr && len > 0)
+      memcpy(chunk.data, data, len);
+  }
+
+  return xQueueSend(ota_data_queue, &chunk, timeout) == pdTRUE;
 }
 
 static TimerHandle_t s_btn_hold_timer = nullptr;
@@ -144,9 +152,6 @@ bool init_ipc(){
   if(ekf_state_mutex == nullptr)
     ekf_state_mutex = xSemaphoreCreateMutex();
 
-  if(ota_data_queue == nullptr)
-    ota_data_queue = xQueueCreate(OTA_DATA_QUEUE_DEPTH, sizeof(OtaDataChunk));
-
   if(led_cmd_queue == nullptr)
     led_cmd_queue = xQueueCreate(LED_CMD_QUEUE_DEPTH, sizeof(LedCommand));
 
@@ -166,14 +171,45 @@ bool init_ipc(){
     );
   }
 
+  // [C3] BLE transport port: Layer 2 reports, Layer 3 queues and wakes the OTA task.
+  ble_ota_set_sink(on_ble_ota_event);
+
   return (i2c0_mutex != nullptr &&
           i2c1_mutex != nullptr &&
           spi_bus_mutex != nullptr &&
           flash_mutex != nullptr &&
           ekf_state_mutex != nullptr &&
-          ota_data_queue != nullptr &&
           led_cmd_queue != nullptr &&
           calib_report_queue != nullptr &&
           motor_cmd_queue != nullptr &&
           s_btn_hold_timer != nullptr);
+}
+
+bool ipc_create_ota_queue(size_t chunk_size){
+  if(ota_data_queue != nullptr) return true;
+  ota_data_queue = xQueueCreate(OTA_DATA_QUEUE_DEPTH, chunk_size);
+  return (ota_data_queue != nullptr);
+}
+
+void ipc_destroy_ota_queue(){
+  if(ota_data_queue == nullptr) return;
+  vQueueDelete(ota_data_queue);
+  ota_data_queue = nullptr;
+}
+
+// [C4] Task registry accessors — the registry is written from more than one
+// layer, so every mutation is serialised here and direct array writes are gone.
+void ipc_register_task(uint32_t task_id, TaskHandle_t handle){
+  if(task_id >= TASK_COUNT) return;
+  SYS_ENTER_CRITICAL();
+  app_task_handles[task_id] = handle;
+  SYS_EXIT_CRITICAL();
+}
+
+TaskHandle_t ipc_get_task(uint32_t task_id){
+  if(task_id >= TASK_COUNT) return nullptr;
+  SYS_ENTER_CRITICAL();
+  TaskHandle_t handle = app_task_handles[task_id];
+  SYS_EXIT_CRITICAL();
+  return handle;
 }

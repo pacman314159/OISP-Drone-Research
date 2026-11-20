@@ -32,3 +32,4 @@ references:
 1. **Centralized Middleware IPC**: All inter-task communication primitives (FreeRTOS mutexes, semaphores, queues, ring buffers) MUST be centralized inside Layer 3 (`src/middleware/`). Never scatter shared resource allocations or global IPC handles across drivers or core algorithms.
 2. **Architectural Memory Bank**: Notes serve as the authoritative decision ledger. Future document generation (`System Life Cycle.md`, `RTOS Architecture.md`, `Firmware Structure.md`) and AI reasoning must trace back to these notes.
 3. **Anti Over-Engineering**: Decisions should favor simple, proven, modular patterns over complex abstractions.
+4. A note that supersedes another note or rule MUST name the note/section it supersedes. Silent supersession is not permitted — see `.agents/AGENTS.md` §0 Rule Precedence, Gate A.

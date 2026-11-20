@@ -7,6 +7,11 @@
 #include "drivers/storage/sd_card_driver.h"
 
 volatile bool sd_stop_logging_requested = false;
+volatile bool sd_logger_halt_requested = false;
+
+void sd_request_halt(){
+  sd_logger_halt_requested = true;
+}
 
 struct __attribute__((packed)) PktImuRaw {
   uint8_t     type;
@@ -71,16 +76,6 @@ struct __attribute__((packed)) PktAttEuler {
   Vec3<float> euler;
 };
 static_assert(sizeof(PktAttEuler) == 20, "PktAttEuler layout must be strictly 20 bytes aligned");
-
-struct __attribute__((packed)) PktPower {
-  uint8_t  type;
-  uint32_t timestamp_us;
-  uint8_t  _pad[3];
-  float    voltage_mv;
-  float    current_ma;
-  float    power_mw;
-  float    energy_mah;
-};
 
 struct __attribute__((packed)) PktRc {
   uint8_t  type;
@@ -207,9 +202,11 @@ void sd_logger_task(void* arg){
   }
 
   if(!sd_driver->is_open()){
-    Serial.println("[SD_LOGGER] SD card not mounted or log file failed to open. Task suspending.");
-    vTaskSuspend(nullptr);
-    return;
+    Serial.println("[SD_LOGGER] SD card not mounted or log file failed to open. Halt requested; Layer 5 will suspend this task.");
+    sd_request_halt();
+    // Park: Layer 5 owns our lifecycle and will suspend us. We never suspend
+    // or delete ourselves (0042).
+    for(;;) xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
   }
 
   const uint32_t task_id = TASK_SD_LOGGER_ID;
@@ -230,7 +227,6 @@ void sd_logger_task(void* arg){
   ChannelTracker trk_mag_filt;
   ChannelTracker trk_baro_raw;
   ChannelTracker trk_baro_filt;
-  ChannelTracker trk_power;
   ChannelTracker trk_rc;
   ChannelTracker trk_att_quat;
   ChannelTracker trk_att_euler;
@@ -255,9 +251,11 @@ void sd_logger_task(void* arg){
         sd_driver->close();
         xSemaphoreGive(spi_bus_mutex);
       }
-      Serial.println("[SD_LOGGER] Log closed cleanly upon user request. Task suspending.");
-      SYSVIEW_END(task_id);
-      vTaskSuspend(nullptr);
+      Serial.println("[SD_LOGGER] Log closed cleanly upon user request. Halt requested; Layer 5 will suspend this task.");
+      sd_request_halt();
+      // Park: Layer 5 owns our lifecycle and will suspend us. We never suspend
+      // or delete ourselves (0042).
+      for(;;) xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
     }
 
     SYSVIEW_START(task_id);
@@ -307,14 +305,6 @@ void sd_logger_task(void* arg){
         sector_buf, buf_index, sd_driver, last_flush_tick,
         [](uint32_t ts, float p){
           return PktBaroFilt{PKT_TYPE_BARO_FILT, ts, p};
-        });
-    }
-
-    if constexpr((ACTIVE_SD_LOG_PACKETS_MASK & LOG_MASK_POWER) != 0){
-      log_single_stream<PktPower>(power_timestamp, power_data, trk_power,
-        sector_buf, buf_index, sd_driver, last_flush_tick,
-        [](uint32_t ts, const PowerMeasurement& pw){
-          return PktPower{PKT_TYPE_POWER, ts, {0, 0, 0}, pw.voltage_mv, pw.current_ma, pw.power_mw, pw.energy_mah};
         });
     }
 
@@ -394,7 +384,10 @@ void sd_logger_task(void* arg){
           xSemaphoreGive(spi_bus_mutex);
         }
         SYSVIEW_END(task_id);
-        vTaskSuspend(nullptr);
+        sd_request_halt();
+        // Park: Layer 5 owns our lifecycle and will suspend us. We never suspend
+        // or delete ourselves (0042).
+        for(;;) xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
       }else if(LOG_LIMIT_POLICY == LOG_LIMIT_CIRCULAR_OVERWRITE){
         if(xSemaphoreTake(spi_bus_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTRUE){
           sd_driver->reset_file_pointer_to_data_start();

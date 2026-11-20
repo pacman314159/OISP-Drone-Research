@@ -92,7 +92,7 @@ SafetyStatus check_sensor_data_stream(){
     else if((now_ms - healthy_start_ms) >= SENSOR_STREAM_HEALTHY_TIME_MS){
       if(s_status != SafetyStatus::PASSED){
         s_status = SafetyStatus::PASSED;
-        Serial.println("[SAFETY] [GATE 1/6] Sensor data stream check PASSED! All streams active & healthy.");
+        Serial.println("[SAFETY] [GATE 1/5] Sensor data stream check PASSED! All streams active & healthy.");
       }
       return SafetyStatus::PASSED;
     }
@@ -102,14 +102,14 @@ SafetyStatus check_sensor_data_stream(){
     // If stream was previously healthy and suddenly dropped
     if(s_status == SafetyStatus::PASSED){
       s_status = SafetyStatus::FAILED;
-      Serial.println("[SAFETY] [GATE 1/6] Sensor data stream DROPPED while in PREFLIGHT!");
+      Serial.println("[SAFETY] [GATE 1/5] Sensor data stream DROPPED while in PREFLIGHT!");
       return SafetyStatus::FAILED;
     }
 
     // Startup timeout check: If sensors failed to produce healthy streams within grace period
     if((now_ms - stream_check_start_ms) >= SENSOR_STREAM_STARTUP_TIMEOUT_MS){
       s_status = SafetyStatus::FAILED;
-      Serial.println("[SAFETY] [GATE 1/6] Sensor data stream check TIMED OUT / FAILED!");
+      Serial.println("[SAFETY] [GATE 1/5] Sensor data stream check TIMED OUT / FAILED!");
       if(!has_data)
         Serial.printf("      Missing data: IMU_raw:%d, MAG_raw:%d, BARO_raw:%d, IMU_filt:%d, MAG_filt:%d\n",
                       imu_raw_has_data, mag_raw_has_data, baro_raw_has_data, imu_filt_has_data, mag_filt_has_data);
@@ -161,7 +161,7 @@ SafetyStatus check_stationary_condition(){
       stationary_start_ms = current_time_ms;
     else if((current_time_ms - stationary_start_ms) >= STATIONARY_TIME_REQUIRED_MS){
       s_status = SafetyStatus::PASSED;
-      Serial.println("[SAFETY] [GATE 2/6] Stationary condition check PASSED!");
+      Serial.println("[SAFETY] [GATE 2/5] Stationary condition check PASSED!");
       return s_status;
     }
   }else{
@@ -169,7 +169,7 @@ SafetyStatus check_stationary_condition(){
 
     if((current_time_ms - check_start_ms) >= PREFLIGHT_STATIONARY_TIMEOUT_MS){
       s_status = SafetyStatus::FAILED;
-      Serial.printf("[SAFETY] [GATE 2/6] Stationary condition check FAILED! (Motion detected or settling timed out after %lu ms).\n",
+      Serial.printf("[SAFETY] [GATE 2/5] Stationary condition check FAILED! (Motion detected or settling timed out after %lu ms).\n",
                     static_cast<unsigned long>(PREFLIGHT_STATIONARY_TIMEOUT_MS));
       return s_status;
     }
@@ -204,10 +204,10 @@ SafetyStatus check_passive_sensor_calibration(bool is_stationary){
 
   if(gyro_bias_ok && accel_bias_ok && mag_norm_ok){
     s_status = SafetyStatus::PASSED;
-    Serial.println("[SAFETY] [GATE 3/6] Passive calibration check PASSED!");
+    Serial.println("[SAFETY] [GATE 3/5] Passive calibration check PASSED!");
   }else{
     s_status = SafetyStatus::FAILED;
-    Serial.printf("[SAFETY] [GATE 3/6] Passive calibration check FAILED! (gyro_ok:%d, accel_dev:%.2fm/s^2, mag_norm:%.2f)\n",
+    Serial.printf("[SAFETY] [GATE 3/5] Passive calibration check FAILED! (gyro_ok:%d, accel_dev:%.2fm/s^2, mag_norm:%.2f)\n",
                   gyro_bias_ok, accel_dev_mss, mag_norm);
   }
 
@@ -223,7 +223,7 @@ SafetyStatus check_platform_tilt(){
   float a_norm = a.norm();
   if(!std::isfinite(a_norm) || a_norm < 0.5f || a_norm > 2.0f){
     s_status = SafetyStatus::FAILED;
-    Serial.printf("[SAFETY] [GATE 4/6] Platform tilt check FAILED! Invalid accel norm: %.2f g\n", a_norm);
+    Serial.printf("[SAFETY] [GATE 4/5] Platform tilt check FAILED! Invalid accel norm: %.2f g\n", a_norm);
     return s_status;
   }
 
@@ -235,61 +235,14 @@ SafetyStatus check_platform_tilt(){
 
   if(tilt_deg <= PREFLIGHT_MAX_TILT_DEG){
     s_status = SafetyStatus::PASSED;
-    Serial.printf("[SAFETY] [GATE 4/6] Platform tilt check PASSED! (Incline: %.1f deg <= %.1f deg)\n",
+    Serial.printf("[SAFETY] [GATE 4/5] Platform tilt check PASSED! (Incline: %.1f deg <= %.1f deg)\n",
                   tilt_deg, PREFLIGHT_MAX_TILT_DEG);
   }else{
     s_status = SafetyStatus::FAILED;
-    Serial.printf("[SAFETY] [GATE 4/6] Platform tilt check FAILED! (Incline: %.1f deg > %.1f deg)\n",
+    Serial.printf("[SAFETY] [GATE 4/5] Platform tilt check FAILED! (Incline: %.1f deg > %.1f deg)\n",
                   tilt_deg, PREFLIGHT_MAX_TILT_DEG);
   }
 
-  return s_status;
-}
-
-SafetyStatus check_power_initial_condition(){
-  static SafetyStatus s_status = SafetyStatus::PENDING;
-  if(s_status != SafetyStatus::PENDING) return s_status;
-
-  static uint32_t power_check_start_ms = 0;
-  uint32_t now_ms = millis();
-  if(power_check_start_ms == 0) power_check_start_ms = now_ms;
-
-  if(power_data.empty()){
-    if((now_ms - power_check_start_ms) >= SENSOR_STREAM_STARTUP_TIMEOUT_MS){
-      s_status = SafetyStatus::FAILED;
-      Serial.println("[SAFETY] [GATE 5/6] Battery check TIMED OUT / FAILED! (No power module or battery detected). Transitioning to DEVELOPMENT.");
-      return s_status;
-    }
-    return SafetyStatus::PENDING;
-  }
-
-  PowerMeasurement p = power_data.front();
-  float v_mv = p.voltage_mv;
-
-  // Numerical validity check
-  if(!std::isfinite(v_mv) || v_mv < 1000.0f || v_mv > 36000.0f ||
-     !std::isfinite(p.current_ma) || !std::isfinite(p.power_mw)){
-    s_status = SafetyStatus::FAILED;
-    Serial.printf("[SAFETY] [GATE 5/6] Power module initial check FAILED! Invalid reading: %.1f mV. Transitioning to DEVELOPMENT.\n", v_mv);
-    return s_status;
-  }
-
-  // Auto-detect cell count & calculate per-cell voltage
-  int32_t cell_count = static_cast<int32_t>(roundf(v_mv / 3800.0f));
-  if(cell_count < 1) cell_count = 1;
-  if(cell_count > 8) cell_count = 8;
-  float cell_v_mv = v_mv / static_cast<float>(cell_count);
-
-  if(cell_v_mv < BATTERY_CELL_MIN_VOLTAGE_MV){
-    s_status = SafetyStatus::FAILED;
-    Serial.printf("[SAFETY] [GATE 5/6] Battery initial check FAILED! Pack: %.1f mV (%.1f mV/cell on %dS < %.1f mV/cell). Transitioning to DEVELOPMENT.\n",
-                  v_mv, cell_v_mv, static_cast<int>(cell_count), BATTERY_CELL_MIN_VOLTAGE_MV);
-    return s_status;
-  }
-
-  s_status = SafetyStatus::PASSED;
-  Serial.printf("[SAFETY] [GATE 5/6] Power module & battery initial check PASSED! Pack: %.1f mV (%.1f mV/cell on %dS)\n",
-                v_mv, cell_v_mv, static_cast<int>(cell_count));
   return s_status;
 }
 
@@ -304,7 +257,7 @@ SafetyStatus check_rc_controller_signal(){
   if(rc_data.empty()){
     if((now_ms - rc_check_start_ms) >= SENSOR_STREAM_STARTUP_TIMEOUT_MS){
       s_status = SafetyStatus::FAILED;
-      Serial.println("[SAFETY] [GATE 6/6] RC receiver signal check TIMED OUT / FAILED! (No RC stream detected). Transitioning to DEVELOPMENT.");
+      Serial.println("[SAFETY] [GATE 5/5] RC receiver signal check TIMED OUT / FAILED! (No RC stream detected). Transitioning to DEVELOPMENT.");
       return s_status;
     }
     return SafetyStatus::PENDING;
@@ -313,12 +266,12 @@ SafetyStatus check_rc_controller_signal(){
   const RcChannels& ch = rc_data.front();
   if(ch.failsafe){
     s_status = SafetyStatus::FAILED;
-    Serial.println("[SAFETY] [GATE 6/6] RC receiver signal check FAILED! (Failsafe active). Transitioning to DEVELOPMENT.");
+    Serial.println("[SAFETY] [GATE 5/5] RC receiver signal check FAILED! (Failsafe active). Transitioning to DEVELOPMENT.");
     return s_status;
   }
 
   s_status = SafetyStatus::PASSED;
-  Serial.printf("[SAFETY] [GATE 6/6] RC receiver signal check PASSED! (Signal locked, active channels: %u)\n",
+  Serial.printf("[SAFETY] [GATE 5/5] RC receiver signal check PASSED! (Signal locked, active channels: %u)\n",
                 ch.channel_count);
   return s_status;
 }

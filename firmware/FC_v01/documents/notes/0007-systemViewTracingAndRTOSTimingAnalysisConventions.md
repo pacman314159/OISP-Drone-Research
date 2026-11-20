@@ -174,7 +174,13 @@ All analyzer tools and developer reports MUST adhere to the following definition
 
 ---
 
-## 6. Steady-State Flight Loop Benchmarks (Dual-Core Trace Baseline)
+## 6. Steady-State Flight Loop Benchmarks (Early Baseline — Preliminary DAQ Phase)
+
+> [!CAUTION] Historical Benchmark Status Clarification
+> The benchmark metrics listed below represent **historical preliminary profiling** captured during the early phase of firmware development (September 2026).
+> - **Scope of Early Session**: At the time of this trace capture, **only the basic sensor Data Acquisition (DAQ) modules** (`ACCEL_GYRO_DAQ`, `MAG_DAQ`, and a basic mock task `BLE_VEC3_TRANS_`) were implemented.
+> - **Omitted Subsystems**: Higher-level flight algorithms and background I/O were **not yet running**: no Attitude/Altitude EKFs, no SPI MicroSD high-frequency blackbox logging, no BLE stack transmission dispatch, no 6-gate safety FSM, and no 250 Hz motor actuator pipeline.
+> - **Engineering Notice**: These figures must **not** be quoted as steady-state benchmarks of the modern comprehensive 20-task firmware. A full-system re-profiling across both cores under full flight workload (EKFs + Logging + Telemetry + Actuation) is scheduled for subsequent validation rounds.
 
 Profiling clean steady-state traces (`core0.csv` and `core1.csv`) captured with the 12 KB sweet spot confirms robust real-time flight performance:
 
@@ -250,3 +256,34 @@ To prevent JTAG buffer saturation, CPU stalls, and corrupted trace files (`Incom
    - For live dual-core trace captures on ESP32-S3, set the `trace_size_bytes` parameter in OpenOCD between `12000` and `14000` bytes:
      `esp sysview start file://core0.SVDat file://core1.SVDat 1 12000 -1`
    - This captures ~50 to 100 complete iterations of the 500 Hz flight loop and automatically halts before the 16 KB hardware TRAX buffer wraps around, eliminating `Incomplete block` warnings and data corruption.
+
+---
+
+## 9. Marker Coverage Contract (added 2026-11-20)
+
+The original sections above mandate *how* a marker must be placed, but never required that every task *has* one. An audit of the tree found four Layer 4 workers (`CALIB_GYRO/ACCEL/MAG/BARO`) with no marker at all and one (`BLE_OTA`) named but unmarked, i.e. entire subsystems were invisible in the timeline while §6 implied full coverage. The following contract closes that hole.
+
+### Rule 1: One marker pair per `TaskIDs` entry
+- Every value in `enum TaskIDs` (`include/config.h`) MUST have a `SYSVIEW_START(<TASK>_ID)` / `SYSVIEW_END(<TASK>_ID)` pair around its steady-state work.
+- Enforcement: `src/middleware/sysview_tracing.cpp` holds `k_marker_names[]` plus
+  `static_assert(sizeof(k_marker_names)/sizeof(k_marker_names[0]) == TASK_COUNT, ...)`.
+  Adding a task ID without adding its name row is a **compile error**, not a silently unnamed channel.
+
+### Rule 2: Blocking waits stay outside the marker
+- A marker MUST NOT enclose a blocking call whose duration is scheduler idleness rather than work: `xQueueReceive` with a real timeout, `ulTaskNotifyTake(portMAX_DELAY)`, `vTaskDelay`, or any `portMAX_DELAY` wait.
+- Event-driven tasks therefore open the marker **after** the blocking wait returns and close it before looping back. Rationale: the marker is a WCET/runtime instrument (§5 rule 1); wrapping a 20 ms or infinite block reports ~100 % CPU for a task that costs microseconds.
+- Applied to `STATUS_LED` and `BLE_OTA` on 2026-11-20.
+
+### Rule 3: Exactly one `SYSVIEW_END` per `SYSVIEW_START`, on every path
+- Early-exit branches (`continue`, `break`, park-and-wait) MUST close the marker before leaving the iteration, or open it only after the exit test.
+- Paths that can exit mid-iteration (`motor_task`, `sd_logger_task`, `ble_ota_task`) may therefore contain more `SYSVIEW_END` statements than `SYSVIEW_START` statements — that is legal; what matters is one-end-per-start **per executed path**.
+- Removed `sd_logger_task.cpp` shutdown-path `SYSVIEW_END` that ran before that iteration's `SYSVIEW_START` (double-stop, corrupts the user-marker duration statistics).
+
+### Rule 4: Task table must be large enough for every task
+- `CONFIG_APPTRACE_SV_MAX_TASKS` MUST be ≥ 32 while the firmware runs 19 application tasks plus the IDF/BLE system tasks (`main`, `ipc0/ipc1`, `esp_timer`, `loopTask`, `btController`, `BTC_TASK`, NimBLE host).
+- The ESP-IDF default is **16**. Beyond the limit `SYSVIEW_AddTask()` drops the record: the task still appears in the timeline (task IDs are TCB pointers) but **without a name and without its stack high-water mark** — and because the limit is consumed in creation order, the tasks dropped first are the ones created last: `FSM`, `MOTOR`, `EKF_YAW`, `EKF_ALTITUDE`, `SD_LOGGER`, `BLE_TELEM`, i.e. the flight-critical set.
+- Raised to 32 in `sdkconfig.defaults`, `sdkconfig.fc-v01` and `sdkconfig.fc-v01-ota` on 2026-11-20.
+
+### Rule 5: Coverage is per subsystem, not per flight path
+- Calibration workers, OTA and the LED renderer are traced even though they never run during a flight: the trace is also the tool used to prove *why* something did not run, and an invisible task makes an invisible bug.
+

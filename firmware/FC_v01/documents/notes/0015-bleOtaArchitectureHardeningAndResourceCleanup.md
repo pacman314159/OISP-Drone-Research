@@ -83,3 +83,4 @@ To elevate BLE OTA throughput from ~14 KB/s to 60–90 KB/s without risking queu
 
 ## 4. Cross-References & Traceability
 - Extended by `[[0039-onDemandBleOtaInDevelopmentStateAndDependencyInversionArchitecture]]`: Adds on-demand OTA triggering in DEVELOPMENT mode without manual reset button cycles.
+- Superseded in Part (Rule 1 Boot Window) by `[[0050-pureOnDemandBleOtaMigrationAndBootWindowRetirement]]`: Retires 10-second boot listening window in favor of pure on-demand OTA in DEVELOPMENT mode, reclaiming ~20.5 KB of SRAM at boot.

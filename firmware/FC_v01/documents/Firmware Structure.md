@@ -24,10 +24,12 @@ references:
 The `FC_v01` flight controller firmware is designed for hard real-time, deterministic quadrotor flight control. Built on FreeRTOS and optimized for target microcontrollers (such as the Espressif ESP32-S3), the system guarantees predictable loop execution, strict OSAL/middleware isolation, target-agnostic physical hardware abstraction, and hardware-accelerated SIMD math computation.
 
 ### Core Architectural Principles
-1. **Strict 500 Hz IMU Flight Loop Rate**: Primary sensor data acquisition (DAQ) and cascaded PID control loops operate at deterministic intervals (2.0 ms execution budget).
+1. **Strict 500 Hz IMU Flight Loop Rate**: Primary sensor Data Acquisition (DAQ), sensor preprocessing, and the roll/pitch attitude estimator run at deterministic intervals (2.0 ms execution budget); the motor output loop runs at 250 Hz. **The control law (cascaded PID / INDI) and the motor mixer are not implemented yet** — `src/core/control/` is a reserved stub, see the Layer 4 listing under §2.
 2. **Zero Dynamic Memory Allocation During Flight**: All RTOS tasks, ring buffers, queues, semaphores, and math structures are allocated statically during initialization. Zero `malloc()`, `free()`, `new`, or `delete` calls are permitted inside the flight execution loop.
 3. **Strict Downward Dependency Hierarchy**: Higher application and flight core layers may consume lower layer abstractions, but lower layers (drivers, middleware, HAL) must never import or depend on higher layers.
-4. **Target Hardware Isolation**: Driver, middleware, and core math modules across Layers 2 through 5 are entirely target-agnostic and consume standard HAL interfaces (`HAL_I2C`, `hal_simd`). Target-specific SDK headers (`<Wire.h>`, `esp_err.h`, `stm32f4xx_hal.h`) are restricted exclusively to Layer 1 target modules (`src/platforms/targets/`).
+4. **Target Hardware Isolation**: Driver, middleware, and core math modules across Layers 2 through 5 are entirely target-agnostic and consume standard HAL interfaces (`HAL_I2C`, `hal_simd`). Target-specific SDK headers and target primitives belong to Layer 1 (`src/platforms/targets/`); what Layers 2 through 5 must never do is expose a target-specific type in a public header or function signature. This replaces the former blanket header-import ban, retired 2026-11-18 (Gate A, see §1 preamble and `.agents/AGENTS.md` §0).
+
+**Rule precedence.** This document is normative except where a non-superseded Zettel narrows it under the gates defined in `.agents/AGENTS.md` §0 Rule Precedence: Gate A (explicit supersession), Gate B (physical impossibility), Gate C (registered exception). Any amendment made under a gate MUST name the gate it used. Where no gate applies, the code conforms to this document.
 
 ---
 
@@ -41,7 +43,8 @@ The codebase is organized into **5 decoupled structural layers**:
 +-------------------------------------------------------------+
 | Layer 4: Flight Core & Algorithms                           |
 |          (`src/core/sensor/`, `src/core/control/`,          |
-|           `src/core/math/`, `src/core/telemetry/`,          |
+|           `src/core/actuator/`, `src/core/math/`,           |
+|           `src/core/safety/`, `src/core/telemetry/`,        |
 |           `src/core/blackbox/`, `src/core/interface/`)      |
 +-------------------------------------------------------------+
 | Layer 3: Middleware & Inter-Task IPC Layer                  |
@@ -49,7 +52,9 @@ The codebase is organized into **5 decoupled structural layers**:
 +-------------------------------------------------------------+
 | Layer 2: Sensor & Peripheral Drivers Layer                  |
 |          (`src/drivers/imu/`, `src/drivers/baro/`,          |
-|           `src/drivers/rc_rx/`, `src/drivers/led/`)         |
+|           `src/drivers/rc_rx/`, `src/drivers/led/`,         |
+|           `src/drivers/storage/`,                           |
+|           `src/drivers/telemetry/`, `src/drivers/motor/`)   |
 +-------------------------------------------------------------+
 | Layer 1: Platform HAL & Hardware Target Drivers             |
 |          (`src/platforms/hal/`,                             |
@@ -67,8 +72,10 @@ The codebase is organized into **5 decoupled structural layers**:
 #### Layer 4: Flight Core & Algorithms Layer
 - **Directory**: [`src/core/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core)
   - `src/core/sensor/`: Unified sensor Data Acquisition (DAQ) sampling loops, sensor preprocessing loops (calibration application and noise filtering), and sensor calibration routines ([`daq_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/daq_tasks.cpp), [`sensor_preprocess_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/sensor_preprocess_tasks.cpp), [`calib.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/calib.cpp), [`calib_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/sensor/calib_tasks.cpp)).
-  - `src/core/control/`: Cascaded PID rate and attitude angle controllers, motor mixer ([`control_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/control/control_tasks.cpp)).
-  - `src/core/math/`: Linear algebra matrix engine ([`matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h)), 1st-order discrete low-pass filter algorithms ([`lpf.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/lpf.h)), 3D ellipsoid fitting ([`ellipsoid_fit.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/ellipsoid_fit.h)), and state estimators (AttitudeEKFEngine & AltitudeEKFEngine in [`estimators.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimators.h) and [`estimator_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimator_tasks.cpp)).
+  - `src/core/control/`: **Reserved — no controller is implemented.** Planned home of the cascaded PID rate/attitude controllers and the motor mixer; [`control_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/control/control_tasks.cpp) currently contains only a reservation comment, and the mixer in `src/core/actuator/motor_tasks.cpp` is a commented-out design sketch.
+  - `src/core/math/`: 1st-order discrete low-pass filter algorithms ([`lpf.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/lpf.h)), 3D ellipsoid fitting ([`ellipsoid_fit.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/ellipsoid_fit.h)), and state estimators (AttitudeEKFEngine & AltitudeEKFEngine in [`estimators.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimators.h) and [`estimator_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/estimator_tasks.cpp)). The vector/matrix engine itself is defined in Layer 1 ([`hal_matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_matrix.h)) and re-exported here by the [`matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h) facade — see §5.
+  - `src/core/actuator/`: Motor/ESC output task runner and the (currently commented-out) mixer ([`motor_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/actuator/motor_tasks.cpp), [`motor_tasks.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/actuator/motor_tasks.h)).
+  - `src/core/safety/`: Pre-flight gate evaluation and safety-status aggregation ([`preflight_checks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/safety/preflight_checks.cpp), [`safety_types.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/safety/safety_types.h)).
   - `src/core/telemetry/`: Telemetry streaming protocols and wireless OTA update management ([`ble_telem_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_telem_tasks.cpp), [`ble_ota_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_ota_tasks.cpp)).
   - `src/core/blackbox/`: High-frequency flight data storage and SD card snapshot logger ([`sd_logger_task.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.cpp), [`sd_logger_task.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.h)).
   - `src/core/interface/`: Human-machine and status indication abstractions (reserved for user buttons and status LEDs).
@@ -80,7 +87,9 @@ The codebase is organized into **5 decoupled structural layers**:
 
 #### Layer 2: Sensor & Peripheral Drivers Layer
 - **Directory**: [`src/drivers/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers)
-  - Sensor-specific drivers: IMU ([`mpu6050`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/imu/mpu6050.h), [`hmc5883l`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/imu/hmc5883l.h)), Barometer ([`bmp180`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/baro/bmp180.h), `bmp280`, `ms5611`), RC RX ([`rc_rx`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/rc_rx)).
+  - Sensor-specific drivers: IMU ([`mpu6050`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/imu/mpu6050.h), [`hmc5883l`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/imu/hmc5883l.h)), Barometer ([`bmp180`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/baro/bmp180.h); BMP280 and MS5611 are planned, not implemented), RC RX ([`rc_rx`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/rc_rx)).
+  - Actuator and storage drivers: LED output ([`ws2812`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/led/ws2812.h)), motor driver ([`motor_driver`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/motor/motor_driver.h)), MicroSD/FATFS ([`sd_card_driver`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/storage/sd_card_driver.h)) and flash persistence ([`flash_storage_driver`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/storage/flash_storage_driver.h)).
+  - Telemetry transport: BLE/NimBLE GATT transport and OTA packet encoding ([`ble_driver`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/telemetry/ble_driver.h), [`ble_packet.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/telemetry/ble_packet.h), [`ble_ota_packet.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/telemetry/ble_ota_packet.h)).
   - Hardware peripheral drivers are strictly stateless/class-based drivers; FreeRTOS task creation is forbidden inside Layer 2.
 
 #### Layer 1: Platform HAL & Hardware Target Drivers Layer
@@ -96,22 +105,32 @@ The codebase is organized into **5 decoupled structural layers**:
 To eliminate scheduler fragmentation and priority inversion, all FreeRTOS task configurations are managed centrally in [`include/config.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/include/config.h).
 
 ### Structured Task Parameter Enums
-Hardcoding magic numbers for priorities, stack sizes, or frequencies is strictly prohibited. Configurations are organized into 4 enum groups:
+Hardcoding magic numbers for priorities, stack sizes, or frequencies is strictly prohibited. Task identity, core pinning, priorities, frequencies, and stack sizes are each declared as their own enum group in `include/config.h`: `TaskIDs`, `TaskCores`, `TaskPriorities`, `TaskFrequenciesHz`, `TaskSizesBytes`.
 
 ```cpp
-enum TaskPriorities : uint8_t {
-  TASK_PRIORITY_LOW      = 1, // Telemetry, Housekeeping, Logging
-  TASK_PRIORITY_MED      = 2, // Barometer (50 Hz), Magnetometer (75 Hz) DAQ
-  TASK_PRIORITY_HIGH     = 3, // Rate Controller, Motor Output
-  TASK_PRIORITY_REALTIME = 4  // IMU DAQ Loop (500 Hz)
+// include/config.h - verbatim excerpt (one named constant per task)
+enum TaskPriorities : UBaseType_t {
+  TASK_MOTOR_PRIORITY                 = 4, // Realtime motor output loop (250 Hz)
+  TASK_ACCEL_GYRO_DAQ_PRIORITY        = 3, // Realtime IMU DAQ loop (500 Hz)
+  TASK_EKF_ROLL_PITCH_PRIORITY        = 3, // Realtime attitude estimator (500 Hz)
+  TASK_FSM_PRIORITY                   = 3, // High-medium FSM coordination (100 Hz)
+  TASK_BARO_DAQ_PRIORITY              = 2, // Medium sensor DAQ
+  TASK_MAG_DAQ_PRIORITY               = 2, // Medium sensor DAQ
+  TASK_BLE_TELEM_PRIORITY             = 1, // Low telemetry dispatcher
+  TASK_SD_LOGGER_PRIORITY             = 1  // Low blackbox logger
+  // ... one named constant per task; the full list is in include/config.h
 };
 
-enum TaskFrequencies : uint16_t {
-  TASK_ACCEL_GYRO_DAQ_FREQ_HZ  = 500,
-  TASK_MAG_DAQ_FREQ_HZ         = 75,
-  TASK_BARO_DAQ_FREQ_HZ        = 50
+enum TaskFrequenciesHz : uint32_t {
+  TASK_ACCEL_GYRO_DAQ_FREQ_HZ        = 500,
+  TASK_MOTOR_FREQ_HZ                 = 250,
+  TASK_MAG_DAQ_FREQ_HZ               = 100,
+  TASK_BARO_DAQ_FREQ_HZ              = 50
+  // ... one named constant per task
 };
 ```
+
+Priority values span **4 logical levels** — `1` LOW, `2` MEDIUM, `3` HIGH, `4` REALTIME — but there is **no** `TASK_PRIORITY_LOW/MED/HIGH/REALTIME` enum: each task carries its own named constant whose value is the level ([Note 0002]). The magnetometer DAQ frequency is **100 Hz**, not 75 Hz.
 
 ### Deterministic Periodic Delay Policy
 All periodic sensor tasks and control loops MUST use `vTaskDelayUntil(&last_wake_time, period_ticks)` rather than standard `vTaskDelay()`. This ensures zero execution phase drift across iterations.
@@ -134,7 +153,9 @@ if(xSemaphoreTake(i2c0_mutex, pdMS_TO_TICKS(10)) == pdTRUE){
 ```
 
 ### ISR & Completion Callback Routing
-Low-level hardware Interrupt Service Routines (ISRs) and asynchronous transaction completion callbacks MUST be defined inside Layer 3 (`src/middleware/`). High-level driver or application code must never contain raw `ISR_ATTR` functions directly.
+Hardware ISR **bodies** and their GPIO registration live in Layer 3 ([`src/middleware/ipc.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/middleware/ipc.cpp)): `[Note 0001]` assigns ISR ownership there, and an ISR cannot exist without target primitives. The **interpretation** — debounce, 3-second hold classification, event bitmask, FreeRTOS notification — also lives in Layer 3, and is exposed through a target-neutral `uint8_t` event API (`ipc_pop_btn_events()`). Asynchronous transaction completion callbacks MUST likewise be defined inside Layer 3 (`src/middleware/`), not in high-level driver or application code. Declaring raw ISRs in `src/app/` or `src/drivers/` remains forbidden.
+
+The former "no target headers in Layers 1 to 4" rule was retired on 2026-11-18 (Gate A, explicit supersession) because it was unsatisfiable as written and contradicted this section; see §1 item 4 and `.agents/AGENTS.md` §0 Rule Precedence.
 
 ---
 
@@ -145,13 +166,16 @@ Target SIMD files ([`src/platforms/targets/espressif/simd.cpp`](file:///d:/OneDr
 - **No `#else` Fallbacks**: Layer 1 SIMD functions must NOT contain scalar `#else` fallback implementations.
 - **Hardware-Only Scope**: Layer 1 `hal_simd` provides routines exclusively for types supported directly by hardware SIMD instructions (`float`, `int16_t`, `int8_t`).
 
-### Layer 4 Matrix Architecture & Selection Logic (`matrix.h`)
-Layer 4 ([`src/core/math/matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h)) owns compilation flag checking (`ENABLE_SIMD_ACCELERATION`) and type dispatching:
+### Layer 1 Matrix Engine (`hal_matrix.h`) & Layer 4 Facade (`matrix.h`)
+The vector/matrix engine is defined in **Layer 1** ([`src/platforms/hal/hal_matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_matrix.h)) and owns compilation flag checking (`ENABLE_SIMD_ACCELERATION`) and type dispatching. Layer 4 exposes it through a one-line facade ([`src/core/math/matrix.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/math/matrix.h)) so that no Layer 4 call site changed when the definitions moved down.
+
+**Why Layer 1:** `Vec3<T>` / `Vec4` are needed by Layer 2 ([`ble_packet.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/drivers/telemetry/ble_packet.h)) and Layer 3 ([`ipc.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/middleware/ipc.h)). A lower layer must never import a higher layer, so the type definitions have to sit below both. Layer 4 keeps its own import path; Layer 2 and Layer 3 MUST include `platforms/hal/hal_matrix.h` directly.
+
 - **`Matrix<T, ROWS, COLS>`**: Unified template class for linear algebra calculations.
 - **`Vec3<T>` Inheritance & Union**: Inherits `Matrix<T, 3, 1>` with an anonymous union (`union { T m[3]; struct { T x, y, z; }; }`), supporting both vector member access (`x, y, z`) and contiguous array buffer indexing (`m[i]`).
 - **Preprocessor Block Ordering**:
   - Top Block (`#if (!ENABLE_SIMD_ACCELERATION)`): Portable C++ scalar loops.
-  - Bottom Block (`#else`): Hardware SIMD dispatch via `if constexpr` for `float`, `int16_t`, `int8_t`. Types lacking target SIMD support (`int32_t`, `double`) gracefully execute scalar fallbacks inside Layer 4.
+  - Bottom Block (`#else`): Hardware SIMD dispatch via `if constexpr` for `float`, `int16_t`, `int8_t`. Types lacking target SIMD support (`int32_t`, `double`) gracefully execute scalar fallbacks inside the engine.
 
 ### ESP-DSP Hardware Primitive Integration
 For ESP32-S3 targets, SIMD primitives map directly to Espressif ESP-DSP assembly routines:
@@ -243,8 +267,20 @@ To maintain high readability and clean git diffs across developers, all C++ code
 | `[0036]` | Layer 4 Safety Domain Scoping, Universal SafetyStatus & Pre-Flight Gates Decoupling Specification | Section 2 (Layer 4 Safety Domain), Section 3 (Preflight Checks), Section 4 (FSM Safety Gating) |
 | `[0037]` | 3-State Vertical Velocity & Altitude Extended Kalman Filter (AltitudeEKFEngine), Dependency Injection & Layer 4 RTOS Task Architecture Specification | Section 3 (Altitude EKF Task & Math Engine), Section 4 (IPC alt_state & alt_timestamp) |
 | `[0038]` | Layer 3 OSAL & IPC Boundary Enforcement, Domain Struct Decoupling, and Interface Tasks Consolidation | Section 3 (Layer 4 Interface Tasks), Section 4 (Layer 3 IPC & OSAL Boundaries) |
+| `[0039]` | On-Demand BLE OTA Architecture in DEVELOPMENT State & Dependency Inversion | Section 3 (OTA Task Lifecycle), Section 4 (BLE OTA Gating) |
 | `[0040]` | FSM Calibration Terminal State & Mandatory Reboot Boundary Architectural Decision | Section 2 (Layer 5 App Domain), Section 3 (FSM), Section 4 (Calibration Persistence & Lifecycle) |
 | `[0041]` | SEGGER SystemView Tracing Scope & Exclusion of Maintenance and Calibration Tasks | Section 3 (Timing & Tracing Guardrails), Section 4 (SystemView Tracing & Task Markers) |
 | `[0042]` | Layer 5 Exclusive Task Suspension Authority & Layer 4 OTA Decoupling Architecture | Section 2 (Layer 5 App Authority), Section 3 (Task Lifecycle), Section 4 (BLE OTA Architecture) |
+| `[0043]` | Layer 2 Driver Decoupling from Layer 4 Math and Direct Layer 1 SIMD Scaling Architecture | Section 2 (Drivers Layer), Section 5 (SIMD HAL Integration) |
+| `[0044]` | System Physical Parameters, Mass Budget & Plant Inertia Estimation | Section 1 (Physical System Constants & Airframe Model) |
+| `[0045]` | RC Receiver Command MicroSD Blackbox Logging Architecture, 4-Byte Struct Alignment & Ring Buffer Snapshot Extraction | Section 2 (Storage), Section 3 (SD Logger Task) |
+| `[0046]` | FSM Direct Event Reporting, State Notification Pathways & Controlled Layer Inversion Exception | Section 2 (Layer 5 App Domain), Section 4 (FSM Event Dispatch) |
+| `[0047]` | Layer 1 RMT PPM Sync-Gap Bleed & Pulse RX Decoupling Architecture | Section 1 (HAL Pulse RX & RMT Target) |
+| `[0048]` | HAL SPI Interface Segregation & SD Card Driver Filesystem Decoupling | Section 1 (HAL SPI), Section 2 (SDCardDriver Lifecycle) |
+| `[0049]` | Firmware Architecture Audit, Refactoring Session Summary & Build Verification | Section 2 (5-Layer Boundaries & Refactoring Audit) |
+| `[0050]` | Pure On-Demand BLE OTA Architecture & Legacy Boot Window Retirement | Section 2 (Layer 5 Authority), Section 3 (Task Spawning), Section 4 (Memory Reclaim) |
+| `[0051]` | Multirotor GNSS Module Taxonomy, Antenna Physics, Elevated Mast Isolation & FC_v01 Integration Specification | Section 1 (HAL UART), Section 2 (GNSS Driver), Section 3 (GPS & Pos EKF Tasks) |
+| `[0052]` | Complete INA226 Decommissioning, Matek PDB XT60 Transition & Five-Gate Pre-Flight Safety Pipeline | Section 2 (5-Layer Pruning), Section 4 (5-Gate Preflight FSM) |
+
 
 

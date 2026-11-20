@@ -59,8 +59,9 @@ To prevent direct FSM invocation from degrading into unstructured spaghetti coup
 - `fsm.h` must **never** include heavy application tasks, drivers, or peripheral coordinators.
 
 ### Rule 2: Unidirectional Event Ingestion Only
-- Lower-layer tasks may only **push events** (`fsm_handle_event(...)`) or read read-only state (`fsm_get_state()`).
+- Lower-layer tasks may only **push events** (`fsm_set_event(...)` / `fsm_clear_event(...)`) through the Layer 3 contract header `middleware/flight_events.h` — never through `app/fsm.h` — or read read-only state via the Layer 5 API.
 - Lower-layer tasks may **never mutate FSM internal tables** or execute state transitions directly; all transitions remain encapsulated within `src/app/fsm.cpp`.
+- *(C5, 2026-11-19: the controlled inversion is limited to `middleware/flight_events.h`; Layer 4 never includes `app/fsm.h`.)*
 
 ### Rule 3: Distinct Authority Boundary
 - As established in `[Note 0042]`, reporting an event (e.g. `EVENT_FAILSAFE_TRIGGERED`) is permissible for worker tasks. However, **executing global lifecycle actions** (such as suspending all background tasks) remains the exclusive authority of Layer 5 (`app.cpp`).

@@ -27,6 +27,14 @@ CONFIG_SYSVIEW_ENABLE=y
 CONFIG_FREERTOS_USE_TRACE_FACILITY=y
 CONFIG_APPTRACE_SV_TS_SOURCE_ESP_TIMER=y
 
+# Task table size. 19 application tasks + ~9 system/BLE tasks (main, ipc0/1,
+# esp_timer, btController, BTC_TASK, NimBLE host, loopTask...) far exceeds the
+# IDF default of 16. Tasks past the limit lose their name and stack watermark
+# in the trace — and the ones created last are FSM/MOTOR/EKF/SD_LOGGER, i.e.
+# exactly the flight-critical ones. Keep this >= 32 when adding tasks.
+CONFIG_APPTRACE_SV_MAX_TASKS=32
+CONFIG_SYSVIEW_MAX_TASKS=32
+
 # Never stall the CPU when trace buffer full; drop trace packets instead of freezing flight tasks
 CONFIG_SYSVIEW_BUF_WAIT_TMO=0
 CONFIG_APPTRACE_SV_BUF_WAIT_TMO=0
@@ -55,3 +63,9 @@ CONFIG_SPIRAM_SPEED_80M=y
 # Driver Compatibility (Prevent abort if legacy conflict check constructor runs)
 CONFIG_RMT_SKIP_LEGACY_CONFLICT_CHECK=y
 CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK=y
+
+# Flight-critical: full 240 MHz core clock (owner ruling 2026-11-20; note 0007 assumed 240 MHz)
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=240
+CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240=y
+CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ=240

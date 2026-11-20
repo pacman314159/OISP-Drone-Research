@@ -86,3 +86,4 @@ To prevent unexpected disconnects (`WinError -2147023673` / `0x800704C7`) during
 - Complies with task creation and ID passing invariants from `[[0006-taskCreationConfigEnumsAndTaskArgsPassingDecision]]`.
 - Adheres to Layer 3 OSAL & IPC decoupling rules from `[[0038-osalLayer3IpcDecouplingAndInterfaceTasksConsolidation]]`.
 - Task suspension authority strictly reserved to Layer 5 per `[[0042-layer5ExclusiveTaskSuspensionAuthorityAndOtaDecoupling]]`, fully decoupling `ble_ota_tasks.cpp` from `app/app.h`.
+- Consolidated into pure on-demand model by `[[0050-pureOnDemandBleOtaMigrationAndBootWindowRetirement]]`: Completely retires the legacy 10-second boot listening window and eliminates boot SRAM queue allocation.

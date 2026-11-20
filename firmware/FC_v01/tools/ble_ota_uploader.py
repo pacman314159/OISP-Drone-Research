@@ -3,8 +3,8 @@
 BLE OTA Firmware Uploader for FC_v01 / FC_v02 Flight Controller
 Supports both standalone CLI usage and PlatformIO custom upload target.
 
-The FC OTA listener task runs for 10 seconds upon boot-up.
-Run this script within 10 seconds of FC reboot/power-on.
+The FC OTA listener task runs on-demand when the Flight Controller is in DEVELOPMENT mode.
+Ensure the Flight Controller is in DEVELOPMENT mode before uploading.
 """
 
 import sys
@@ -130,7 +130,7 @@ class BleOtaUploader:
         print(f"[*] Firmware Binary: {self.bin_path}")
         print(f"[*] Image Size: {fw_size:,} bytes ({fw_size / 1024:.2f} KB)")
         print(f"[*] CRC32: 0x{crc32_val:08X}")
-        print(f"[*] Scanning for BLE device '{self.device_name}' (listening in 10s boot window or DEVELOPMENT mode)...")
+        print(f"[*] Scanning for BLE device '{self.device_name}' (on-demand OTA in DEVELOPMENT mode)...")
 
         device = None
         scan_attempts = 0
@@ -145,7 +145,7 @@ class BleOtaUploader:
 
         if not device:
             print("\n[!] Error: Flight Controller not found!", file=sys.stderr)
-            print("[!] Ensure FC is powered on and either within the 10-second boot window or in DEVELOPMENT mode.", file=sys.stderr)
+            print("[!] Ensure FC is powered on, BLE is advertising, and system is in DEVELOPMENT mode.", file=sys.stderr)
             return False
 
         print(f"[+] Found FC device: {device.name} ({device.address})")

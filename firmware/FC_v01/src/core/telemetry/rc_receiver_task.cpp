@@ -4,7 +4,7 @@
 #include "middleware/ipc.h"
 #include "middleware/sysview_tracing.h"
 #include "drivers/rc_rx/fs_ia6b.h"
-#include "app/fsm.h"
+#include "middleware/flight_events.h"   // C5: EVT_* contract from Layer 3; Layer 4 no longer imports Layer 5
 
 void rc_receiver_task(void* arg){
   if(arg == nullptr) return;

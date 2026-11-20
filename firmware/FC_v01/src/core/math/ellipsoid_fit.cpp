@@ -5,6 +5,7 @@
 // 1. 9-PARAMETER FULL ROTATED ELLIPSOID SOLVER (SIMD ADAM)
 // =============================================================================
 
+// points: magnetometer samples in Gauss (already driver-scaled by HMC5883L::get_all_data, 1090 LSB/Gauss)
 void ellipsoid_fit_9param_init(Ellipsoid9ParamState& state, const Vec3<float>* points, uint16_t n,
                                uint16_t max_epochs, float lr, float tol, uint16_t min_samples){
   if(points == nullptr || n < min_samples) return;
@@ -19,24 +20,24 @@ void ellipsoid_fit_9param_init(Ellipsoid9ParamState& state, const Vec3<float>* p
   const float inv_n = 1.0f / static_cast<float>(n);
 
   // 1. Initial Guess: Compute empirical centroid v0 (hard-iron offset)
-  Vec3<float> sum{0.0f, 0.0f, 0.0f};
+  Vec3<float> sum{0.0f, 0.0f, 0.0f}; // Gauss (accumulator)
   for(uint16_t i = 0; i < n; ++i)
     sum += points[i];
 
-  state.v0 = sum * inv_n;
+  state.v0 = sum * inv_n; // Gauss
 
   // 2. Initial Guess: Compute reference field magnitude B0 (mean radial distance)
-  float sum_dist = 0.0f;
+  float sum_dist = 0.0f; // Gauss
   for(uint16_t i = 0; i < n; ++i){
-    Vec3<float> diff = points[i] - state.v0;
+    Vec3<float> diff = points[i] - state.v0; // Gauss
     sum_dist += diff.norm();
   }
 
-  state.b0 = sum_dist * inv_n;
+  state.b0 = sum_dist * inv_n; // Gauss
   if(state.b0 <= 1e-6f) state.b0 = 1.0f;
 
   // 3. Initial Guess: Soft-iron matrix W = (1 / b0) * I (maps initial sphere to unit sphere)
-  state.W = Matrix<float, 3, 3>::identity() * (1.0f / state.b0);
+  state.W = Matrix<float, 3, 3>::identity() * (1.0f / state.b0); // dimensionless (1/Gauss)
 
   // 4. Initialize Adam momentum states to zero
   state.m_v0 = Vec3<float>(0.0f, 0.0f, 0.0f);
@@ -45,15 +46,15 @@ void ellipsoid_fit_9param_init(Ellipsoid9ParamState& state, const Vec3<float>* p
   state.v_W  = Matrix<float, 3, 3>::zeros();
 
   // 5. Compute pre-optimization RMSE on unit sphere residual
-  float sum_r_sq = 0.0f;
+  float sum_r_sq = 0.0f; // dimensionless
   for(uint16_t i = 0; i < n; ++i){
-    Vec3<float> d = points[i] - state.v0;
-    Vec3<float> u = state.W * d;
-    float r = u.norm_sq() - 1.0f;
+    Vec3<float> d = points[i] - state.v0; // Gauss
+    Vec3<float> u = state.W * d;          // dimensionless (unit-sphere coordinate)
+    float r = u.norm_sq() - 1.0f;         // dimensionless
     sum_r_sq += r * r;
   }
 
-  state.initial_rmse = sqrtf(sum_r_sq * inv_n);
+  state.initial_rmse = sqrtf(sum_r_sq * inv_n); // dimensionless
   state.current_rmse = state.initial_rmse;
   state.prev_rmse    = 1e9f;
 }
@@ -73,24 +74,24 @@ bool ellipsoid_fit_9param_step(Ellipsoid9ParamState& state, const Vec3<float>* p
     state.current_epoch++;
     state.prev_rmse = state.current_rmse;
 
-    Vec3<float> s_u{0.0f, 0.0f, 0.0f};
-    Matrix<float, 3, 3> G = Matrix<float, 3, 3>::zeros();
-    float sum_r_sq = 0.0f;
+    Vec3<float> s_u{0.0f, 0.0f, 0.0f};                    // dimensionless (sum of u * r)
+    Matrix<float, 3, 3> G = Matrix<float, 3, 3>::zeros(); // Gauss
+    float sum_r_sq = 0.0f;                                // dimensionless
 
     // Evaluate point cloud projections and residuals (accelerated via Matrix SIMD operators)
     for(uint16_t i = 0; i < n; ++i){
-      Vec3<float> d = points[i] - state.v0;
-      Vec3<float> u = state.W * d;
+      Vec3<float> d = points[i] - state.v0; // Gauss
+      Vec3<float> u = state.W * d;          // dimensionless (unit-sphere coordinate)
 
-      float r = u.norm_sq() - 1.0f;
+      float r = u.norm_sq() - 1.0f; // dimensionless
       sum_r_sq += r * r;
 
-      Vec3<float> r_u = u * r;
+      Vec3<float> r_u = u * r;        // dimensionless
       s_u += r_u;
       G += r_u * d.transpose();
     }
 
-    state.current_rmse = sqrtf(sum_r_sq / n_f);
+    state.current_rmse = sqrtf(sum_r_sq / n_f); // dimensionless
 
     // Early stopping tolerance check: |RMSE_t - RMSE_{t-1}| < tol
     if(state.current_epoch > 1){
@@ -157,6 +158,7 @@ void ellipsoid_fit_9param_get_params(const Ellipsoid9ParamState& state, Ellipsoi
 // 2. 6-PARAMETER AXIS-ALIGNED ELLIPSOID SOLVER (SIMD ADAM)
 // =============================================================================
 
+// points: accelerometer samples in g (already driver-scaled by MPU6050::get_all_data, 16384 LSB/g)
 void ellipsoid_fit_6param_init(Ellipsoid6ParamState& state, const Vec3<float>* points, uint16_t n,
                                uint16_t max_epochs, float lr, float tol, uint16_t min_samples){
   if(points == nullptr || n < min_samples) return;
@@ -171,25 +173,25 @@ void ellipsoid_fit_6param_init(Ellipsoid6ParamState& state, const Vec3<float>* p
   const float inv_n = 1.0f / static_cast<float>(n);
 
   // 1. Initial Guess: Compute empirical centroid v0 (zero-g offset)
-  Vec3<float> sum{0.0f, 0.0f, 0.0f};
+  Vec3<float> sum{0.0f, 0.0f, 0.0f}; // g (accumulator)
   for(uint16_t i = 0; i < n; ++i)
     sum += points[i];
 
-  state.v0 = sum * inv_n;
+  state.v0 = sum * inv_n; // g
 
   // 2. Initial Guess: Compute reference magnitude b0 (mean radial distance)
-  float sum_dist = 0.0f;
+  float sum_dist = 0.0f; // g
   for(uint16_t i = 0; i < n; ++i){
-    Vec3<float> diff = points[i] - state.v0;
+    Vec3<float> diff = points[i] - state.v0; // g
     sum_dist += diff.norm();
   }
 
-  state.b0 = sum_dist * inv_n;
+  state.b0 = sum_dist * inv_n; // g
   if(state.b0 <= 1e-6f) state.b0 = 1.0f;
 
   // 3. Initial Guess: Sensitivity scale vector s = [1/b0, 1/b0, 1/b0]
-  float inv_b0 = 1.0f / state.b0;
-  state.s = Vec3<float>(inv_b0, inv_b0, inv_b0);
+  float inv_b0 = 1.0f / state.b0; // 1/g
+  state.s = Vec3<float>(inv_b0, inv_b0, inv_b0); // dimensionless (1/g)
 
   // 4. Initialize Adam momentum states to zero
   state.m_v0 = Vec3<float>(0.0f, 0.0f, 0.0f);
@@ -198,15 +200,15 @@ void ellipsoid_fit_6param_init(Ellipsoid6ParamState& state, const Vec3<float>* p
   state.v_s  = Vec3<float>(0.0f, 0.0f, 0.0f);
 
   // 5. Compute pre-optimization RMSE on unit sphere residual
-  float sum_r_sq = 0.0f;
+  float sum_r_sq = 0.0f; // dimensionless
   for(uint16_t i = 0; i < n; ++i){
-    Vec3<float> d = points[i] - state.v0;
-    Vec3<float> u = d.hadamard(state.s);
-    float r = u.norm_sq() - 1.0f;
+    Vec3<float> d = points[i] - state.v0; // g
+    Vec3<float> u = d.hadamard(state.s);  // dimensionless (unit-sphere coordinate)
+    float r = u.norm_sq() - 1.0f;         // dimensionless
     sum_r_sq += r * r;
   }
 
-  state.initial_rmse = sqrtf(sum_r_sq * inv_n);
+  state.initial_rmse = sqrtf(sum_r_sq * inv_n); // dimensionless
   state.current_rmse = state.initial_rmse;
   state.prev_rmse    = 1e9f;
 }
@@ -226,23 +228,23 @@ bool ellipsoid_fit_6param_step(Ellipsoid6ParamState& state, const Vec3<float>* p
     state.current_epoch++;
     state.prev_rmse = state.current_rmse;
 
-    Vec3<float> s_u{0.0f, 0.0f, 0.0f};
-    Vec3<float> g_s{0.0f, 0.0f, 0.0f};
-    float sum_r_sq = 0.0f;
+    Vec3<float> s_u{0.0f, 0.0f, 0.0f}; // dimensionless (sum of u * r)
+    Vec3<float> g_s{0.0f, 0.0f, 0.0f}; // g
+    float sum_r_sq = 0.0f;             // dimensionless
 
     // Evaluate point cloud projections and residuals
     for(uint16_t i = 0; i < n; ++i){
-      Vec3<float> d = points[i] - state.v0;
-      Vec3<float> u = d.hadamard(state.s);
+      Vec3<float> d = points[i] - state.v0; // g
+      Vec3<float> u = d.hadamard(state.s);  // dimensionless (unit-sphere coordinate)
 
-      float r = u.norm_sq() - 1.0f;
+      float r = u.norm_sq() - 1.0f; // dimensionless
       sum_r_sq += r * r;
 
       s_u += u * r;
       g_s += (u.hadamard(d)) * r;
     }
 
-    state.current_rmse = sqrtf(sum_r_sq / n_f);
+    state.current_rmse = sqrtf(sum_r_sq / n_f); // dimensionless
 
     // Early stopping tolerance check: |RMSE_t - RMSE_{t-1}| < tol
     if(state.current_epoch > 1){

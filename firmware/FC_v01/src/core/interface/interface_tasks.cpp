@@ -15,8 +15,6 @@ void status_led_task(void* arg){
   uint8_t base_brightness = RGB_LED_DEFAULT_BRIGHTNESS;
 
   while(true){
-    SYSVIEW_START(TASK_STATUS_LED_ID);
-
     LedCommand new_cmd;
     TickType_t wait_ticks = portMAX_DELAY;
 
@@ -31,6 +29,10 @@ void status_led_task(void* arg){
       current_cmd = new_cmd;
       anim_step = 0;
     }
+
+    // Marker opens AFTER the blocking wait: this task is event-driven, so the
+    // idle/blocked time must not be counted as execution (note 0007 rule 1).
+    SYSVIEW_START(TASK_STATUS_LED_ID);
 
     Color c = get_palette_color(current_cmd.color);
 

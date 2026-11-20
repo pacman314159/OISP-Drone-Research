@@ -1,9 +1,7 @@
 #include <Arduino.h>
-#include <esp_timer.h>
 #include <NimBLEDevice.h>
 #include <esp_log.h>
 #include "config.h"
-#include "middleware/ipc.h"
 #include "drivers/telemetry/ble_driver.h"
 #include "drivers/telemetry/ble_ota_packet.h"
 
@@ -19,6 +17,9 @@ extern "C" bool bleInUse(void){
 OtaStartPayload ota_start_payload = {0, 0, 0};
 volatile bool   ota_abort_requested = false;
 
+// OTA transport sink, registered by Layer 3 in init_ipc() (audit item C3).
+static BleOtaSink s_ota_sink = nullptr;
+
 static NimBLECharacteristic* p_gyro_raw_char   = nullptr;
 static NimBLECharacteristic* p_gyro_filt_char  = nullptr;
 static NimBLECharacteristic* p_accel_raw_char  = nullptr;
@@ -29,7 +30,6 @@ static NimBLECharacteristic* p_baro_raw_char   = nullptr;
 static NimBLECharacteristic* p_baro_filt_char  = nullptr;
 static NimBLECharacteristic* p_att_quat_char   = nullptr;
 static NimBLECharacteristic* p_att_euler_char  = nullptr;
-static NimBLECharacteristic* p_power_char      = nullptr;
 static NimBLECharacteristic* p_rc_channels_char = nullptr;
 static NimBLECharacteristic* p_alt_char         = nullptr;
 static NimBLECharacteristic* p_ota_control_char = nullptr;
@@ -77,8 +77,6 @@ class OtaControlCallbacks : public NimBLECharacteristicCallbacks {
       }
       ota_abort_requested = false;
       if(s_ota_trigger_cb != nullptr && s_ota_trigger_cb()){
-        if(app_task_handles[TASK_BLE_OTA_ID] != nullptr)
-          xTaskNotifyGive(app_task_handles[TASK_BLE_OTA_ID]);
         Serial.println("[BLE_OTA] OTA authorized by Layer 5 coordinator.");
       }else{
         Serial.println("[BLE_OTA] OTA trigger rejected: System not authorized for OTA update (requires DEVELOPMENT mode).");
@@ -86,25 +84,18 @@ class OtaControlCallbacks : public NimBLECharacteristicCallbacks {
         send_ble_ota_response(&err_resp, sizeof(err_resp));
       }
     }else if(cmd == OTA_CMD_END){
-      if(ota_data_queue != nullptr){
-        OtaDataChunk eof_chunk = {};
-        eof_chunk.length = OTA_CHUNK_EOF_MARKER;
-        if(val.length() >= sizeof(OtaEndPayload)){
-          OtaEndPayload end_payload;
-          memcpy(&end_payload, data, sizeof(OtaEndPayload));
-          memcpy(eof_chunk.data, &end_payload.fw_size_bytes, sizeof(uint32_t));
-        }
-        xQueueSend(ota_data_queue, &eof_chunk, pdMS_TO_TICKS(100));
+      uint8_t eof_size[sizeof(uint32_t)] = {0, 0, 0, 0};
+      if(val.length() >= sizeof(OtaEndPayload)){
+        OtaEndPayload end_payload;
+        memcpy(&end_payload, data, sizeof(OtaEndPayload));
+        memcpy(eof_size, &end_payload.fw_size_bytes, sizeof(uint32_t));
       }
+      if(s_ota_sink != nullptr)
+        s_ota_sink(BLE_OTA_EVT_EOF, eof_size, sizeof(eof_size));
     }else if(cmd == OTA_CMD_ABORT){
       ota_abort_requested = true;
-      if(ota_data_queue != nullptr){
-        OtaDataChunk abort_chunk = {};
-        abort_chunk.length = OTA_CHUNK_ABORT_MARKER;
-        xQueueSend(ota_data_queue, &abort_chunk, 0);
-      }
-      if(app_task_handles[TASK_BLE_OTA_ID] != nullptr)
-        xTaskNotifyGive(app_task_handles[TASK_BLE_OTA_ID]);
+      if(s_ota_sink != nullptr)
+        s_ota_sink(BLE_OTA_EVT_ABORT, nullptr, 0);
     }else if(cmd == OTA_CMD_REBOOT){
       Serial.println("[BLE_OTA] Remote reboot command received! Restarting MCU...");
       vTaskDelay(pdMS_TO_TICKS(100));
@@ -117,7 +108,7 @@ static OtaDataChunk s_incoming_ota_chunk;
 
 class OtaDataCallbacks : public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic* pCharacteristic) override{
-    if(!ble_ota_active || ota_data_queue == nullptr) return;
+    if(!ble_ota_active || s_ota_sink == nullptr) return;
 
     std::string val = pCharacteristic->getValue();
     if(val.empty()) return;
@@ -125,17 +116,57 @@ class OtaDataCallbacks : public NimBLECharacteristicCallbacks {
     s_incoming_ota_chunk.length = static_cast<uint16_t>(val.length() > sizeof(s_incoming_ota_chunk.data) ? sizeof(s_incoming_ota_chunk.data) : val.length());
     memcpy(s_incoming_ota_chunk.data, val.data(), s_incoming_ota_chunk.length);
 
-    if(xQueueSend(ota_data_queue, &s_incoming_ota_chunk, pdMS_TO_TICKS(500)) != pdTRUE){
+    if(!s_ota_sink(BLE_OTA_EVT_DATA, s_incoming_ota_chunk.data, s_incoming_ota_chunk.length)){
       Serial.println("[BLE_OTA] Error: ota_data_queue overflow! Aborting session.");
       ota_abort_requested = true;
-      if(app_task_handles[TASK_BLE_OTA_ID] != nullptr)
-        xTaskNotifyGive(app_task_handles[TASK_BLE_OTA_ID]);
+      s_ota_sink(BLE_OTA_EVT_ABORT, nullptr, 0);
     }
   }
 };
 
 static OtaControlCallbacks ota_control_callbacks;
 static OtaDataCallbacks ota_data_callbacks;
+
+// ---------------------------------------------------------------------------
+// OTA transport sink (audit item C3)
+//
+// Layer 2 reports; Layer 3 owns the queue, the abort flag and the task wake-up.
+// This is the same "detect here, decide above" rule applied to the SD logger in
+// R5: the BLE driver must not reach into middleware globals.
+// ---------------------------------------------------------------------------
+void ble_ota_set_sink(BleOtaSink sink){
+  s_ota_sink = sink;
+}
+
+// NimBLE server callbacks live in Layer 2 because they are part of the BLE
+// transport. They used to be defined in src/middleware/ipc.cpp, which forced
+// Layer 2 to reference an object owned by Layer 3 (a real dependency cycle).
+class FcBleServerCallbacks : public NimBLEServerCallbacks {
+public:
+  void onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) override{
+    set_ble_connected(true);
+    if(desc != nullptr)
+      pServer->updateConnParams(desc->conn_handle, 6, 12, 0, 500);
+    Serial.println("BLE Client Connected!");
+  }
+
+  void onDisconnect(NimBLEServer* pServer) override{
+    set_ble_connected(false);
+
+    if(is_ble_ota_active()){
+      Serial.println("[BLE_OTA] Connection lost during active OTA! Triggering abort...");
+      ota_abort_requested = true;
+      if(s_ota_sink != nullptr)
+        s_ota_sink(BLE_OTA_EVT_ABORT, nullptr, 0);
+    }
+
+    Serial.println("BLE Client Disconnected!");
+    if(!is_ble_ota_active())
+      NimBLEDevice::startAdvertising();
+  }
+};
+
+static FcBleServerCallbacks ble_server_callbacks;
 
 bool ble_driver_init(){
   esp_log_level_set("NimBLE", ESP_LOG_WARN);
@@ -178,9 +209,6 @@ bool ble_driver_init(){
 
   if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_ATT_EULER) != 0)
     p_att_euler_char = pTelemetryService->createCharacteristic(BLE_CHAR_ATT_EULER_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
-
-  if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_POWER) != 0)
-    p_power_char = pTelemetryService->createCharacteristic(BLE_CHAR_POWER_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
 
   if constexpr((ACTIVE_BLE_TELEM_MASK & BLE_TELEM_MASK_RC_CHANNELS) != 0)
     p_rc_channels_char = pTelemetryService->createCharacteristic(BLE_CHAR_RC_CHANNELS_UUID, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
@@ -229,7 +257,6 @@ static NimBLECharacteristic* get_char_by_mask(uint16_t mask_bit){
     case BLE_TELEM_MASK_BARO_FILT:   return p_baro_filt_char;
     case BLE_TELEM_MASK_ATT_QUAT:    return p_att_quat_char;
     case BLE_TELEM_MASK_ATT_EULER:   return p_att_euler_char;
-    case BLE_TELEM_MASK_POWER:       return p_power_char;
     case BLE_TELEM_MASK_RC_CHANNELS: return p_rc_channels_char;
     case BLE_TELEM_MASK_ALT:         return p_alt_char;
     default:                         return nullptr;

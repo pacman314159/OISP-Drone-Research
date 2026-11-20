@@ -33,7 +33,8 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 +-------------------------------------------------------------+
 | Layer 4: Flight Core & Algorithms                           |
 |          (`src/core/sensor/`, `src/core/control/`,          |
-|           `src/core/math/`, `src/core/telemetry/`,          |
+|           `src/core/actuator/`, `src/core/math/`,           |
+|           `src/core/safety/`, `src/core/telemetry/`,        |
 |           `src/core/blackbox/`, `src/core/interface/`)      |
 +-------------------------------------------------------------+
 | Layer 3: Middleware & Inter-Task IPC Layer                  |
@@ -41,7 +42,9 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 +-------------------------------------------------------------+
 | Layer 2: Drivers Layer                                      |
 |          (`src/drivers/imu/`, `src/drivers/baro/`,          |
-|           `src/drivers/rc_rx/`, `src/drivers/led/`)         |
+|           `src/drivers/rc_rx/`, `src/drivers/led/`,         |
+|           `src/drivers/storage/`,                           |
+|           `src/drivers/telemetry/`, `src/drivers/motor/`)   |
 +-------------------------------------------------------------+
 | Layer 1: Platform HAL & Targets                             |
 |          (`src/platforms/hal/`,                             |
@@ -62,7 +65,9 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 - **Directory**: `src/core/`
   - `src/core/sensor/`: Sensor Data Acquisition (DAQ) task runners (`daq_tasks.cpp/.h`), sensor preprocessing task runners (`sensor_preprocess_tasks.cpp/.h`), and calibration routines (`calib.cpp/.h`, `calib_tasks.cpp/.h`).
   - `src/core/control/`: Cascaded PID rate/angle controllers, motor mixer.
+  - `src/core/actuator/`: Motor/ESC activation and mixing task runners (`motor_tasks.cpp/.h`).
   - `src/core/math/`: Linear algebra matrix engine (`matrix.h`), discrete filters (`lpf.h`), 3D ellipsoid fitting (`ellipsoid_fit.cpp/.h`), and estimators (`estimator_tasks.cpp/.h`).
+  - `src/core/safety/`: Pre-flight gate evaluation and safety-status aggregation (`preflight_checks.cpp/.h`).
   - `src/core/telemetry/`: Telemetry data streaming and OTA update tasks (`ble_telem_tasks.cpp/.h`, `ble_ota_tasks.cpp/.h`).
   - `src/core/blackbox/`: High-frequency flight data logging and MicroSD storage (`sd_logger_task.cpp/.h`).
   - `src/core/interface/`: LED status indication and button interface tasks.
@@ -78,7 +83,7 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
   - `src/drivers/imu/`: MPU6050, HMC5883L drivers under active development.
   - `src/drivers/baro/`: BMP180 driver under active development. BMP280 and MS5611 are dummy implementations reserved for future sensor development.
   - `src/drivers/rc_rx/`: FS-iA6B IBUS/PPM receiver drivers.
-  - **Task Scoping Constraint**: All FreeRTOS task declarations inside `src/drivers/` are strictly forbidden; all task runners belong exclusively to Layer 4 (`src/core/sensor/`, `src/core/control/`, `src/core/math/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or Layer 5 (`src/app/`).
+  - **Task Scoping Constraint**: All FreeRTOS task declarations inside `src/drivers/` are strictly forbidden; all task runners belong exclusively to Layer 4 (`src/core/sensor/`, `src/core/control/`, `src/core/actuator/`, `src/core/math/`, `src/core/safety/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or Layer 5 (`src/app/`). `actuator/` hosts the motor/ESC activation and mixing task runners; `safety/` hosts pre-flight gate evaluation and safety-status aggregation.
 
 ### Layer 1: Platform HAL & Hardware Target Drivers Layer
 - **Directory**: `src/platforms/`
@@ -104,4 +109,4 @@ In the future, 3 primary technical documents will be developed simultaneously al
 3. **Zero Dynamic Allocation**: No `malloc()`, `free()`, `new`, or `delete` within the core 500 Hz flight loop.
 4. **Explicit Physical Units**: Standard SI units specified in code comments (`float accel; // m/s^2`, `float gyro; // rad/s`).
 5. **Naming Conventions**: `snake_case` for variables & functions, `PascalCase` for classes & structs, `ALL_CAPS_SNAKE` for constants & enums.
-6. **FreeRTOS Task Scoping**: All FreeRTOS tasks MUST be declared and defined strictly within `core/` (organized into 6 unified functional domains: `src/core/sensor/`, `src/core/control/`, `src/core/math/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or `app/` (`src/app/`) layers. FreeRTOS task declarations are strictly prohibited inside `drivers/` or lower layers. `sensor/` houses high-frequency sensor sampling task runners (`daq_tasks.cpp`, `daq_tasks.h`) and calibration routines [Note 0016].
+6. **FreeRTOS Task Scoping**: All FreeRTOS tasks MUST be declared and defined strictly within `core/` (organized into 8 unified functional domains: `src/core/sensor/`, `src/core/control/`, `src/core/actuator/`, `src/core/math/`, `src/core/safety/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or `app/` (`src/app/`) layers. FreeRTOS task declarations are strictly prohibited inside `drivers/` or lower layers. `sensor/` houses high-frequency sensor sampling task runners (`daq_tasks.cpp`, `daq_tasks.h`) and calibration routines [Note 0016]. `actuator/` houses motor/ESC activation and mixing task runners (`motor_tasks.cpp/.h`) [Note 0034]. `safety/` houses pre-flight gate evaluation and safety-status aggregation [Note 0036].

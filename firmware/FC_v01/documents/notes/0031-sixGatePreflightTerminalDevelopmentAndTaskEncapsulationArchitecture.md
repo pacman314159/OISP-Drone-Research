@@ -19,6 +19,7 @@ references:
   - "[[0028-ina226PowerModuleI2c1DaqAndBatteryMonitoringArchitecture]]"
   - "[[0030-rmtHardwarePpmDecodingFsIa6bAndBleTelemetryArchitecture]]"
   - "[[0045-rcReceiverCommandBlackboxSdCardLoggingArchitecture]]"
+  - "[[0052-ina226RemovalMatekPdbAndFiveGatePreflightPipeline]]"
 ---
 
 # Zettel 0031: Six-Gate Pre-Flight Safety Pipeline, Terminal Development Mode, Subsystem Task Encapsulation & Battery Enforcement Architecture
@@ -28,7 +29,7 @@ references:
 - **Author**: Drone Research Team / Developer
 - **Date**: 2026-10-16
 - **Time**: 19:48:00 +07:00
-- **Status**: Approved & Implemented
+- **Status**: Amended by `[[0052-ina226RemovalMatekPdbAndFiveGatePreflightPipeline]]` (Gate 5 battery check & `power_daq_task` retired; active pipeline is 5 gates)
 - **References**: `[Note 0000]`, `[Note 0001]`, `[Note 0002]`, `[Note 0006]`, `[Note 0013]`, `[Note 0018]`, `[Note 0020]`, `[Note 0023]`, `[Note 0024]`, `[Note 0027]`, `[Note 0028]`, `[Note 0030]`
 
 ---

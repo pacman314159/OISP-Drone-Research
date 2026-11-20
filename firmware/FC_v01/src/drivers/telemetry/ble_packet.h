@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "core/math/matrix.h"
+#include "platforms/hal/hal_matrix.h"
 
 #pragma pack(push, 1)
 
@@ -42,22 +42,6 @@ struct BleAttQuatPacket {
   BleAttQuatPacket(uint32_t ts, const float quat[4]) : timestamp(ts), q{quat[0], quat[1], quat[2], quat[3]}{}
 };
 
-// Power & Battery Telemetry Packet (20 Bytes Little-Endian, Millis Scale)
-struct BlePowerPacket {
-  uint32_t timestamp;  // us or ms
-  float    voltage_mv; // mV
-  float    current_ma; // mA
-  float    power_mw;   // mW
-  float    energy_mah; // mAh
-
-  BlePowerPacket() : timestamp(0), voltage_mv(0.0f), current_ma(0.0f), power_mw(0.0f), energy_mah(0.0f){}
-  template<typename TMeas>
-  BlePowerPacket(uint32_t ts, const TMeas& m)
-    : timestamp(ts), voltage_mv(m.voltage_mv), current_ma(m.current_ma), power_mw(m.power_mw), energy_mah(m.energy_mah){}
-  BlePowerPacket(uint32_t ts, float v_mv, float i_ma, float p_mw, float e_mah)
-    : timestamp(ts), voltage_mv(v_mv), current_ma(i_ma), power_mw(p_mw), energy_mah(e_mah){}
-};
-
 // RC Receiver Channels Telemetry Packet (28 Bytes Little-Endian, 6 Channels)
 struct BleRcPacket {
   uint32_t timestamp; // us or ms
@@ -83,6 +67,5 @@ static_assert(sizeof(BleMagPacket) == 16, "BleMagPacket must be exactly 16 bytes
 static_assert(sizeof(BleAttEulerPacket) == 16, "BleAttEulerPacket must be exactly 16 bytes for FCDatMon stride S=16");
 static_assert(sizeof(BleBaroPacket) == 8, "BleBaroPacket must be exactly 8 bytes for FCDatMon stride S=8");
 static_assert(sizeof(BleAttQuatPacket) == 20, "BleAttQuatPacket must be exactly 20 bytes for FCDatMon stride S=20");
-static_assert(sizeof(BlePowerPacket) == 20, "BlePowerPacket must be exactly 20 bytes for FCDatMon stride S=20");
 static_assert(sizeof(BleRcPacket) == 28, "BleRcPacket must be exactly 28 bytes for FCDatMon stride S=28");
 static_assert(sizeof(BleAltPacket) == 16, "BleAltPacket must be exactly 16 bytes for FCDatMon stride S=16");

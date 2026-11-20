@@ -5,3 +5,7 @@
 .ccls
 .cache
 build
+managed_components/
+graphify-out/
+sdkconfig.fc-v01*
+compile_commands.json

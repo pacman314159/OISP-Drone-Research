@@ -17,6 +17,7 @@ references:
   - "[[0027-preflightSensorDataStreamCheckFsmArchitecture]]"
   - "[[0029-unificationOfInterTaskRingBufferSizeConstant]]"
   - "[[0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture]]"
+  - "[[0052-ina226RemovalMatekPdbAndFiveGatePreflightPipeline]]"
 ---
 
 # Zettel 0028: INA226 Power Module I2C1 DAQ, Shunt Resistor Calibration, Millis Scale Metrics & Battery Health Monitoring Architecture
@@ -26,7 +27,7 @@ references:
 - **Author**: Drone Research Team / Developer
 - **Date**: 2026-10-15
 - **Time**: 15:35:00 +07:00
-- **Status**: Approved & Implemented
+- **Status**: Superseded by `[[0052-ina226RemovalMatekPdbAndFiveGatePreflightPipeline]]` (INA226 removed in transition to passive Matek PDB XT60)
 - **References**: `[Note 0000]`, `[Note 0001]`, `[Note 0002]`, `[Note 0006]`, `[Note 0009]`, `[Note 0018]`, `[Note 0019]`, `[Note 0020]`, `[Note 0027]`
 
 ---
@@ -214,3 +215,4 @@ struct PowerMeasurement {
 - [[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]]: FSM state machine transitions and safety arming gates.
 - [[0027-preflightSensorDataStreamCheckFsmArchitecture]]: 6-stream health verification including power telemetry.
 - [[0029-unificationOfInterTaskRingBufferSizeConstant]]: Unification of power ring buffer capacity under RING_BUF_SIZE.
+- [[0052-ina226RemovalMatekPdbAndFiveGatePreflightPipeline]]: Full architectural decommissioning of INA226 after Matek PDB XT60 transition.

@@ -1,76 +1,34 @@
 #include <Arduino.h>
-#include <esp_ota_ops.h>
-#include <esp_partition.h>
 #include "ble_ota_tasks.h"
 #include "config.h"
 #include "middleware/ipc.h"
+#include "middleware/sysview_tracing.h"
 #include "drivers/telemetry/ble_driver.h"
 #include "drivers/telemetry/ble_ota_packet.h"
 #include "drivers/led/ws2812.h"
+#include "platforms/hal/hal_ota.h"
 
 void ble_ota_task(void* arg){
+  HAL_OTA& ota = *static_cast<HAL_OTA*>(arg);
   const uint32_t task_id = TASK_BLE_OTA_ID;
-  (void)task_id;
-  const bool immediate_start = (arg != nullptr);
-
-  if(!immediate_start){
-    Serial.printf("[BLE_OTA] Task started. Listening for OTA trigger (%lu ms window)...\n", static_cast<unsigned long>(OTA_BOOT_WINDOW_TIMEOUT_MS));
-
-    uint32_t notified = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(OTA_BOOT_WINDOW_TIMEOUT_MS));
-
-    if(notified == 0){
-      Serial.printf("[BLE_OTA] %lu ms boot window expired without OTA trigger. Terminating OTA task.\n", static_cast<unsigned long>(OTA_BOOT_WINDOW_TIMEOUT_MS));
-      set_ble_ota_active(false);
-      app_task_handles[TASK_BLE_OTA_ID] = nullptr;
-      if(ota_data_queue != nullptr){
-        vQueueDelete(ota_data_queue);
-        ota_data_queue = nullptr;
-      }
-      vTaskDelete(NULL);
-      return;
-    }
-  }
 
   Serial.println("[BLE_OTA] OTA trigger received! Entering OTA Update Mode...");
   set_ble_ota_active(true);
 
-  const esp_partition_t* running = esp_ota_get_running_partition();
-  const esp_partition_t* update_partition = esp_ota_get_next_update_partition(NULL);
+  const uint32_t fw_size = ota_start_payload.fw_size_bytes; // bytes
 
-  if(update_partition == nullptr){
-    Serial.println("[BLE_OTA] Error: No valid OTA update partition found!");
-    uint8_t err_resp = OTA_RESP_ERR_FLASH;
+  // [C7] Partition selection, capacity check and esp_ota_begin live behind HAL_OTA.
+  SYSVIEW_START(task_id);
+  OtaStatus begin_status = ota.begin(fw_size);
+  SYSVIEW_END(task_id);
+
+  if(begin_status != OtaStatus::OK){
+    uint8_t err_resp = (begin_status == OtaStatus::FIRMWARE_TOO_LARGE)
+                       ? OTA_RESP_ERR_SIZE : OTA_RESP_ERR_FLASH;
     send_ble_ota_response(&err_resp, sizeof(err_resp));
     set_ble_ota_active(false);
-    app_task_handles[TASK_BLE_OTA_ID] = nullptr;
-    vTaskDelete(NULL);
-    return;
-  }
-
-  if(running != nullptr)
-    Serial.printf("[BLE_OTA] Running partition: %s, Target partition: %s (size: 0x%lx)\n",
-                  running->label, update_partition->label, static_cast<unsigned long>(update_partition->size));
-
-  uint32_t fw_size = ota_start_payload.fw_size_bytes; // bytes
-  if(fw_size > update_partition->size){
-    Serial.printf("[BLE_OTA] Error: Firmware size %lu exceeds partition capacity %lu!\n",
-                  static_cast<unsigned long>(fw_size), static_cast<unsigned long>(update_partition->size));
-    uint8_t err_resp = OTA_RESP_ERR_SIZE;
-    send_ble_ota_response(&err_resp, sizeof(err_resp));
-    set_ble_ota_active(false);
-    app_task_handles[TASK_BLE_OTA_ID] = nullptr;
-    vTaskDelete(NULL);
-    return;
-  }
-
-  esp_ota_handle_t ota_handle = 0;
-  esp_err_t err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
-  if(err != ESP_OK){
-    Serial.printf("[BLE_OTA] esp_ota_begin failed: 0x%x\n", err);
-    uint8_t err_resp = OTA_RESP_ERR_FLASH;
-    send_ble_ota_response(&err_resp, sizeof(err_resp));
-    set_ble_ota_active(false);
-    app_task_handles[TASK_BLE_OTA_ID] = nullptr;
+    ipc_register_task(TASK_BLE_OTA_ID, nullptr);   // C4: registry through the Layer 3 API
+    ipc_destroy_ota_queue();
     vTaskDelete(NULL);
     return;
   }
@@ -84,10 +42,20 @@ void ble_ota_task(void* arg){
   bool ota_success = false;
   OtaDataChunk chunk;
 
+  // Event-driven task: the marker covers ONE chunk of work, never the blocked
+  // queue wait (up to 3 s of timeout), so the trace shows real flash/CPU cost.
+  bool iter_open = false;
+  auto close_iteration = [&iter_open](){
+    if(iter_open){
+      SYSVIEW_END(TASK_BLE_OTA_ID);
+      iter_open = false;
+    }
+  };
+
   while(true){
     if(ota_abort_requested || !is_ble_connected()){
       Serial.println("[BLE_OTA] Transfer interrupted (abort requested or connection lost). Discarding image...");
-      esp_ota_abort(ota_handle);
+      ota.abort();
       uint8_t err_resp = OTA_RESP_ERR_ABORT;
       send_ble_ota_response(&err_resp, sizeof(err_resp));
       break;
@@ -95,17 +63,21 @@ void ble_ota_task(void* arg){
 
     if(xQueueReceive(ota_data_queue, &chunk, pdMS_TO_TICKS(3000)) != pdTRUE){
       Serial.println("[BLE_OTA] Data stream timed out or connection dropped! Discarding image...");
-      esp_ota_abort(ota_handle);
+      ota.abort();
       uint8_t err_resp = OTA_RESP_ERR_FLASH;
       send_ble_ota_response(&err_resp, sizeof(err_resp));
       break;
     }
 
+    SYSVIEW_START(task_id);
+    iter_open = true;
+
     if(chunk.length == OTA_CHUNK_ABORT_MARKER){
       Serial.println("[BLE_OTA] Abort marker received. Discarding image...");
-      esp_ota_abort(ota_handle);
+      ota.abort();
       uint8_t err_resp = OTA_RESP_ERR_ABORT;
       send_ble_ota_response(&err_resp, sizeof(err_resp));
+      close_iteration();
       break;
     }
 
@@ -119,27 +91,22 @@ void ble_ota_task(void* arg){
       if(total_written != expected_total){
         Serial.printf("[BLE_OTA] Size mismatch: written %lu, expected %lu bytes. Discarding image...\n",
                       static_cast<unsigned long>(total_written), static_cast<unsigned long>(expected_total));
-        esp_ota_abort(ota_handle);
+        ota.abort();
         uint8_t err_resp = OTA_RESP_ERR_VERIFY;
         send_ble_ota_response(&err_resp, sizeof(err_resp));
+        close_iteration();
         break;
       }
 
       Serial.printf("[BLE_OTA] End of data received. Total bytes written: %lu. Validating image...\n",
                     static_cast<unsigned long>(total_written));
-      err = esp_ota_end(ota_handle);
-      if(err != ESP_OK){
-        Serial.printf("[BLE_OTA] esp_ota_end validation failed: 0x%x\n", err);
-        uint8_t err_resp = OTA_RESP_ERR_VERIFY;
-        send_ble_ota_response(&err_resp, sizeof(err_resp));
-        break;
-      }
 
-      err = esp_ota_set_boot_partition(update_partition);
-      if(err != ESP_OK){
-        Serial.printf("[BLE_OTA] esp_ota_set_boot_partition failed: 0x%x\n", err);
-        uint8_t err_resp = OTA_RESP_ERR_FLASH;
+      OtaStatus end_status = ota.end_and_set_boot();
+      if(end_status != OtaStatus::OK){
+        uint8_t err_resp = (end_status == OtaStatus::VERIFY_FAILED)
+                           ? OTA_RESP_ERR_VERIFY : OTA_RESP_ERR_FLASH;
         send_ble_ota_response(&err_resp, sizeof(err_resp));
+        close_iteration();
         break;
       }
 
@@ -147,15 +114,15 @@ void ble_ota_task(void* arg){
       uint8_t success_resp = OTA_RESP_SUCCESS;
       send_ble_ota_response(&success_resp, sizeof(success_resp));
       ota_success = true;
+      close_iteration();
       break;
     }
 
-    err = esp_ota_write(ota_handle, chunk.data, chunk.length);
-    if(err != ESP_OK){
-      Serial.printf("[BLE_OTA] esp_ota_write failed: 0x%x\n", err);
-      esp_ota_abort(ota_handle);
+    if(!ota.write(chunk.data, chunk.length)){
+      ota.abort();
       uint8_t err_resp = OTA_RESP_ERR_FLASH;
       send_ble_ota_response(&err_resp, sizeof(err_resp));
+      close_iteration();
       break;
     }
 
@@ -176,10 +143,12 @@ void ble_ota_task(void* arg){
         send_ble_ota_response(reinterpret_cast<const uint8_t*>(&prog), sizeof(prog));
       }
     }
+
+    close_iteration();
   }
 
   set_ble_ota_active(false);
-  app_task_handles[TASK_BLE_OTA_ID] = nullptr;
+  ipc_register_task(TASK_BLE_OTA_ID, nullptr);   // C4
 
   const uint32_t reboot_delay_ms = ota_success ? 500 : 1000;
   if(ota_success){
@@ -188,23 +157,25 @@ void ble_ota_task(void* arg){
     Serial.println("[BLE_OTA] OTA Failed or Aborted. Rebooting system in 1000 ms...");
   }
   vTaskDelay(pdMS_TO_TICKS(reboot_delay_ms));
-  esp_restart();
+  ota.restart();
 }
 
-bool spawn_ble_ota_task(bool immediate_start){
-  if(app_task_handles[TASK_BLE_OTA_ID] != nullptr) return true;
-  if(ota_data_queue == nullptr)
-    ota_data_queue = xQueueCreate(OTA_DATA_QUEUE_DEPTH, sizeof(OtaDataChunk));
-  if(ota_data_queue == nullptr) return false;
+bool spawn_ble_ota_task(HAL_OTA& ota){
+  if(ipc_get_task(TASK_BLE_OTA_ID) != nullptr) return true;   // C4
+  if(!ipc_create_ota_queue(sizeof(OtaDataChunk))) return false;
 
+  TaskHandle_t handle = nullptr;
   BaseType_t ret = xTaskCreatePinnedToCore(
     ble_ota_task,
     TASK_BLE_OTA_NAME,
     TASK_BLE_OTA_STACK_SIZE,
-    immediate_start ? reinterpret_cast<void*>(1) : nullptr,
+    &ota,
     TASK_BLE_OTA_PRIORITY,
-    &app_task_handles[TASK_BLE_OTA_ID],
+    &handle,
     TASK_BLE_OTA_CORE
   );
-  return (ret == pdPASS);
+  if(ret != pdPASS) return false;
+
+  ipc_register_task(TASK_BLE_OTA_ID, handle);   // C4: no direct registry write
+  return true;
 }

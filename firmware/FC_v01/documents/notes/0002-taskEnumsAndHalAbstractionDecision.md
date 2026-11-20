@@ -57,9 +57,12 @@ enum TaskFrequencies : uint16_t {
 };
 ```
 
-### Rule 3: Complete Target Hardware Abstraction Across Layers 1 to 4
-- No entity, peripheral driver, middleware module, algorithm, or application component across Layers 1 to 4 shall import target-specific headers (e.g. `<Wire.h>`, `<driver/rmt.h>`, `esp_err.h`, or `stm32f4xx_hal.h`) or have any awareness of whether the underlying physical I2C or peripheral drivers are for STM32, ESP32, or any other target SoC.
+### Rule 3: Hardware Access Through HAL Interfaces
 - All hardware interactions MUST occur strictly through abstract HAL interfaces (`HAL_I2C`, `HAL_I2C_ASYNC`, `HAL_PulseTX`) and target hardware accessor functions (`get_i2c0_bus()`, `get_pulse_tx0()`).
+- No public header or function signature in Layers 2 through 5 may expose a target-specific type. Target-neutral value types are mandatory at every public API — the button event API is `uint8_t` (`ipc_pop_btn_events()` in `src/middleware/ipc.h`).
+- **Header-import prohibition retired (2026-11-18, Gate A — owner ruling).** The former blanket rule — "No entity, peripheral driver, middleware module, algorithm, or application component across Layers 1 to 4 shall import target-specific headers (e.g. `<Wire.h>`, `<driver/rmt.h>`, `esp_err.h`, or `stm32f4xx_hal.h`) or have any awareness of whether the underlying physical I2C or peripheral drivers are for STM32, ESP32, or any other target SoC" — is deleted. It was unsatisfiable as written: it also forbade Layer 1 (`src/platforms/targets/`), the layer whose function is to own target headers, and it directly contradicted `[Note 0001]`, which requires hardware ISR bodies in Layer 3. This retirement supersedes `0002` §61 and the identical restriction in `documents/Firmware Structure.md` §1.4.
+- **ISR ownership is unaffected by this retirement.** Hardware ISR bodies and their GPIO registration still belong to Layer 3 (`src/middleware/ipc.cpp`), per `[Note 0001]`; debounce, 3-second hold classification, the event bitmask and the FreeRTOS notification are also Layer 3, exposed through the target-neutral `uint8_t` API. Declaring raw ISRs in `src/app/` or `src/drivers/` remains forbidden.
+- **Recorded debt.** `src/core/interface/user_button.cpp` (Layer 4) still performs GPIO configuration and level reads directly; it is technical debt against a future `HAL_GPIO` abstraction, which is deferred (do not describe it as approved work).
 
 ### Rule 4: Prohibition of `auto` Variable Declarations
 - `auto` type deduction for variables is strictly forbidden across all firmware layers to prevent type ambiguity, hidden conversions, pointer/reference decay, and unintended value copies.
@@ -70,12 +73,14 @@ enum TaskFrequencies : uint16_t {
 - This eliminates loop execution phase drift and guarantees precise, deterministic release frequencies (e.g. exact 500 Hz / 2 ms periods for the IMU loop).
 
 ### Rule 6: Centralized Inter-Task Communication (`ipc.h` / `ipc.cpp`)
-- All Layer 3 shared RTOS resources — including synchronization primitives (mutexes `i2c0_mutex`/`i2c1_mutex`/`status_led_mutex`, semaphores), inter-task data pipes (queues, ring buffers `imu_ring_buffer`), and shared memory allocations — MUST be declared centrally in `src/middleware/ipc.h` and instantiated in `src/middleware/ipc.cpp`.
-- Initialization of all system IPC handles MUST be executed via `init_ipc()`. Scattering IPC declarations across drivers or application code is strictly forbidden.
+- **Ownership.** Every RTOS object with more than one consumer (queue, mutex, semaphore, ring buffer) MUST be declared in `src/middleware/` and created in `src/middleware/ipc.cpp`. No module creates its own.
+- **Types.** Any type that crosses an IPC boundary MUST be a POD declared in `include/ipc_types.h`, containing no OS type and no vendor type.
+- **Access.** Queues, mutexes and the task registry MUST be accessed through the Layer 3 API (`ipc_*`). Task registry mutations go through `ipc_register_task()` / `ipc_get_task()`; only Layer 5's task-creation site in `app.cpp` may populate a slot directly at creation time. Single-producer/single-consumer ring buffers MAY be accessed directly, and their SPSC discipline MUST be stated at the declaration (`middleware/ipc_handles.h`).
+- *(C15, 2026-11-19: replaces the blanket "everything through `ipc.h`" wording. The headers are now split — `include/ipc_types.h`, `middleware/ipc_handles.h`, `middleware/ipc_lifecycle.h`, with `middleware/ipc.h` kept as an umbrella — while `ipc.cpp` remains the single owner.)*
 
 ### Rule 7: FreeRTOS Task Scoping & Scoped Layering
-- FreeRTOS tasks MUST be declared and defined strictly in Layer 4 (`src/core/`, e.g. `src/core/sensor/`, `src/core/control/`, `src/core/math/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or Layer 5 (`src/app/`).
-- Declaring or creating FreeRTOS tasks inside Layer 2 (`drivers/`) or below is strictly prohibited. `sensor/` houses high-frequency sensor Data Acquisition and calibration routines [Note 0016].
+- FreeRTOS tasks MUST be declared and defined strictly in Layer 4 (`src/core/`, e.g. `src/core/sensor/`, `src/core/control/`, `src/core/actuator/`, `src/core/math/`, `src/core/safety/`, `src/core/telemetry/`, `src/core/blackbox/`, `src/core/interface/`) or Layer 5 (`src/app/`).
+- Declaring or creating FreeRTOS tasks inside Layer 2 (`drivers/`) or below is strictly prohibited. `sensor/` houses high-frequency sensor Data Acquisition and calibration routines [Note 0016]; `actuator/` houses motor/ESC activation and mixing task runners; `safety/` houses pre-flight gate evaluation and safety-status aggregation.
 
 ---
 
@@ -85,5 +90,5 @@ enum TaskFrequencies : uint16_t {
 3. **HAL Isolation Rule**: Ensure driver and application code consume `HAL_I2C&` exclusively via `get_i2c0_bus()`.
 4. **Explicit Typing Rule**: Replace any `auto` declarations with explicit types.
 5. **Deterministic Delay Rule**: Use `vTaskDelayUntil()` for all periodic loops.
-6. **Centralized IPC Rule**: Declare all shared locks, semaphores, queues, and ring buffers inside `src/middleware/ipc.h` / `ipc.cpp` and initialize via `init_ipc()`.
+6. **Centralized IPC Rule**: Declare all shared locks, semaphores, queues, and ring buffers in `src/middleware/` and create them in `src/middleware/ipc.cpp`; initialize via `init_ipc()`. IPC contracts live in `include/ipc_types.h`. Queues, mutexes and the task registry go through the `ipc_*` API; SPSC ring buffers may be accessed directly with their discipline stated at the declaration (Rule 6, C15).
 7. **Task Scoping Rule**: Ensure all task functions reside exclusively in `core/` or `app/` (e.g. `src/core/sensor/daq_tasks.h`, `src/core/sensor/sensor_preprocess_tasks.h`, `src/core/telemetry/ble_telem_tasks.h`).
