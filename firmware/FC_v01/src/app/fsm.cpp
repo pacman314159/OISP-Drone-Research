@@ -486,9 +486,32 @@ static void update_gate_event(SafetyStatus status, uint32_t pass_evt, uint32_t f
   }
 }
 
+// -----------------------------------------------------------------------------
+// [N1] Motor lockout asserted by the FSM on entry to a non-flight state.
+//
+// The FSM is the state authority, so it must *assert* "disarmed" rather than rely
+// on nothing having armed. The physical override (MotorDriver::disarm_all(), pulse
+// 1000 us, _armed = false) is reached through the Layer 3 mediator queue exactly as
+// note 0035 specifies - no Layer 5 -> Layer 2 driver call is introduced here.
+//
+// Edge-triggered: this runs every FSM tick at 100 Hz and motor_cmd_queue is only 4
+// deep, so the command is sent once per state entry, not per tick.
+// -----------------------------------------------------------------------------
+static void assert_motor_lockout(SystemState state){
+  static SystemState s_lockout_state = PREFLIGHT;
+  static bool        s_lockout_sent  = false;
+
+  if(s_lockout_sent && s_lockout_state == state) return;
+  s_lockout_state = state;
+  s_lockout_sent  = true;
+
+  MotorCommand cmd = MOTOR_CMD_DISARM;
+  (void)xQueueSend(motor_cmd_queue, &cmd, 0);
+}
+
 static void handle_state_preflight(){
-  // [SAFETY MOTOR LOCKOUT] Ensure all motor PWM outputs are disabled (PWM = 0)
-  // hal_motor_disable_all(); // Motor driver PWM = 0 lockout
+  // [SAFETY MOTOR LOCKOUT] Ensure all motor PWM outputs are disabled.
+  assert_motor_lockout(PREFLIGHT);
 
   // Check if user requested active sensor calibration (held at boot or pressed in preflight)
   if((s_current_events & (EVT_BTN_LONG_HOLD | EVT_ACTIVE_CALIB_INVOKED)) != 0 || user_button_is_pressed()){
@@ -519,8 +542,8 @@ static void handle_state_preflight(){
 }
 
 static void handle_state_development(){
-  // [SAFETY MOTOR LOCKOUT] Ensure all motor PWM outputs remain disabled (PWM = 0)
-  // hal_motor_disable_all(); // Motor driver PWM = 0 lockout
+  // [SAFETY MOTOR LOCKOUT] Ensure all motor PWM outputs remain disabled.
+  assert_motor_lockout(DEVELOPMENT);
 
   static bool s_dev_entry_logged = false;
   if(!s_dev_entry_logged){

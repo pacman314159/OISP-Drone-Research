@@ -117,4 +117,5 @@ In [`include/config.h`](include/config.h), `TASK_MOTOR_PRIORITY` is elevated to 
 - [[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]]: Centralized state transitions and arming gating.
 - [[0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture]]: Pre-flight 6-gate lockout.
 - [[0034-motorDriverLedcHalQuadxActuatorTaskArchitecture]]: Normalized motor driver and LEDC HAL.
+- [[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]] (amendment 2026-11-21): the FSM now **asserts** the disarm this note defines, instead of relying on the boot-time call alone. `assert_motor_lockout()` in `src/app/fsm.cpp` sends `MOTOR_CMD_DISARM` through `motor_cmd_queue` on entry to `PREFLIGHT` and `DEVELOPMENT` — the mediator path of this note, no Layer 5 → Layer 2 driver call. It replaced a comment referencing `hal_motor_disable_all()`, a function that was never implemented. Edge-triggered once per state entry because the queue is 4 deep. Not yet compile-verified.
 
