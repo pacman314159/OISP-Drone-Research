@@ -7,6 +7,11 @@ pcb/**/.history_trim/
 *.lck
 *-backups/
 
+# Generated artefacts (diagram renders, browser scratch, Office lock files)
+.archify/
+.playwright-mcp/
+~$*
+
 # Credentials
 .agents/credentials.json
 .agents/*token*.json
