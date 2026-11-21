@@ -162,7 +162,7 @@ struct PowerMeasurement {
    - `REQUIRE_BATTERY_FOR_ARMING` has been completely eliminated; battery presence and health are mandatory.
    - If average cell voltage $V_{\text{cell}} < 3300\,\text{mV}$ (`BATTERY_CELL_MIN_VOLTAGE_MV`), reading is invalid, or no battery data arrives within `SENSOR_STREAM_STARTUP_TIMEOUT_MS` (2.5 s):
      - Sets `EVT_BATTERY_LOW` and clears `EVT_BATTERY_VOLTAGE_OK`.
-     - Fails Gate 5 and triggers immediate, one-way transition to **`STATE_DEVELOPMENT`** (`Rule_Preflight_To_Development`, see `[[0031]]`).
+     - Fails Gate 5 and triggers immediate, one-way transition to **`STATE_DEVELOPMENT`** (`Rule_Preflight_To_Development`, see `[[0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture]]`).
      - Motors are permanently locked (`PWM = 0`) with solid amber alert LED until cold reboot.
 3. **Stream Health Integration**: Added as part of Gate 5 in `check_power_initial_condition()`. Verifies timestamp freshness ($\Delta t \le 200\,000\,\mu\text{s}$) and voltage sanity ($1000\,\text{mV} \le V_{\text{pack}} \le 36000\,\text{mV}$).
 

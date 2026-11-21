@@ -71,6 +71,8 @@ This accumulation broke multiple foundational architectural rules established in
 - Updated `src/app/app.cpp` to include `"core/interface/interface_tasks.h"`.
 
 ### Decision 2: Executed Layer 3 IPC Refactoring & Domain Decoupling
+
+> **Correction 2026-11-21.** When this note was written, "Executed" over-claimed: three of the four programme items below were still open in the tree, and a 2026-11-19 audit recorded that as a defect in the ledger. The programme is genuinely executed **as of 2026-11-21** — see §6 for the trace of each remainder. Item 7 of this list is also out of date: `FcBleServerCallbacks` left `ipc.h` on 2026-11-19 ([[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]]).
 1. **Redundant Mutex Elimination**:
    - Removed `status_led_mutex` from `ipc.h` and `ipc.cpp`; status LED synchronization is serialized exclusively via `led_cmd_queue`.
 2. **Interface Domain Migration**:
@@ -96,3 +98,20 @@ This accumulation broke multiple foundational architectural rules established in
 - Updates RGB LED worker location defined in `[[0023-fsmCentricCalibrationOrchestrationAndRgbLedArchitecture]]`.
 - Aligns with unified buffer constants from `[[0029-unificationOfInterTaskRingBufferSizeConstant]]`.
 - Complemented by `[[0039-onDemandBleOtaInDevelopmentStateAndDependencyInversionArchitecture]]`: Uses Dependency Inversion callback for on-demand BLE OTA task invocation.
+
+---
+
+## 6. Remaining Items — closed 2026-11-21
+
+The three gaps that were still open when this note claimed "Executed":
+
+| Original claim | What was still true in the tree | Closed by |
+|---|---|---|
+| Payload types decoupled from IPC | `ipc.cpp` included Layer 4 headers (`interface_tasks.h`, `calib.h`) only to size `LedCommand` / `CalibReportMsg` | `include/ipc_types.h` — [[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]] |
+| Controlled task registry | `ble_ota_tasks.cpp` wrote `app_task_handles[]` directly at 6 sites, racing Layer 5's suspension sweep | `ipc_register_task()` / `ipc_get_task()` — [[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]] |
+| Hardware behind HAL | `esp_ota_*` / `esp_partition_*` called directly from Layer 4 | `HAL_OTA` + `platforms/targets/espressif/ota.cpp` — [[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]] |
+
+**Verification status:** none of the three has been compiled. The build gate (both `fc-v01` environments) and the OTA smoke test are still owed before this note can be read as *verified* rather than *executed*.
+
+- Amends: [[0002-taskEnumsAndHalAbstractionDecision]] Rule 6 — the blanket "everything through `ipc.h`" wording is replaced by ownership / types / access.
+- Context of the commit: [[0054-baselineCommitWorktreeRetirementAndOnedriveGitHazard]].

@@ -6,8 +6,8 @@ date: 2026-09-15
 time: 19:17:05 +07:00
 tags: ["#zettelkasten", "#firmware", "#architecture", "#fc_v01", "#layers", "#freertos"]
 references:
-  - "[[Firmware Structure]]"
-  - "[[System Architecture v01]]"
+  - "documents/Firmware Structure.md"
+  # "System Architecture v01" was retired; Firmware Structure.md is the normative document
   - "[[0016-coreDirectoryCompactionAndDomainConsolidation]]"
   - "[[0017-bmp180TwoStepI2cTransactionAndBaroDaqArchitecture]]"
   - "[[0038-osalLayer3IpcDecouplingAndInterfaceTasksConsolidation]]"

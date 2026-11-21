@@ -177,7 +177,7 @@ In `src/app/fsm.cpp` (`check_rc_controller_signal`, Gate 6):
 ## 6. Traceability & Cross-References
 - [[0001-taskConfigMiddlewareIsrDecision]]: RMT PPM decoding and centralized task configurations.
 - [[0009-distinctBleGattCharacteristicUuidIsolation]]: Dedicated GATT characteristic for RC channels.
-- [[0010-bleTelemetryMinPacketFrequencyAndDualTriggerFlushes]]: Dual-trigger flush mechanism for BLE telemetry.
-- [[0012-ws2812RgbLedExternalHardwareIsolationAndCentralizedMutexEncapsulationRule]]: RMT Channel 1 reservation for WS2812 LED.
+- [[0010-bleMinimumPacketFrequencyAndDualTriggerFlush]]: Dual-trigger flush mechanism for BLE telemetry.
+- [[0012-ws2812HardwareIsolationAndMutexEncapsulationRule]]: RMT Channel 1 reservation for WS2812 LED.
 - [[0020-fsmBackbonePreFlightSensorChecksAndActiveCalibrationArchitecture]]: FSM pre-flight gating and events.
 - [[0029-unificationOfInterTaskRingBufferSizeConstant]]: Unified ring buffer capacity sizing.

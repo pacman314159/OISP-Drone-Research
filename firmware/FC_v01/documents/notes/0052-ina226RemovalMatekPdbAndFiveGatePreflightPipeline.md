@@ -70,7 +70,7 @@ To maintain structural cleanliness before introducing new external sensors (`MTF
 ## 5. Verification
 
 - Static symbol audit across `src/` and `include/` (`rg -n -i` across 25 power/INA226/battery/6-gate symbols) returned **0 matches**.
-- Knowledge graph synchronized via `graphify update .` and Zettelkasten links updated in `[[0028]]`, `[[0031]]`, and `documents/Firmware Structure.md`.
+- Knowledge graph synchronized via `graphify update .` and Zettelkasten links updated in `[[0028-ina226PowerModuleI2c1DaqAndBatteryMonitoringArchitecture]]`, `[[0031-sixGatePreflightTerminalDevelopmentAndTaskEncapsulationArchitecture]]`, and `documents/Firmware Structure.md`.
 - Note: Per `.agents/AGENTS.md` build policy, `pio run -e esp32-s3-devkitc-1 -j 4` is reserved for manual developer verification.
 
 ---

@@ -16,6 +16,8 @@ references:
   - "[[0046-fsmDirectEventReportingAndControlledLayerInversionException]]"
   - "[[0047-layer1RmtPpmSyncGapBleedAndPulseRxDecoupling]]"
   - "[[0048-halSpiInterfaceSegregationAndSdCardDriverDecoupling]]"
+  - "[[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]]"
+  - "[[0054-baselineCommitWorktreeRetirementAndOnedriveGitHazard]]"
 ---
 
 # Zettel 0049: Firmware Architecture Audit, Refactoring Session Summary & Build Verification
@@ -64,3 +66,14 @@ This sprint resolved all high-priority architectural inversions, safety hazards,
 ## 3. Verification & Build Targets
 - **Target 1**: `pio run -e fc-v01 -j 4` (Production flight controller firmware)
 - **Target 2**: `pio run -e fc-v01-ota -j 4` (BLE OTA distribution binary)
+
+---
+
+## 7. Follow-up — audit closeout 2026-11-21
+
+The 2026-11-18/19 architecture audit that this note's session began was closed out on 2026-11-21. Two notes record how:
+
+- [[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]] — the Layer 3 split, registry accessors, `HAL_OTA` and `flight_events.h` landed in code. **Still unverified by compilation.**
+- [[0054-baselineCommitWorktreeRetirementAndOnedriveGitHazard]] — one baseline commit (`69dd292`), six session worktrees retired, two branches audited and deleted (one was **not** empty: its analyzer/GNSS/i2c content is now in `main`), stash dropped, generated artefacts deleted and ignored.
+
+Residual and still open in the firmware itself: the motor-lockout call is commented out in `PREFLIGHT` and `DEVELOPMENT`, `check_storage_health()` is a stub that returns `PASSED`, and the graphify graph still contains `ina226` nodes.

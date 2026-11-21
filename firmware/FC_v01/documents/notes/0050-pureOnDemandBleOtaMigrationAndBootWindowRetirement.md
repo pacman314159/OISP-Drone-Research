@@ -86,3 +86,4 @@ In `src/drivers/telemetry/ble_driver.cpp`, `OtaControlCallbacks::onWrite` delega
 - **Extends & Cleans**: `[[0039-onDemandBleOtaInDevelopmentStateAndDependencyInversionArchitecture]]` by eliminating dual fallback paths.
 - **Enforces**: Layer 5 exclusive task suspension authority defined in `[[0042-layer5ExclusiveTaskSuspensionAuthorityAndOtaDecoupling]]`.
 - **Complies With**: 5-layer hierarchy in `[[0000-firmwareStructureLayerDecision]]` and centralized task configuration in `[[0001-taskConfigMiddlewareIsrDecision]]`.
+- **Amended 2026-11-21** by `[[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]]`: `spawn_ble_ota_task(HAL_OTA&)` now takes an injected HAL port, registry mutations go through `ipc_register_task()`, and `ota_data_queue` is declared in `middleware/ipc_lifecycle.h` rather than the former single `ipc.h`.

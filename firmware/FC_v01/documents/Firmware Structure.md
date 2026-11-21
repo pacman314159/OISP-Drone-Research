@@ -15,6 +15,18 @@ references:
   - "[[0040-fsmCalibrationTerminalStateAndRebootBoundaryDecision]]"
   - "[[0041-seggerSystemViewExclusionForSetupAndCalibrationTasks]]"
   - "[[0042-layer5ExclusiveTaskSuspensionAuthorityAndOtaDecoupling]]"
+  - "[[0043-layer2DriverDecouplingFromLayer4MathAndDirectSimdScaling]]"
+  - "[[0044-systemPhysicalParametersAndMassBudget]]"
+  - "[[0045-rcReceiverCommandBlackboxSdCardLoggingArchitecture]]"
+  - "[[0046-fsmDirectEventReportingAndControlledLayerInversionException]]"
+  - "[[0047-layer1RmtPpmSyncGapBleedAndPulseRxDecoupling]]"
+  - "[[0048-halSpiInterfaceSegregationAndSdCardDriverDecoupling]]"
+  - "[[0049-firmwareRefactoringAuditSessionSummaryAndVerification]]"
+  - "[[0050-pureOnDemandBleOtaMigrationAndBootWindowRetirement]]"
+  - "[[0051-gpsGnssModuleSelectionAndAntennaPhysics]]"
+  - "[[0052-ina226RemovalMatekPdbAndFiveGatePreflightPipeline]]"
+  - "[[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]]"
+  - "[[0054-baselineCommitWorktreeRetirementAndOnedriveGitHazard]]"
 ---
 
 # FC_v01 Firmware Architecture & Structure Specification
@@ -281,6 +293,8 @@ To maintain high readability and clean git diffs across developers, all C++ code
 | `[0050]` | Pure On-Demand BLE OTA Architecture & Legacy Boot Window Retirement | Section 2 (Layer 5 Authority), Section 3 (Task Spawning), Section 4 (Memory Reclaim) |
 | `[0051]` | Multirotor GNSS Module Taxonomy, Antenna Physics, Elevated Mast Isolation & FC_v01 Integration Specification | Section 1 (HAL UART), Section 2 (GNSS Driver), Section 3 (GPS & Pos EKF Tasks) |
 | `[0052]` | Complete INA226 Decommissioning, Matek PDB XT60 Transition & Five-Gate Pre-Flight Safety Pipeline | Section 2 (5-Layer Pruning), Section 4 (5-Gate Preflight FSM) |
+| `[0053]` | Layer 3 IPC Accessor Split, Task-Registry Serialization & HAL_OTA Boundary | Section 2 (Layer 3 Middleware), Section 4 (IPC & Contracts), Section 5 (HAL Boundaries) |
+| `[0054]` | Single Baseline Commit, Worktree Retirement & OneDrive-Resident Git Hazard | Not architectural — repository history, branch/worktree lifecycle and `.git` residency |
 
 
 

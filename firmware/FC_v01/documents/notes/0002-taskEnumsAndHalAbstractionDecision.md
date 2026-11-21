@@ -92,3 +92,8 @@ enum TaskFrequencies : uint16_t {
 5. **Deterministic Delay Rule**: Use `vTaskDelayUntil()` for all periodic loops.
 6. **Centralized IPC Rule**: Declare all shared locks, semaphores, queues, and ring buffers in `src/middleware/` and create them in `src/middleware/ipc.cpp`; initialize via `init_ipc()`. IPC contracts live in `include/ipc_types.h`. Queues, mutexes and the task registry go through the `ipc_*` API; SPSC ring buffers may be accessed directly with their discipline stated at the declaration (Rule 6, C15).
 7. **Task Scoping Rule**: Ensure all task functions reside exclusively in `core/` or `app/` (e.g. `src/core/sensor/daq_tasks.h`, `src/core/sensor/sensor_preprocess_tasks.h`, `src/core/telemetry/ble_telem_tasks.h`).
+
+---
+
+## 4. Amendments
+- **A1 (2026-11-21)**: Rule 6 was rewritten from a blanket "every IPC object goes through `ipc.h`" mandate into three checkable sentences — **Ownership** (declared in `src/middleware/`, created in `ipc.cpp`), **Types** (POD contracts in `include/ipc_types.h`, no OS or vendor type), **Access** (queues/mutexes/registry via the `ipc_*` API; SPSC ring buffers may be direct with their discipline stated at the declaration). See `[[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]]`. Nothing about ownership was relaxed — only the expression changed, because the single hub had become 30 `extern`s against 3 functions and made payload changes rebuild 17 translation units.
