@@ -1,0 +1,80 @@
+[INFO] Opening File Explorer to select binary flight log (.BIN)...
+[INFO] Selected file via Explorer: D:\OneDrive_MSFT\Work\Drone_Research\analyzers\binary_black_box_data\LOG_0032.BIN
+[INFO] Initialized next Run ID: 0002
+
+================================================================================
+  FLIGHT LOG SCAN REPORT: LOG_0032.BIN
+  Target Board:     esp32-s3-fc-v02-n8r8
+  Session ID:       LOG_0032
+  Boot Timestamp:   902324 us (0.902 s)
+  Limit Policy:     STOP_ON_SIZE
+  Max File Size:    50.0 MB
+================================================================================
+  Tracked Data Streams in Log:
+    [OK] Accelerometer & Gyroscope RAW   : 19,255 samples (~38.51 s @ ~500 Hz)
+    [OK] Accelerometer & Gyroscope FILT  : 19,254 samples (~38.51 s @ ~500 Hz)
+    [OK] Magnetometer RAW                :  3,859 samples (~38.58 s @ ~100 Hz)
+    [OK] Magnetometer FILT               :  3,855 samples (~38.58 s @ ~100 Hz)
+    [OK] Barometer RAW                   :  1,897 samples (~38.66 s @ ~50 Hz)
+    [OK] Barometer FILT                  :  1,897 samples (~38.66 s @ ~50 Hz)
+    [ ] Attitude Euler Angles           : Not logged
+    [ ] Attitude Quaternions            : Not logged
+    [ ] Power Monitor (INA226)          : Not logged
+================================================================================
+
+------------------------------------------------------------
+  ANALYSIS SELECTION MENU (Assigned Run ID: 0002)
+------------------------------------------------------------
+  ACCELEROMETER:
+    [1]  Accelerometer RAW      - Histogram & Standard Deviation
+    [2]  Accelerometer RAW      - Fast Fourier Transform (FFT)
+    [3]  Accelerometer RAW      - Time Series (Value vs. Time)
+    [4]  Accelerometer FILTERED - Histogram & Standard Deviation
+    [5]  Accelerometer FILTERED - Fast Fourier Transform (FFT)
+    [6]  Accelerometer FILTERED - Time Series (Value vs. Time)
+
+  GYROSCOPE:
+    [7]  Gyroscope RAW          - Histogram & Standard Deviation
+    [8]  Gyroscope RAW          - Fast Fourier Transform (FFT)
+    [9]  Gyroscope RAW          - Time Series (Value vs. Time)
+   [10]  Gyroscope FILTERED     - Histogram & Standard Deviation
+   [11]  Gyroscope FILTERED     - Fast Fourier Transform (FFT)
+   [12]  Gyroscope FILTERED     - Time Series (Value vs. Time)
+
+  MAGNETOMETER:
+   [13]  Magnetometer RAW       - Histogram & Standard Deviation
+   [14]  Magnetometer RAW       - Fast Fourier Transform (FFT)
+   [15]  Magnetometer RAW       - Time Series (Value vs. Time)
+   [16]  Magnetometer RAW       - 3-Plane Projections
+   [17]  Magnetometer RAW       - Ellipsoid Calibration (Rotated Fit & Epoch RMSE)
+   [18]  Magnetometer FILTERED  - Histogram & Standard Deviation
+   [19]  Magnetometer FILTERED  - Fast Fourier Transform (FFT)
+   [20]  Magnetometer FILTERED  - Time Series (Value vs. Time)
+   [21]  Magnetometer FILTERED  - 3-Plane Projections
+
+  BAROMETER:
+   [22]  Barometer RAW          - Histogram & Standard Deviation
+   [23]  Barometer RAW          - Fast Fourier Transform (FFT)
+   [24]  Barometer RAW          - Time Series (Value vs. Time)
+   [25]  Barometer FILTERED     - Histogram & Standard Deviation
+   [26]  Barometer FILTERED     - Fast Fourier Transform (FFT)
+   [27]  Barometer FILTERED     - Time Series (Value vs. Time)
+
+  ATTITUDE (ORIENTATION):
+   [28]  Attitude Euler         - Time Series (Roll / Pitch / Yaw vs. Time)
+
+  POWER MONITOR (INA226):
+   [29]  Power                  - Histogram & Standard Deviation (Voltage / Current / Power)
+   [30]  Power                  - Time Series (Voltage, Current, Power, Energy vs. Time)
+
+  BATCH / COMBINED:
+   [31]  All Time Series Plots (Raw & Filtered)
+   [32]  All Histograms (Raw & Filtered)
+   [33]  All FFTs (Raw & Filtered)
+   [34]  All RAW Analysis (Histograms, FFTs, Time Series, Projections, Calibration)
+   [35]  All FILTERED Analysis (Histograms, FFTs, Time Series, Projections)
+   [36]  Complete Analysis (Everything: All Raw + All Filtered)
+    [0]  Exit
+------------------------------------------------------------
+Enter option number(s) [e.g. 1, 4, 7 or 1-6 or 36]: 
+[INFO] Exiting on user request.
