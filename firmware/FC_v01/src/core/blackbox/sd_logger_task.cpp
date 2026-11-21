@@ -13,6 +13,36 @@ void sd_request_halt(){
   sd_logger_halt_requested = true;
 }
 
+// Storage health snapshot: single writer is this task (sole SD driver owner).
+// ADVISORY BY DESIGN: never gates flight - see zettel 0056.
+static StorageHealthSnapshot s_storage_health{};
+static bool                  s_storage_degraded_latched = false;
+static bool                  s_storage_degraded_logged  = false;
+
+StorageHealthSnapshot storage_health_snapshot(){
+  return s_storage_health;
+}
+
+// Latches DEGRADED and emits at most one advisory Serial line.
+static void storage_mark_degraded(const char* serial_line){
+  s_storage_degraded_latched  = true;
+  s_storage_health.degraded   = true;
+  s_storage_health.verdict    = StorageVerdict::DEGRADED;
+  if(!s_storage_degraded_logged){
+    s_storage_degraded_logged = true;
+    Serial.println(serial_line);
+  }
+}
+
+static void storage_publish(bool mounted, uint64_t bytes_free){
+  bool below_threshold = (bytes_free < SD_MIN_FREE_BYTES_FOR_LOGGING);
+  s_storage_health.mounted    = mounted;
+  s_storage_health.bytes_free = bytes_free;
+  s_storage_health.degraded   = s_storage_degraded_latched || !mounted || below_threshold;
+  s_storage_health.verdict    = s_storage_health.degraded ? StorageVerdict::DEGRADED
+                                                          : StorageVerdict::HEALTHY;
+}
+
 struct __attribute__((packed)) PktImuRaw {
   uint8_t     type;
   uint32_t    timestamp_us;
@@ -110,10 +140,15 @@ struct ChannelTracker {
 static void append_packet(const void* data, size_t len, uint8_t* sector_buf, size_t& buf_index, SDCardDriver* sd_driver, TickType_t& last_flush_tick){
   if(buf_index + len > 512){
     memset(&sector_buf[buf_index], 0, 512 - buf_index);
+    bool write_ok = true;
     if(xSemaphoreTake(spi_bus_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTRUE){
-      sd_driver->write_sector(sector_buf, 512);
+      write_ok = sd_driver->write_sector(sector_buf, 512);
       xSemaphoreGive(spi_bus_mutex);
+    }else{
+      write_ok = false;
     }
+    if(!write_ok)
+      storage_mark_degraded("[STORAGE] SD write failure - logging degraded, flight permitted.");
     buf_index = 0;
     last_flush_tick = xTaskGetTickCount();
   }
@@ -179,8 +214,13 @@ void sd_logger_task(void* arg){
   SDCardDriver* sd_driver = static_cast<SDCardDriver*>(arg);
 
   if constexpr(ACTIVE_SD_LOG_PACKETS_MASK != LOG_MASK_NONE){
+    bool     sd_mounted    = false; // SD card mounted (bool)
+    uint64_t sd_free_bytes = 0;     // Free space on the mounted card (bytes)
+
     if(xSemaphoreTake(spi_bus_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTRUE){
-      if(sd_driver->init()){
+      sd_mounted = sd_driver->init();
+      if(sd_mounted){
+        sd_free_bytes = sd_driver->get_free_bytes();
         char filename[32];
         uint16_t session_id = 0;
         if(sd_driver->open_next_log_file(filename, sizeof(filename), session_id)){
@@ -198,6 +238,20 @@ void sd_logger_task(void* arg){
         }
       }
       xSemaphoreGive(spi_bus_mutex);
+    }
+
+    // Publish the boot verdict; one advisory Serial line per outcome.
+    storage_publish(sd_mounted, sd_free_bytes);
+    if(!sd_mounted){
+      storage_mark_degraded("[STORAGE] SD card absent - logging disabled, flight permitted.");
+    }else if(!sd_driver->is_open()){
+      storage_mark_degraded("[STORAGE] SD log file could not be opened - logging disabled, flight permitted.");
+    }else if(sd_free_bytes < SD_MIN_FREE_BYTES_FOR_LOGGING){
+      storage_mark_degraded("[STORAGE] SD free space below threshold - logging degraded, flight permitted.");
+    }else{
+      Serial.printf("[STORAGE] SD logging active (%lu KiB free, threshold %lu KiB), flight permitted.\n",
+                    static_cast<unsigned long>(sd_free_bytes / 1024ULL),
+                    static_cast<unsigned long>(SD_MIN_FREE_BYTES_FOR_LOGGING / 1024ULL));
     }
   }
 
@@ -352,21 +406,33 @@ void sd_logger_task(void* arg){
     TickType_t now_ticks = xTaskGetTickCount();
     if(buf_index > 0 && (now_ticks - last_flush_tick) >= max_flush_ticks){
       memset(&sector_buf[buf_index], 0, 512 - buf_index);
+      bool write_ok = true;
       if(xSemaphoreTake(spi_bus_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTRUE){
-        sd_driver->write_sector(sector_buf, 512);
+        write_ok = sd_driver->write_sector(sector_buf, 512);
         sd_driver->flush();
         xSemaphoreGive(spi_bus_mutex);
+      }else{
+        write_ok = false;
       }
+      if(!write_ok)
+        storage_mark_degraded("[STORAGE] SD write failure - logging degraded, flight permitted.");
       buf_index = 0;
       last_flush_tick = now_ticks;
     }
 
     if((now_ticks - last_sync_tick) >= sync_period_ticks){
+      uint64_t free_bytes = s_storage_health.bytes_free; // Free space (bytes), refreshed below
       if(xSemaphoreTake(spi_bus_mutex, pdMS_TO_TICKS(BUS_MUTEX_TIMEOUT_MS)) == pdTRUE){
         sd_driver->flush();
+        free_bytes = sd_driver->get_free_bytes();
         xSemaphoreGive(spi_bus_mutex);
       }
       last_sync_tick = now_ticks;
+
+      // Free-space threshold, refreshed at the metadata-sync cadence (1 Hz).
+      if(free_bytes < SD_MIN_FREE_BYTES_FOR_LOGGING)
+        storage_mark_degraded("[STORAGE] SD free space below threshold - logging degraded, flight permitted.");
+      storage_publish(true, free_bytes);
     }
 
     if(sd_driver->get_bytes_written() >= LOG_MAX_FILE_SIZE_BYTES){
@@ -383,6 +449,8 @@ void sd_logger_task(void* arg){
           sd_driver->close();
           xSemaphoreGive(spi_bus_mutex);
         }
+        // Logging ended: latch DEGRADED so the snapshot cannot report HEALTHY.
+        storage_mark_degraded("[STORAGE] SD log size limit reached - logging stopped, flight permitted.");
         SYSVIEW_END(task_id);
         sd_request_halt();
         // Park: Layer 5 owns our lifecycle and will suspend us. We never suspend

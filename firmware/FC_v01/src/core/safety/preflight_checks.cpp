@@ -275,8 +275,3 @@ SafetyStatus check_rc_controller_signal(){
                 ch.channel_count);
   return s_status;
 }
-
-SafetyStatus check_storage_health(){
-  // [FUTURE CHECK] Verify SD card sector capacity and mount status
-  return SafetyStatus::PASSED;
-}

@@ -417,6 +417,9 @@ constexpr uint32_t     LOG_MAX_FILE_SIZE_BYTES      = 50 * 1024 * 1024;
 constexpr uint32_t     LOG_SECTOR_TIMEOUT_MS        = 100;
 constexpr uint32_t     LOG_METADATA_SYNC_PERIOD_MS  = 1000;
 
+// Minimum free space required to keep logging (bytes); advisory only - see zettel 0056.
+constexpr uint64_t     SD_MIN_FREE_BYTES_FOR_LOGGING = 64ULL * 1024ULL * 1024ULL; // 64 MiB free space
+
 constexpr uint8_t      LED_COLOR_SD_STOP_R          = 0;
 constexpr uint8_t      LED_COLOR_SD_STOP_G          = 255;
 constexpr uint8_t      LED_COLOR_SD_STOP_B          = 255;

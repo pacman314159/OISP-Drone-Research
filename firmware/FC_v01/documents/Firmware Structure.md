@@ -28,6 +28,7 @@ references:
   - "[[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]]"
   - "[[0054-baselineCommitWorktreeRetirementAndOnedriveGitHazard]]"
   - "[[0055-esp32OnlyTargetStrategyAndStm32PortRetirement]]"
+  - "[[0056-loggingOptionalAdvisoryStorageHealthAndNonGatingFlightPolicy]]"
 ---
 
 # FC_v01 Firmware Architecture & Structure Specification
@@ -295,6 +296,7 @@ To maintain high readability and clean git diffs across developers, all C++ code
 | `[0053]` | Layer 3 IPC Accessor Split, Task-Registry Serialization & HAL_OTA Boundary | Section 2 (Layer 3 Middleware), Section 4 (IPC & Contracts), Section 5 (HAL Boundaries) |
 | `[0054]` | Single Baseline Commit, Worktree Retirement & OneDrive-Resident Git Hazard | Not architectural — repository history, branch/worktree lifecycle and `.git` residency |
 | `[0055]` | ESP32-S3-Only Target Strategy & Retirement of the STM32 Port Placeholder | Section 2 (Layer 1 Target Directories), Section 1 (Target Hardware Isolation) |
+| `[0056]` | Logging Is Advisory — SD Storage Health Never Gates Flight | Section 4 (Pre-Flight Gating & Safety Domain), Section 2 (Blackbox) |
 
 
 
