@@ -1,0 +1,63 @@
+[
+  {
+    "label": "pdflatex: Build Paper (2 Passes)",
+    "command": "cmd",
+    "args": [
+      "/c",
+      "pdflatex -synctex=1 -interaction=nonstopmode -file-line-error minipaper.tex && pdflatex -synctex=1 -interaction=nonstopmode -file-line-error minipaper.tex"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "on_success",
+    "save": "all"
+  },
+  {
+    "label": "pdflatex: Compile Paper (Single Pass)",
+    "command": "pdflatex",
+    "args": [
+      "-synctex=1",
+      "-interaction=nonstopmode",
+      "-file-line-error",
+      "minipaper.tex"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "on_success",
+    "save": "all"
+  },
+  {
+    "label": "Clean Build Artifacts",
+    "command": "pwsh",
+    "args": [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      "$ZED_WORKTREE_ROOT/build.ps1",
+      "-Clean"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "on_success"
+  },
+  {
+    "label": "Open Paper PDF",
+    "command": "pwsh",
+    "args": [
+      "-NoProfile",
+      "-Command",
+      "Start-Process minipaper.pdf"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success"
+  }
+]

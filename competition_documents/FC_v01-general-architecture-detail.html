@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FC_v01 Flight Controller — General Architecture (rev 2)</title>
+<style>
+:root, [data-theme="dark"]{
+  --bg:#020617; --grid:rgba(148,163,184,.05);
+  --panel:rgba(15,23,42,.55); --panel-line:#1e293b;
+  --text:#e8eef8; --muted:#94a3b8; --dim:#64748b;
+  --task-f:rgba(52,211,153,.13); --task-s:#34d399;
+  --soc-f:rgba(251,191,36,.10); --soc-s:#fbbf24;
+  --hw-f:rgba(96,165,250,.12); --hw-s:#60a5fa;
+  --isr-f:rgba(251,113,133,.16); --isr-s:#fb7185;
+  --mem-f:rgba(251,146,60,.14); --mem-s:#fb923c;
+  --mod-f:rgba(148,163,184,.07); --mod-s:#334155;
+  --res-f:rgba(251,113,133,.05); --res-s:#7f1d3a;
+  --key:#22d3ee; --flag:#f59e0b;
+  --arrow:#94a3b8; --arrow-em:#34d399; --arrow-ctl:#a78bfa;
+  --band:rgba(15,23,42,.34); --band-line:#1e293b;
+  --lbl-bg:#0b1220;
+  --warn:#fda4af; --emph:#5eead4;
+}
+[data-theme="light"]{
+  --bg:#f4f6f9; --grid:rgba(100,116,139,.09);
+  --panel:#ffffff; --panel-line:#e2e8f0;
+  --text:#0f172a; --muted:#475569; --dim:#94a3b8;
+  --task-f:#e8f5e3; --task-s:#4f8a3c;
+  --soc-f:#fff7e0; --soc-s:#b8860b;
+  --hw-f:#e6f0fb; --hw-s:#5b86b8;
+  --isr-f:#fde8e8; --isr-s:#bf5b56;
+  --mem-f:#ffe9d1; --mem-s:#c1712b;
+  --mod-f:#f1f5f9; --mod-s:#cbd5e1;
+  --res-f:#fdf2f2; --res-s:#e0b0b0;
+  --key:#0e7490; --flag:#b45309;
+  --arrow:#5b6b7f; --arrow-em:#0f766e; --arrow-ctl:#6d5bb5;
+  --band:#fbfcfe; --band-line:#dbe3ec;
+  --lbl-bg:#ffffff;
+  --warn:#b91c1c; --emph:#0f766e;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  background:
+    radial-gradient(1100px 520px at 12% -10%, color-mix(in srgb, var(--soc-s) 9%, transparent), transparent 70%),
+    radial-gradient(900px 480px at 96% 6%, color-mix(in srgb, var(--key) 8%, transparent), transparent 70%),
+    var(--bg);
+  color:var(--text); min-height:100vh; padding:26px 30px 46px; -webkit-font-smoothing:antialiased;
+}
+.shell{max-width:1760px;margin:0 auto}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin-bottom:16px}
+.top h1{font-size:24px;font-weight:700;letter-spacing:-.015em;line-height:1.2}
+.top p{color:var(--muted);font-size:12.5px;margin-top:7px;max-width:1010px;line-height:1.6}
+.badge{display:inline-flex;align-items:center;gap:8px;font-size:10.5px;color:var(--muted);
+  border:1px solid var(--panel-line);border-radius:999px;padding:6px 12px;background:var(--panel);white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--task-s);box-shadow:0 0 0 4px color-mix(in srgb,var(--task-s) 18%,transparent)}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{font:inherit;font-size:11.5px;color:var(--text);background:var(--panel);border:1px solid var(--panel-line);
+  border-radius:8px;padding:7px 12px;cursor:pointer;transition:.16s ease;backdrop-filter:blur(8px)}
+button:hover{border-color:var(--task-s);color:var(--task-s)}
+button.primary{border-color:color-mix(in srgb,var(--task-s) 55%,var(--panel-line))}
+.card{background:var(--panel);border:1px solid var(--panel-line);border-radius:16px;
+  box-shadow:0 1px 2px rgba(2,6,23,.06),0 26px 60px -34px rgba(2,6,23,.55);padding:14px;backdrop-filter:blur(6px)}
+svg{width:100%;height:auto;display:block;font-family:inherit}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.notes div{background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:13px 15px}
+.notes h3{font-size:11px;letter-spacing:.09em;color:var(--muted);margin-bottom:7px;text-transform:uppercase}
+.notes p{font-size:11.5px;line-height:1.62;color:var(--muted)}
+.notes b{color:var(--text);font-weight:600}
+footer{margin-top:16px;font-size:10.5px;color:var(--dim);line-height:1.7}
+.t{font-family:inherit;fill:var(--text)}
+.grid line{stroke:var(--grid);stroke-width:1}
+.soc{fill:none;stroke:var(--soc-s);stroke-width:1.1;opacity:.5}
+.bg{fill:var(--lbl-bg)}
+.band{fill:var(--band);stroke:var(--band-line);stroke-width:1}
+.band-label{fill:var(--dim);letter-spacing:.12em}
+.t-band-sub{fill:var(--muted);font-weight:600;letter-spacing:.02em}
+.t-dim2{fill:var(--dim)}
+.t-muted{fill:var(--muted)}
+.t-dim{fill:var(--dim)}
+.t-soc{fill:var(--soc-s)}
+.task{fill:var(--task-f);stroke:var(--task-s);stroke-width:1.3}
+.task.ghost{fill:transparent;stroke-dasharray:3.2 2.6;opacity:.72;stroke-width:1.1}
+.t-task{fill:var(--text)}
+.t-task-sub{fill:var(--task-s);opacity:.92}
+.mod{fill:var(--mod-f);stroke:var(--mod-s);stroke-width:1}
+.mod.hal{fill:color-mix(in srgb,var(--mod-f) 55%,transparent)}
+.t-title{fill:var(--text)}
+.t-sub{fill:var(--muted)}
+.t-mem{fill:var(--mem-s)}
+.mem{fill:var(--mem-f);stroke:var(--mem-s);stroke-width:1.2}
+.hw{fill:var(--hw-f);stroke:var(--hw-s);stroke-width:1.1}
+.t-hw-title{fill:var(--hw-s)}
+.hwgroup{fill:color-mix(in srgb,var(--hw-f) 40%,transparent);stroke:var(--hw-s);stroke-width:.9;stroke-dasharray:4 3;opacity:.85}
+.socblk{fill:var(--soc-f);stroke:var(--soc-s);stroke-width:1.05}
+.host{fill:color-mix(in srgb,var(--hw-f) 40%,transparent);stroke:var(--hw-s);stroke-width:1;stroke-dasharray:4 3}
+.reserved{fill:var(--res-f);stroke:var(--res-s);stroke-width:1;stroke-dasharray:3 3}
+.isr{fill:var(--isr-f);stroke:var(--isr-s);stroke-width:1.2}
+.t-isr{fill:var(--isr-s)}
+.t-isr-sub{fill:var(--isr-s);opacity:.85}
+.lad-bg{fill:color-mix(in srgb,var(--mem-f) 40%,transparent)}
+.lad-rail{stroke:var(--mem-s);stroke-width:1.3}
+.lad-rung{stroke:var(--mem-s);stroke-width:.7;opacity:.6}
+.key-fill{fill:none;stroke:var(--key);stroke-width:1.5}
+.key-hole{fill:none;stroke:var(--key);stroke-width:1.2}
+.key-stroke{fill:none;stroke:var(--key);stroke-width:1.5;stroke-linecap:round}
+.key-label{fill:var(--key)}
+.sub-mini{fill:var(--dim);font-size:6.4px}
+.flag-pole{stroke:var(--flag);stroke-width:1.5}
+.flag-fill{fill:color-mix(in srgb,var(--flag) 26%,transparent);stroke:var(--flag);stroke-width:1.1}
+.flag-label{fill:var(--flag)}
+.syncrel{fill:color-mix(in srgb,var(--key) 5%,transparent);stroke:color-mix(in srgb,var(--key) 26%,transparent);stroke-width:1}
+.t-sync{fill:var(--muted)}
+.ondemand{fill:none;stroke:var(--task-s);stroke-width:.9;stroke-dasharray:4 3;opacity:.32}
+.panel{fill:var(--panel);stroke:var(--panel-line);stroke-width:1}
+.panel-rule{stroke:var(--panel-line);stroke-width:1}
+.t-panel-title{fill:var(--text);letter-spacing:.07em}
+.t-panel{fill:var(--muted)}
+.t-warn{fill:var(--warn)}
+.t-warn2{fill:var(--warn);opacity:.85}
+.t-emph2{fill:var(--emph)}
+.path{fill:none;stroke:var(--arrow);stroke-width:1.1;stroke-linejoin:round;stroke-linecap:round}
+.path.d{stroke:color-mix(in srgb,var(--arrow-em) 72%,var(--arrow))}
+.path.c{stroke:var(--arrow-ctl);stroke-dasharray:4 3}
+.path.s{stroke:var(--mem-s);stroke-width:1;opacity:.9}
+.path.dash{stroke-dasharray:4 3}
+.lbl-bg{fill:var(--lbl-bg);stroke:var(--panel-line);stroke-width:.6}
+.t-lbl{fill:var(--muted)}
+@media print{
+  body{padding:0;background:#fff}
+  .top .toolbar,.notes,footer{display:none}
+  .card{border:0;box-shadow:none;padding:0}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div>
+      <h1>FC_v01 Flight Controller — General Architecture</h1>
+      <p>Five-layer FreeRTOS firmware on one ESP32-S3: strict downward-only dependencies, 14 resident tasks plus 5 on-demand workers,
+      hardware SIMD through a Layer-1 compute HAL, and a 500 Hz sensing/estimation chain. The control law is intentionally absent —
+      this figure shows what the tree implements, not the intended end state.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+      <span class="badge"><span class="dot"></span>verified against source · 2026-11-20</span>
+      <div class="toolbar">
+        <button id="theme" class="primary">Light theme</button>
+        <button id="svg">Download SVG</button>
+        <button id="png">Download PNG</button>
+        <button id="print">Print</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <svg id="diagram" viewBox="0 0 1760 1700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FC_v01 firmware general architecture">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0.6 L9.4,5 L0,9.4 z" class="ah-fill"/></marker>
+        <marker id="ah-dash" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0.6 L9.4,5 L0,9.4 z" class="ah-fill-ctl"/></marker>
+        <style>.ah-fill{fill:var(--arrow)} .ah-fill-ctl{fill:var(--arrow-ctl)}</style>
+      </defs>
+      <rect x="0" y="0" width="1760" height="1700" class="bg"/>
+<g class="grid"><line x1="30" y1="84" x2="30" y2="1670"/><line x1="80" y1="84" x2="80" y2="1670"/><line x1="130" y1="84" x2="130" y2="1670"/><line x1="180" y1="84" x2="180" y2="1670"/><line x1="230" y1="84" x2="230" y2="1670"/><line x1="280" y1="84" x2="280" y2="1670"/><line x1="330" y1="84" x2="330" y2="1670"/><line x1="380" y1="84" x2="380" y2="1670"/><line x1="430" y1="84" x2="430" y2="1670"/><line x1="480" y1="84" x2="480" y2="1670"/><line x1="530" y1="84" x2="530" y2="1670"/><line x1="580" y1="84" x2="580" y2="1670"/><line x1="630" y1="84" x2="630" y2="1670"/><line x1="680" y1="84" x2="680" y2="1670"/><line x1="730" y1="84" x2="730" y2="1670"/><line x1="780" y1="84" x2="780" y2="1670"/><line x1="830" y1="84" x2="830" y2="1670"/><line x1="880" y1="84" x2="880" y2="1670"/><line x1="930" y1="84" x2="930" y2="1670"/><line x1="980" y1="84" x2="980" y2="1670"/><line x1="1030" y1="84" x2="1030" y2="1670"/><line x1="1080" y1="84" x2="1080" y2="1670"/><line x1="1130" y1="84" x2="1130" y2="1670"/><line x1="1180" y1="84" x2="1180" y2="1670"/><line x1="1230" y1="84" x2="1230" y2="1670"/><line x1="1280" y1="84" x2="1280" y2="1670"/><line x1="1330" y1="84" x2="1330" y2="1670"/><line x1="1380" y1="84" x2="1380" y2="1670"/><line x1="1430" y1="84" x2="1430" y2="1670"/><line x1="1480" y1="84" x2="1480" y2="1670"/><line x1="1530" y1="84" x2="1530" y2="1670"/><line x1="1580" y1="84" x2="1580" y2="1670"/><line x1="1630" y1="84" x2="1630" y2="1670"/><line x1="1680" y1="84" x2="1680" y2="1670"/><line x1="1730" y1="84" x2="1730" y2="1670"/><line x1="30" y1="86" x2="1730" y2="86"/><line x1="30" y1="136" x2="1730" y2="136"/><line x1="30" y1="186" x2="1730" y2="186"/><line x1="30" y1="236" x2="1730" y2="236"/><line x1="30" y1="286" x2="1730" y2="286"/><line x1="30" y1="336" x2="1730" y2="336"/><line x1="30" y1="386" x2="1730" y2="386"/><line x1="30" y1="436" x2="1730" y2="436"/><line x1="30" y1="486" x2="1730" y2="486"/><line x1="30" y1="536" x2="1730" y2="536"/><line x1="30" y1="586" x2="1730" y2="586"/><line x1="30" y1="636" x2="1730" y2="636"/><line x1="30" y1="686" x2="1730" y2="686"/><line x1="30" y1="736" x2="1730" y2="736"/><line x1="30" y1="786" x2="1730" y2="786"/><line x1="30" y1="836" x2="1730" y2="836"/><line x1="30" y1="886" x2="1730" y2="886"/><line x1="30" y1="936" x2="1730" y2="936"/><line x1="30" y1="986" x2="1730" y2="986"/><line x1="30" y1="1036" x2="1730" y2="1036"/><line x1="30" y1="1086" x2="1730" y2="1086"/><line x1="30" y1="1136" x2="1730" y2="1136"/><line x1="30" y1="1186" x2="1730" y2="1186"/><line x1="30" y1="1236" x2="1730" y2="1236"/><line x1="30" y1="1286" x2="1730" y2="1286"/><line x1="30" y1="1336" x2="1730" y2="1336"/><line x1="30" y1="1386" x2="1730" y2="1386"/><line x1="30" y1="1436" x2="1730" y2="1436"/><line x1="30" y1="1486" x2="1730" y2="1486"/><line x1="30" y1="1536" x2="1730" y2="1536"/><line x1="30" y1="1586" x2="1730" y2="1586"/><line x1="30" y1="1636" x2="1730" y2="1636"/></g>
+<text x="40" y="44" class="t t-h1" font-size="15" text-anchor="start" font-weight="700">FC_v01 — five-layer firmware architecture</text>
+<text x="40" y="62" class="t t-muted" font-size="8.4" text-anchor="start">one ESP32-S3 · 14 resident + 5 on-demand FreeRTOS tasks · 500 Hz sensing and estimation · control law not implemented</text>
+<text x="1720" y="40" class="t t-dim" font-size="8.2" text-anchor="end">rev 2 — verified against source</text>
+<text x="1720" y="54" class="t t-dim" font-size="8.2" text-anchor="end">2026-11-20  ·  firmware/FC_v01</text>
+<rect x="24" y="86" width="1176" height="1356" rx="16" class="soc"/>
+<text x="44" y="107" class="t t-soc" font-size="8.7" text-anchor="start" font-weight="600">ESP32-S3 (N8R8)  ·  dual-core Xtensa LX7 @ 240 MHz  ·  8 MB QIO flash + 8 MB octal PSRAM  ·  16 KB TRAX trace buffer</text>
+<text x="1176" y="107" class="t t-dim" font-size="7.2" text-anchor="end">SoC boundary</text>
+<rect x="40" y="144" width="1140" height="108" rx="10" class="band"/>
+<text x="57" y="198" class="t band-label" font-size="8.4" text-anchor="middle" transform="rotate(-90 57 198)">L5 · APPLICATION</text>
+<text x="86" y="162" class="t t-band-sub" font-size="7.8" text-anchor="start">src/app/ · src/main.cpp — boot, FSM, task-lifecycle authority</text>
+<g>
+    <circle cx="130" cy="205" r="37" class="task"/>
+    <text x="130" y="201" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">app_start()</text>
+    <text x="130" y="217" class="t t-task-sub" font-size="7.9" text-anchor="middle">boot only</text>
+    <text x="130" y="226" class="t t-task-sub" font-size="7.9" text-anchor="middle">IDF main</text>
+  </g>
+<g>
+    <circle cx="320" cy="205" r="37" class="task"/>
+    <text x="320" y="201" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">FSM_MAIN</text>
+    <text x="320" y="217" class="t t-task-sub" font-size="7.9" text-anchor="middle">100 Hz · p3</text>
+    <text x="320" y="226" class="t t-task-sub" font-size="7.9" text-anchor="middle">event FSM</text>
+  </g>
+<rect x="420" y="152" width="740" height="96" rx="6" class="mod"/>
+<text x="432" y="168" class="t t-title" font-size="8.9" text-anchor="start" font-weight="600">FSM_MAIN — 12 states declared, 9 reachable</text>
+<text x="432" y="182" class="t t-sub" font-size="7.2" text-anchor="start">UNINIT → PREFLIGHT → { CALIB | READY | DEVELOPMENT } → TAKEOFF → FLIGHT → POSTFLIGHT / CRASHED</text>
+<text x="432" y="194" class="t t-sub" font-size="7.2" text-anchor="start">LANDING bypassed (FLIGHT → POSTFLIGHT on a 3 s button hold); LANDING, LEVELOUT and FREEFALL have no transition rule</text>
+<text x="432" y="210" class="t t-dim2" font-size="6.9" text-anchor="start">boot order: init_ipc() → I2C0 (+ I2C1 reserved) → MPU6050 · HMC bypass · BMP180 → LED · RC · NimBLE · SPI · button</text>
+<text x="432" y="220" class="t t-dim2" font-size="6.9" text-anchor="start">→ motors DISARMED → 14 tasks → fsm_init().   5 pre-flight gates every 10 ms: ALL pass → READY, any FAIL → DEVELOPMENT.</text>
+<text x="432" y="232" class="t t-emph2" font-size="6.9" text-anchor="start">Calibration is terminal: exiting CALIB requires a reboot (note 0040).   OTA is authorised only in DEVELOPMENT (0050).</text>
+<rect x="40" y="264" width="1140" height="484" rx="10" class="band"/>
+<text x="57" y="492" class="t band-label" font-size="8.4" text-anchor="middle" transform="rotate(-90 57 492)">L4 · FLIGHT CORE</text>
+<text x="1168" y="278" class="t t-band-sub" font-size="7.6" text-anchor="end">src/core/ — sensor · math · safety · telemetry</text>
+<text x="1168" y="288" class="t t-dim2" font-size="7" text-anchor="end">blackbox · actuator · interface</text>
+<g>
+    <circle cx="246" cy="320" r="38" class="task"/>
+    <text x="246" y="316" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">PREPROCESS</text>
+    <text x="246" y="332" class="t t-task-sub" font-size="7.9" text-anchor="middle">500 Hz · p3</text>
+    <text x="246" y="341" class="t t-task-sub" font-size="7.9" text-anchor="middle">calib + LPF</text>
+  </g>
+<g>
+    <circle cx="420" cy="320" r="38" class="task"/>
+    <text x="420" y="316" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">MAG_PRE</text><text x="420" y="326.4" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">PROCESS</text>
+    <text x="420" y="332" class="t t-task-sub" font-size="7.9" text-anchor="middle">100 Hz · p2</text>
+    <text x="420" y="341" class="t t-task-sub" font-size="7.9" text-anchor="middle">unit sphere</text>
+  </g>
+<g>
+    <circle cx="594" cy="320" r="38" class="task"/>
+    <text x="594" y="316" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">EKF_ROLL</text><text x="594" y="326.4" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">PITCH</text>
+    <text x="594" y="332" class="t t-task-sub" font-size="7.9" text-anchor="middle">500 Hz · p3</text>
+    <text x="594" y="341" class="t t-task-sub" font-size="7.9" text-anchor="middle">quat EKF</text>
+  </g>
+<g>
+    <circle cx="768" cy="320" r="38" class="task"/>
+    <text x="768" y="316" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">EKF_YAW</text>
+    <text x="768" y="332" class="t t-task-sub" font-size="7.9" text-anchor="middle">100 Hz · p2</text>
+    <text x="768" y="341" class="t t-task-sub" font-size="7.9" text-anchor="middle">mag update</text>
+  </g>
+<g>
+    <circle cx="130" cy="450" r="38" class="task"/>
+    <text x="130" y="446" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">MOTOR</text>
+    <text x="130" y="462" class="t t-task-sub" font-size="7.9" text-anchor="middle">250 Hz · p4</text>
+    <text x="130" y="471" class="t t-task-sub" font-size="7.9" text-anchor="middle">ARM/DISARM</text>
+  </g>
+<g>
+    <circle cx="304" cy="450" r="38" class="task"/>
+    <text x="304" y="446" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">BLE_TELEM</text>
+    <text x="304" y="462" class="t t-task-sub" font-size="7.9" text-anchor="middle">100 Hz · p1</text>
+    <text x="304" y="471" class="t t-task-sub" font-size="7.9" text-anchor="middle">GATT notify</text>
+  </g>
+<g>
+    <circle cx="478" cy="450" r="38" class="task"/>
+    <text x="478" y="446" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">SD_LOGGER</text>
+    <text x="478" y="462" class="t t-task-sub" font-size="7.9" text-anchor="middle">100 Hz · p1</text>
+    <text x="478" y="471" class="t t-task-sub" font-size="7.9" text-anchor="middle">blackbox</text>
+  </g>
+<g>
+    <circle cx="652" cy="450" r="38" class="task"/>
+    <text x="652" y="446" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">EKF_ALTITUDE</text>
+    <text x="652" y="462" class="t t-task-sub" font-size="7.9" text-anchor="middle">100 Hz · p2</text>
+    <text x="652" y="471" class="t t-task-sub" font-size="7.9" text-anchor="middle">3-state z/vz</text>
+  </g>
+<g>
+    <circle cx="826" cy="450" r="38" class="task"/>
+    <text x="826" y="446" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">STATUS_LED</text>
+    <text x="826" y="462" class="t t-task-sub" font-size="7.9" text-anchor="middle">event · p1</text>
+    <text x="826" y="471" class="t t-task-sub" font-size="7.9" text-anchor="middle">LED pattern</text>
+  </g>
+<g>
+    <circle cx="130" cy="580" r="38" class="task"/>
+    <text x="130" y="576" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">ACCEL_GYRO</text><text x="130" y="586.4" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">DAQ</text>
+    <text x="130" y="592" class="t t-task-sub" font-size="7.9" text-anchor="middle">500 Hz · p3</text>
+    <text x="130" y="601" class="t t-task-sub" font-size="7.9" text-anchor="middle">MPU6050</text>
+  </g>
+<g>
+    <circle cx="304" cy="580" r="38" class="task"/>
+    <text x="304" y="576" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">MAG_DAQ</text>
+    <text x="304" y="592" class="t t-task-sub" font-size="7.9" text-anchor="middle">100 Hz · p2</text>
+    <text x="304" y="601" class="t t-task-sub" font-size="7.9" text-anchor="middle">HMC5883L</text>
+  </g>
+<g>
+    <circle cx="478" cy="580" r="38" class="task"/>
+    <text x="478" y="576" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">BARO_DAQ</text>
+    <text x="478" y="592" class="t t-task-sub" font-size="7.9" text-anchor="middle">50 Hz · p2</text>
+    <text x="478" y="601" class="t t-task-sub" font-size="7.9" text-anchor="middle">BMP180</text>
+  </g>
+<g>
+    <circle cx="652" cy="580" r="38" class="task"/>
+    <text x="652" y="576" class="t t-task" font-size="9.5" text-anchor="middle" font-weight="600">RC_RECEIVER</text>
+    <text x="652" y="592" class="t t-task-sub" font-size="7.9" text-anchor="middle">50 Hz · p2</text>
+    <text x="652" y="601" class="t t-task-sub" font-size="7.9" text-anchor="middle">PPM in</text>
+  </g>
+<rect x="236" y="650" width="454" height="80" rx="8" class="ondemand"/>
+<text x="244" y="664" class="t t-dim2" font-size="7" text-anchor="start" font-weight="600">ON DEMAND — not resident at boot</text>
+<g>
+    <circle cx="272" cy="700" r="22" class="task ghost"/>
+    <text x="272" y="698" class="t t-task" font-size="7.2" text-anchor="middle" font-weight="600">CALIB</text><text x="272" y="708.4" class="t t-task" font-size="7.2" text-anchor="middle" font-weight="600">GYRO</text>
+    
+    
+  </g>
+<g>
+    <circle cx="360" cy="700" r="22" class="task ghost"/>
+    <text x="360" y="698" class="t t-task" font-size="7.2" text-anchor="middle" font-weight="600">CALIB</text><text x="360" y="708.4" class="t t-task" font-size="7.2" text-anchor="middle" font-weight="600">ACCEL</text>
+    
+    
+  </g>
+<g>
+    <circle cx="448" cy="700" r="22" class="task ghost"/>
+    <text x="448" y="698" class="t t-task" font-size="7.2" text-anchor="middle" font-weight="600">CALIB</text><text x="448" y="708.4" class="t t-task" font-size="7.2" text-anchor="middle" font-weight="600">MAG</text>
+    
+    
+  </g>
+<g>
+    <circle cx="536" cy="700" r="22" class="task ghost"/>
+    <text x="536" y="698" class="t t-task" font-size="7.2" text-anchor="middle" font-weight="600">CALIB</text><text x="536" y="708.4" class="t t-task" font-size="7.2" text-anchor="middle" font-weight="600">BARO</text>
+    
+    
+  </g>
+<g>
+    <circle cx="624" cy="700" r="22" class="task ghost"/>
+    <text x="624" y="698" class="t t-task" font-size="7.2" text-anchor="middle" font-weight="600">BLE_OTA</text>
+    
+    
+  </g>
+<text x="244" y="726" class="t t-dim2" font-size="6.7" text-anchor="start">200 / 200 / 100 / 50 Hz · p1 · one worker at a time · OTA only in DEVELOPMENT</text>
+<rect x="880" y="290" width="286" height="164" rx="7" class="panel"/>
+<text x="892" y="304" class="t t-panel-title" font-size="8.1" text-anchor="start" font-weight="700">PRE-FLIGHT SAFETY — 5 GATES</text>
+<text x="892" y="317" class="t t-dim2" font-size="6.8" text-anchor="start">core/safety/preflight_checks.cpp</text>
+<text x="892" y="335" class="t t-panel" font-size="7.3" text-anchor="start">1  sensor stream  IMU · MAG · BARO fresh, in range</text>
+<text x="892" y="349" class="t t-panel" font-size="7.3" text-anchor="start">2  stationary      1.5 s below motion variance</text>
+<text x="892" y="363" class="t t-panel" font-size="7.3" text-anchor="start">3  passive calib   gyro bias · |a| ≈ 1 g · |m|</text>
+<text x="892" y="377" class="t t-panel" font-size="7.3" text-anchor="start">4  platform tilt   ≤ 10° from gravity</text>
+<text x="892" y="391" class="t t-panel" font-size="7.3" text-anchor="start">5  RC signal       PPM locked, failsafe clear</text>
+<text x="892" y="408" class="t t-emph2" font-size="7.1" text-anchor="start">ALL five set, no blocker → READY</text>
+<text x="892" y="421" class="t t-dim2" font-size="6.9" text-anchor="start">any FAIL → DEVELOPMENT, motors stay disarmed</text>
+<text x="892" y="434" class="t t-dim2" font-size="6.9" text-anchor="start">the 6th (battery) gate retired with INA226 — note 0052</text>
+<rect x="880" y="468" width="286" height="232" rx="7" class="panel"/>
+<text x="892" y="482" class="t t-panel-title" font-size="8.1" text-anchor="start" font-weight="700">MATH · ALGORITHMS · THE GAP</text>
+<text x="892" y="498" class="t t-panel" font-size="7.3" text-anchor="start">lpf.h  1st-order (accel, mag) + 2nd-order (gyro)</text>
+<text x="892" y="512" class="t t-panel" font-size="7.3" text-anchor="start">estimators.cpp  7-state quaternion EKF (gyro bias)</text>
+<text x="892" y="524" class="t t-panel" font-size="7.3" text-anchor="start">                        3-state altitude EKF (z, vz, bias)</text>
+<text x="892" y="538" class="t t-panel" font-size="7.3" text-anchor="start">ellipsoid_fit.cpp  SIMD Adam (accel 6-point, mag 9-param)</text>
+<text x="892" y="552" class="t t-panel" font-size="7.3" text-anchor="start">matrix.h  one-line facade over L1 hal_matrix</text>
+<line x1="892" y1="564" x2="1154" y2="564" class="panel-rule"/>
+<text x="892" y="578" class="t t-warn" font-size="7.7" text-anchor="start" font-weight="700">core/control/ — RESERVED, NOT IMPLEMENTED</text>
+<text x="892" y="592" class="t t-warn" font-size="7.2" text-anchor="start">control_tasks.cpp is a 2-line “DEFERRED” stub.</text>
+<text x="892" y="605" class="t t-warn" font-size="7.2" text-anchor="start">No PID, no INDI, no controller task, no setpoint.</text>
+<text x="892" y="618" class="t t-warn" font-size="7.2" text-anchor="start">IndiControllerOutput is declared in ipc.h but nothing</text>
+<text x="892" y="631" class="t t-warn" font-size="7.2" text-anchor="start">produces it.</text>
+<text x="892" y="648" class="t t-dim2" font-size="7.1" text-anchor="start">Mixer: motor_tasks.cpp:57–93 is a commented sketch;</text>
+<text x="892" y="661" class="t t-dim2" font-size="7.1" text-anchor="start">MOTOR consumes only ARM / DISARM / EMERGENCY_STOP.</text>
+<text x="892" y="678" class="t t-emph2" font-size="7.1" text-anchor="start">So the 500 Hz chain ends at state estimation.</text>
+<rect x="40" y="760" width="1140" height="220" rx="10" class="band"/>
+<text x="57" y="870" class="t band-label" font-size="8.4" text-anchor="middle" transform="rotate(-90 57 870)">L3 · MIDDLEWARE</text>
+<text x="1168" y="774" class="t t-band-sub" font-size="7.6" text-anchor="end">src/middleware/ — IPC umbrella · ring_buffer.h</text>
+<text x="1168" y="784" class="t t-dim2" font-size="7" text-anchor="end">critical_section.h · task registry · ISR routing</text>
+<g>
+    <rect x="86" y="810" width="126" height="20" rx="3" class="lad-bg"/>
+    <line x1="88" y1="812" x2="210" y2="812" class="lad-rail"/>
+    <line x1="88" y1="828" x2="210" y2="828" class="lad-rail"/>
+    <line x1="91" y1="812" x2="91" y2="828" class="lad-rung"/><line x1="103.88888888888889" y1="812" x2="103.88888888888889" y2="828" class="lad-rung"/><line x1="116.77777777777777" y1="812" x2="116.77777777777777" y2="828" class="lad-rung"/><line x1="129.66666666666669" y1="812" x2="129.66666666666669" y2="828" class="lad-rung"/><line x1="142.55555555555554" y1="812" x2="142.55555555555554" y2="828" class="lad-rung"/><line x1="155.44444444444446" y1="812" x2="155.44444444444446" y2="828" class="lad-rung"/><line x1="168.33333333333334" y1="812" x2="168.33333333333334" y2="828" class="lad-rung"/><line x1="181.22222222222223" y1="812" x2="181.22222222222223" y2="828" class="lad-rung"/><line x1="194.11111111111111" y1="812" x2="194.11111111111111" y2="828" class="lad-rung"/><line x1="207" y1="812" x2="207" y2="828" class="lad-rung"/>
+    <text x="149" y="839" class="t t-mem" font-size="7.9" text-anchor="middle" font-weight="600">accel_raw · gyro_raw</text>
+    <text x="149" y="848" class="t t-sub" font-size="6.7" text-anchor="middle">+ ts  ·  [10]</text>
+  </g>
+<g>
+    <rect x="241" y="810" width="126" height="20" rx="3" class="lad-bg"/>
+    <line x1="243" y1="812" x2="365" y2="812" class="lad-rail"/>
+    <line x1="243" y1="828" x2="365" y2="828" class="lad-rail"/>
+    <line x1="246" y1="812" x2="246" y2="828" class="lad-rung"/><line x1="258.8888888888889" y1="812" x2="258.8888888888889" y2="828" class="lad-rung"/><line x1="271.77777777777777" y1="812" x2="271.77777777777777" y2="828" class="lad-rung"/><line x1="284.6666666666667" y1="812" x2="284.6666666666667" y2="828" class="lad-rung"/><line x1="297.55555555555554" y1="812" x2="297.55555555555554" y2="828" class="lad-rung"/><line x1="310.44444444444446" y1="812" x2="310.44444444444446" y2="828" class="lad-rung"/><line x1="323.33333333333337" y1="812" x2="323.33333333333337" y2="828" class="lad-rung"/><line x1="336.22222222222223" y1="812" x2="336.22222222222223" y2="828" class="lad-rung"/><line x1="349.1111111111111" y1="812" x2="349.1111111111111" y2="828" class="lad-rung"/><line x1="362" y1="812" x2="362" y2="828" class="lad-rung"/>
+    <text x="304" y="839" class="t t-mem" font-size="7.9" text-anchor="middle" font-weight="600">mag_raw</text>
+    <text x="304" y="848" class="t t-sub" font-size="6.7" text-anchor="middle">+ ts  ·  [10]</text>
+  </g>
+<g>
+    <rect x="415" y="810" width="126" height="20" rx="3" class="lad-bg"/>
+    <line x1="417" y1="812" x2="539" y2="812" class="lad-rail"/>
+    <line x1="417" y1="828" x2="539" y2="828" class="lad-rail"/>
+    <line x1="420" y1="812" x2="420" y2="828" class="lad-rung"/><line x1="432.8888888888889" y1="812" x2="432.8888888888889" y2="828" class="lad-rung"/><line x1="445.77777777777777" y1="812" x2="445.77777777777777" y2="828" class="lad-rung"/><line x1="458.6666666666667" y1="812" x2="458.6666666666667" y2="828" class="lad-rung"/><line x1="471.55555555555554" y1="812" x2="471.55555555555554" y2="828" class="lad-rung"/><line x1="484.44444444444446" y1="812" x2="484.44444444444446" y2="828" class="lad-rung"/><line x1="497.33333333333337" y1="812" x2="497.33333333333337" y2="828" class="lad-rung"/><line x1="510.22222222222223" y1="812" x2="510.22222222222223" y2="828" class="lad-rung"/><line x1="523.1111111111111" y1="812" x2="523.1111111111111" y2="828" class="lad-rung"/><line x1="536" y1="812" x2="536" y2="828" class="lad-rung"/>
+    <text x="478" y="839" class="t t-mem" font-size="7.9" text-anchor="middle" font-weight="600">pressure</text>
+    <text x="478" y="848" class="t t-sub" font-size="6.7" text-anchor="middle">+ ts  ·  [10]</text>
+  </g>
+<g>
+    <rect x="589" y="810" width="126" height="20" rx="3" class="lad-bg"/>
+    <line x1="591" y1="812" x2="713" y2="812" class="lad-rail"/>
+    <line x1="591" y1="828" x2="713" y2="828" class="lad-rail"/>
+    <line x1="594" y1="812" x2="594" y2="828" class="lad-rung"/><line x1="606.8888888888889" y1="812" x2="606.8888888888889" y2="828" class="lad-rung"/><line x1="619.7777777777778" y1="812" x2="619.7777777777778" y2="828" class="lad-rung"/><line x1="632.6666666666666" y1="812" x2="632.6666666666666" y2="828" class="lad-rung"/><line x1="645.5555555555555" y1="812" x2="645.5555555555555" y2="828" class="lad-rung"/><line x1="658.4444444444445" y1="812" x2="658.4444444444445" y2="828" class="lad-rung"/><line x1="671.3333333333334" y1="812" x2="671.3333333333334" y2="828" class="lad-rung"/><line x1="684.2222222222222" y1="812" x2="684.2222222222222" y2="828" class="lad-rung"/><line x1="697.1111111111111" y1="812" x2="697.1111111111111" y2="828" class="lad-rung"/><line x1="710" y1="812" x2="710" y2="828" class="lad-rung"/>
+    <text x="652" y="839" class="t t-mem" font-size="7.9" text-anchor="middle" font-weight="600">rc_data</text>
+    <text x="652" y="848" class="t t-sub" font-size="6.7" text-anchor="middle">+ ts  ·  [10]</text>
+  </g>
+<g>
+    <polygon points="744,790 932,790 944,844 756,844" class="mem"/>
+    <text x="844" y="807" class="t t-mem" font-size="8.1" text-anchor="middle" font-weight="600">calib_data</text>
+    <text x="844" y="819" class="t t-sub" font-size="6.8" text-anchor="middle">SensorCalibrationData · NVS-backed</text>
+  </g>
+<text x="956" y="802" class="t t-dim2" font-size="6.7" text-anchor="start">written by the calib workers and by READY</text>
+<text x="956" y="812" class="t t-dim2" font-size="6.7" text-anchor="start">read by PREPROCESS, EKF_ALT and the FSM</text>
+<text x="956" y="822" class="t t-dim2" font-size="6.7" text-anchor="start">gates: is_valid · baro_ref_pa</text>
+<g>
+    <rect x="86" y="884" width="126" height="20" rx="3" class="lad-bg"/>
+    <line x1="88" y1="886" x2="210" y2="886" class="lad-rail"/>
+    <line x1="88" y1="902" x2="210" y2="902" class="lad-rail"/>
+    <line x1="91" y1="886" x2="91" y2="902" class="lad-rung"/><line x1="103.88888888888889" y1="886" x2="103.88888888888889" y2="902" class="lad-rung"/><line x1="116.77777777777777" y1="886" x2="116.77777777777777" y2="902" class="lad-rung"/><line x1="129.66666666666669" y1="886" x2="129.66666666666669" y2="902" class="lad-rung"/><line x1="142.55555555555554" y1="886" x2="142.55555555555554" y2="902" class="lad-rung"/><line x1="155.44444444444446" y1="886" x2="155.44444444444446" y2="902" class="lad-rung"/><line x1="168.33333333333334" y1="886" x2="168.33333333333334" y2="902" class="lad-rung"/><line x1="181.22222222222223" y1="886" x2="181.22222222222223" y2="902" class="lad-rung"/><line x1="194.11111111111111" y1="886" x2="194.11111111111111" y2="902" class="lad-rung"/><line x1="207" y1="886" x2="207" y2="902" class="lad-rung"/>
+    <text x="149" y="913" class="t t-mem" font-size="7.9" text-anchor="middle" font-weight="600">accel · gyro (filt)</text>
+    <text x="149" y="922" class="t t-sub" font-size="6.7" text-anchor="middle">+ ts  ·  [10]</text>
+  </g>
+<g>
+    <rect x="241" y="884" width="126" height="20" rx="3" class="lad-bg"/>
+    <line x1="243" y1="886" x2="365" y2="886" class="lad-rail"/>
+    <line x1="243" y1="902" x2="365" y2="902" class="lad-rail"/>
+    <line x1="246" y1="886" x2="246" y2="902" class="lad-rung"/><line x1="258.8888888888889" y1="886" x2="258.8888888888889" y2="902" class="lad-rung"/><line x1="271.77777777777777" y1="886" x2="271.77777777777777" y2="902" class="lad-rung"/><line x1="284.6666666666667" y1="886" x2="284.6666666666667" y2="902" class="lad-rung"/><line x1="297.55555555555554" y1="886" x2="297.55555555555554" y2="902" class="lad-rung"/><line x1="310.44444444444446" y1="886" x2="310.44444444444446" y2="902" class="lad-rung"/><line x1="323.33333333333337" y1="886" x2="323.33333333333337" y2="902" class="lad-rung"/><line x1="336.22222222222223" y1="886" x2="336.22222222222223" y2="902" class="lad-rung"/><line x1="349.1111111111111" y1="886" x2="349.1111111111111" y2="902" class="lad-rung"/><line x1="362" y1="886" x2="362" y2="902" class="lad-rung"/>
+    <text x="304" y="913" class="t t-mem" font-size="7.9" text-anchor="middle" font-weight="600">mag (filt)</text>
+    <text x="304" y="922" class="t t-sub" font-size="6.7" text-anchor="middle">+ ts  ·  [10]</text>
+  </g>
+<g>
+    <rect x="415" y="884" width="126" height="20" rx="3" class="lad-bg"/>
+    <line x1="417" y1="886" x2="539" y2="886" class="lad-rail"/>
+    <line x1="417" y1="902" x2="539" y2="902" class="lad-rail"/>
+    <line x1="420" y1="886" x2="420" y2="902" class="lad-rung"/><line x1="432.8888888888889" y1="886" x2="432.8888888888889" y2="902" class="lad-rung"/><line x1="445.77777777777777" y1="886" x2="445.77777777777777" y2="902" class="lad-rung"/><line x1="458.6666666666667" y1="886" x2="458.6666666666667" y2="902" class="lad-rung"/><line x1="471.55555555555554" y1="886" x2="471.55555555555554" y2="902" class="lad-rung"/><line x1="484.44444444444446" y1="886" x2="484.44444444444446" y2="902" class="lad-rung"/><line x1="497.33333333333337" y1="886" x2="497.33333333333337" y2="902" class="lad-rung"/><line x1="510.22222222222223" y1="886" x2="510.22222222222223" y2="902" class="lad-rung"/><line x1="523.1111111111111" y1="886" x2="523.1111111111111" y2="902" class="lad-rung"/><line x1="536" y1="886" x2="536" y2="902" class="lad-rung"/>
+    <text x="478" y="913" class="t t-mem" font-size="7.9" text-anchor="middle" font-weight="600">att_quat · att_euler</text>
+    <text x="478" y="922" class="t t-sub" font-size="6.7" text-anchor="middle">+ ts  ·  [10]</text>
+  </g>
+<g>
+    <rect x="589" y="884" width="126" height="20" rx="3" class="lad-bg"/>
+    <line x1="591" y1="886" x2="713" y2="886" class="lad-rail"/>
+    <line x1="591" y1="902" x2="713" y2="902" class="lad-rail"/>
+    <line x1="594" y1="886" x2="594" y2="902" class="lad-rung"/><line x1="606.8888888888889" y1="886" x2="606.8888888888889" y2="902" class="lad-rung"/><line x1="619.7777777777778" y1="886" x2="619.7777777777778" y2="902" class="lad-rung"/><line x1="632.6666666666666" y1="886" x2="632.6666666666666" y2="902" class="lad-rung"/><line x1="645.5555555555555" y1="886" x2="645.5555555555555" y2="902" class="lad-rung"/><line x1="658.4444444444445" y1="886" x2="658.4444444444445" y2="902" class="lad-rung"/><line x1="671.3333333333334" y1="886" x2="671.3333333333334" y2="902" class="lad-rung"/><line x1="684.2222222222222" y1="886" x2="684.2222222222222" y2="902" class="lad-rung"/><line x1="697.1111111111111" y1="886" x2="697.1111111111111" y2="902" class="lad-rung"/><line x1="710" y1="886" x2="710" y2="902" class="lad-rung"/>
+    <text x="652" y="913" class="t t-mem" font-size="7.9" text-anchor="middle" font-weight="600">alt_state</text>
+    <text x="652" y="922" class="t t-sub" font-size="6.7" text-anchor="middle">z · vz · az  ·  [10]</text>
+  </g>
+<g>
+    <rect x="744" y="872" width="200" height="48" rx="5" class="mod"/>
+    <text x="844" y="887" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">queues</text>
+    <text x="844" y="898" class="t t-sub" font-size="7.1" text-anchor="middle">led_cmd(16) · motor_cmd(4)</text>
+    
+  </g>
+<text x="844" y="912" class="t t-sub" font-size="7.1" text-anchor="middle">calib_report(16) · ota_data(32, on demand)</text>
+<text x="956" y="886" class="t t-dim2" font-size="6.7" text-anchor="start">ota_data_q is created on demand only</text>
+<text x="956" y="896" class="t t-dim2" font-size="6.7" text-anchor="start">(~16.5 KB SRAM reclaimed at boot — note 0050)</text>
+<text x="956" y="912" class="t t-dim2" font-size="6.7" text-anchor="start">11 data rings + 8 timestamp rings · static BSS</text>
+<text x="956" y="922" class="t t-dim2" font-size="6.7" text-anchor="start">RING_BUF_SIZE = 10 · push overwrites the oldest</text>
+<rect x="86" y="934" width="1070" height="40" rx="6" class="syncrel"/>
+<g transform="translate(104,954)">
+    <circle cx="0" cy="0" r="5" class="key-fill"/>
+    <circle cx="0" cy="0" r="1.8" class="key-hole"/>
+    <path d="M4.4 0 H16 M11.4 0 v4.2 M14.8 0 v3.1" class="key-stroke"/>
+    <text x="24" y="-1" class="t key-label" font-size="7.1">i2c0_mutex</text>
+    <text x="24" y="8" class="t sub-mini">MPU · HMC · BMP</text>
+  </g>
+<g transform="translate(268,954)">
+    <circle cx="0" cy="0" r="5" class="key-fill"/>
+    <circle cx="0" cy="0" r="1.8" class="key-hole"/>
+    <path d="M4.4 0 H16 M11.4 0 v4.2 M14.8 0 v3.1" class="key-stroke"/>
+    <text x="24" y="-1" class="t key-label" font-size="7.1">spi_bus_mutex</text>
+    <text x="24" y="8" class="t sub-mini">SD card + SPI bus</text>
+  </g>
+<g transform="translate(432,954)">
+    <circle cx="0" cy="0" r="5" class="key-fill"/>
+    <circle cx="0" cy="0" r="1.8" class="key-hole"/>
+    <path d="M4.4 0 H16 M11.4 0 v4.2 M14.8 0 v3.1" class="key-stroke"/>
+    <text x="24" y="-1" class="t key-label" font-size="7.1">flash_mutex</text>
+    <text x="24" y="8" class="t sub-mini">NVS calib records</text>
+  </g>
+<g transform="translate(596,954)">
+    <circle cx="0" cy="0" r="5" class="key-fill"/>
+    <circle cx="0" cy="0" r="1.8" class="key-hole"/>
+    <path d="M4.4 0 H16 M11.4 0 v4.2 M14.8 0 v3.1" class="key-stroke"/>
+    <text x="24" y="-1" class="t key-label" font-size="7.1">ekf_state_mutex</text>
+    <text x="24" y="8" class="t sub-mini">1 engine, 2 tasks</text>
+  </g>
+<g>
+    <ellipse cx="790" cy="953" rx="42" ry="12" class="isr"/>
+    <text x="790" y="952" class="t t-isr" font-size="7.4" text-anchor="middle" font-weight="600">user_btn_isr</text>
+    <text x="790" y="961.4" class="t t-isr-sub" font-size="6.4" text-anchor="middle">GPIO 38</text>
+  </g>
+<g transform="translate(866,953)">
+    <path d="M0 -10 V8" class="flag-pole"/>
+    <path d="M0 -10 H14 L10.4 -5.4 L14 -0.8 H0 Z" class="flag-fill"/>
+    <text x="20" y="-2" class="t flag-label" font-size="7.1">s_btn_event_flags</text>
+    
+  </g>
+<text x="985" y="950" class="t t-dim2" font-size="6.7" text-anchor="start">ISR → flag → xTaskNotifyGive(FSM)</text>
+<text x="985" y="960" class="t t-dim2" font-size="6.7" text-anchor="start">ring ops: taskENTER_CRITICAL(&amp;sys_spinlock)</text>
+<rect x="40" y="992" width="1140" height="158" rx="10" class="band"/>
+<text x="57" y="1071" class="t band-label" font-size="8.4" text-anchor="middle" transform="rotate(-90 57 1071)">L2 · DRIVERS</text>
+<text x="1168" y="1006" class="t t-band-sub" font-size="7.6" text-anchor="end">src/drivers/ — stateless classes</text>
+<text x="1168" y="1016" class="t t-dim2" font-size="7" text-anchor="end">task creation is forbidden in L2 and L1</text>
+<g>
+    <rect x="86" y="1024" width="205" height="44" rx="5" class="mod"/>
+    <text x="188.5" y="1039" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">mpu6050</text>
+    <text x="188.5" y="1050" class="t t-sub" font-size="7.1" text-anchor="middle">→ HAL_I2C · 0x68 · 6-DOF</text>
+    
+  </g>
+<g>
+    <rect x="301" y="1024" width="205" height="44" rx="5" class="mod"/>
+    <text x="403.5" y="1039" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">hmc5883l</text>
+    <text x="403.5" y="1050" class="t t-sub" font-size="7.1" text-anchor="middle">→ HAL_I2C · 0x1E · via bypass</text>
+    
+  </g>
+<g>
+    <rect x="516" y="1024" width="205" height="44" rx="5" class="mod"/>
+    <text x="618.5" y="1039" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">bmp180</text>
+    <text x="618.5" y="1050" class="t t-sub" font-size="7.1" text-anchor="middle">→ HAL_I2C · 0x77 · 2-phase</text>
+    
+  </g>
+<g>
+    <rect x="731" y="1024" width="205" height="44" rx="5" class="mod"/>
+    <text x="833.5" y="1039" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">fs_ia6b</text>
+    <text x="833.5" y="1050" class="t t-sub" font-size="7.1" text-anchor="middle">→ HAL_PulseRX · PPM 6-ch</text>
+    
+  </g>
+<g>
+    <rect x="946" y="1024" width="205" height="44" rx="5" class="mod"/>
+    <text x="1048.5" y="1039" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">ws2812</text>
+    <text x="1048.5" y="1050" class="t t-sub" font-size="7.1" text-anchor="middle">→ HAL_PulseTX · RMT</text>
+    
+  </g>
+<g>
+    <rect x="86" y="1082" width="205" height="44" rx="5" class="mod"/>
+    <text x="188.5" y="1097" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">motor_driver</text>
+    <text x="188.5" y="1108" class="t t-sub" font-size="7.1" text-anchor="middle">→ HAL_PWM · normalized 0…1</text>
+    
+  </g>
+<g>
+    <rect x="301" y="1082" width="205" height="44" rx="5" class="mod"/>
+    <text x="403.5" y="1097" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">sd_card_driver</text>
+    <text x="403.5" y="1108" class="t t-sub" font-size="7.1" text-anchor="middle">→ HAL_SPI · FATFS · 20 MHz</text>
+    
+  </g>
+<g>
+    <rect x="516" y="1082" width="205" height="44" rx="5" class="mod"/>
+    <text x="618.5" y="1097" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">flash_storage_driver</text>
+    <text x="618.5" y="1108" class="t t-sub" font-size="7.1" text-anchor="middle">→ HAL_Flash · NVS records</text>
+    
+  </g>
+<g>
+    <rect x="731" y="1082" width="205" height="44" rx="5" class="mod"/>
+    <text x="833.5" y="1097" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">ble_driver</text>
+    <text x="833.5" y="1108" class="t t-sub" font-size="7.1" text-anchor="middle">NimBLE GATT · telemetry + OTA</text>
+    
+  </g>
+<g>
+    <rect x="946" y="1082" width="205" height="44" rx="5" class="mod"/>
+    <text x="1048.5" y="1097" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">ble_packet / ota_packet</text>
+    <text x="1048.5" y="1108" class="t t-sub" font-size="7.1" text-anchor="middle">wire structs · no I/O</text>
+    
+  </g>
+<text x="86" y="1142" class="t t-dim2" font-size="7.1" text-anchor="start">Drivers never create tasks and never include a higher layer (downward-only dependency, Firmware Structure §1–2).</text>
+<rect x="40" y="1162" width="1140" height="150" rx="10" class="band"/>
+<text x="57" y="1237" class="t band-label" font-size="8.4" text-anchor="middle" transform="rotate(-90 57 1237)">L1 · PLATFORM HAL</text>
+<text x="1168" y="1176" class="t t-band-sub" font-size="7.6" text-anchor="end">src/platforms/hal/ interfaces  ←  targets/espressif/</text>
+<text x="1168" y="1186" class="t t-dim2" font-size="7" text-anchor="end">no scalar fallback in SIMD · no target type in L2–L4 headers</text>
+<g>
+    <rect x="86" y="1198" width="113" height="46" rx="5" class="mod hal"/>
+    <text x="142.5" y="1213" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">HAL_I2C</text>
+    <text x="142.5" y="1224" class="t t-sub" font-size="7.1" text-anchor="middle">i2c.cpp · 400 kHz</text>
+    
+  </g>
+<g>
+    <rect x="205" y="1198" width="113" height="46" rx="5" class="mod hal"/>
+    <text x="261.5" y="1213" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">HAL_SPI</text>
+    <text x="261.5" y="1224" class="t t-sub" font-size="7.1" text-anchor="middle">spi.cpp</text>
+    
+  </g>
+<g>
+    <rect x="324" y="1198" width="113" height="46" rx="5" class="mod hal"/>
+    <text x="380.5" y="1213" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">HAL_PulseRX</text>
+    <text x="380.5" y="1224" class="t t-sub" font-size="7.1" text-anchor="middle">pulse_rmt.cpp</text>
+    
+  </g>
+<g>
+    <rect x="443" y="1198" width="113" height="46" rx="5" class="mod hal"/>
+    <text x="499.5" y="1213" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">HAL_PulseTX</text>
+    <text x="499.5" y="1224" class="t t-sub" font-size="7.1" text-anchor="middle">pulse_rmt.cpp</text>
+    
+  </g>
+<g>
+    <rect x="562" y="1198" width="113" height="46" rx="5" class="mod hal"/>
+    <text x="618.5" y="1213" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">HAL_PWM</text>
+    <text x="618.5" y="1224" class="t t-sub" font-size="7.1" text-anchor="middle">pwm_ledc.cpp</text>
+    
+  </g>
+<g>
+    <rect x="681" y="1198" width="113" height="46" rx="5" class="mod hal"/>
+    <text x="737.5" y="1213" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">HAL_Flash</text>
+    <text x="737.5" y="1224" class="t t-sub" font-size="7.1" text-anchor="middle">flash.cpp · nvs</text>
+    
+  </g>
+<g>
+    <rect x="800" y="1198" width="113" height="46" rx="5" class="mod hal"/>
+    <text x="856.5" y="1213" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">HAL_OTA</text>
+    <text x="856.5" y="1224" class="t t-sub" font-size="7.1" text-anchor="middle">ota.cpp · 2 banks</text>
+    
+  </g>
+<g>
+    <rect x="919" y="1198" width="113" height="46" rx="5" class="mod hal"/>
+    <text x="975.5" y="1213" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">hal_simd</text>
+    <text x="975.5" y="1224" class="t t-sub" font-size="7.1" text-anchor="middle">simd.cpp · ESP-DSP/PIE</text>
+    
+  </g>
+<g>
+    <rect x="1038" y="1198" width="113" height="46" rx="5" class="mod hal"/>
+    <text x="1094.5" y="1213" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">hal_matrix</text>
+    <text x="1094.5" y="1224" class="t t-sub" font-size="7.1" text-anchor="middle">Matrix / Vec3 types</text>
+    
+  </g>
+<rect x="40" y="1330" width="1140" height="110" rx="10" class="band hwband"/>
+<text x="57" y="1434" class="t band-label" font-size="7.6" text-anchor="start" transform="rotate(-90 57 1434)">ON-CHIP · ESP32-S3</text>
+<g>
+    <rect x="86" y="1338" width="126" height="44" rx="5" class="socblk"/>
+    <text x="149" y="1353" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">I2C0</text>
+    <text x="149" y="1364" class="t t-sub" font-size="7.1" text-anchor="middle">400 kHz · master</text>
+    
+  </g>
+<g>
+    <rect x="217" y="1338" width="126" height="44" rx="5" class="socblk"/>
+    <text x="280" y="1353" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">SPI2</text>
+    <text x="280" y="1364" class="t t-sub" font-size="7.1" text-anchor="middle">10 / 20 MHz</text>
+    
+  </g>
+<g>
+    <rect x="348" y="1338" width="126" height="44" rx="5" class="socblk"/>
+    <text x="411" y="1353" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">RMT RX ch0</text>
+    <text x="411" y="1364" class="t t-sub" font-size="7.1" text-anchor="middle">PPM capture</text>
+    
+  </g>
+<g>
+    <rect x="479" y="1338" width="126" height="44" rx="5" class="socblk"/>
+    <text x="542" y="1353" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">RMT TX</text>
+    <text x="542" y="1364" class="t t-sub" font-size="7.1" text-anchor="middle">WS2812 encode</text>
+    
+  </g>
+<g>
+    <rect x="610" y="1338" width="126" height="44" rx="5" class="socblk"/>
+    <text x="673" y="1353" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">LEDC</text>
+    <text x="673" y="1364" class="t t-sub" font-size="7.1" text-anchor="middle">250 Hz · 14-bit</text>
+    
+  </g>
+<g>
+    <rect x="741" y="1338" width="126" height="44" rx="5" class="socblk"/>
+    <text x="804" y="1353" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">BLE radio</text>
+    <text x="804" y="1364" class="t t-sub" font-size="7.1" text-anchor="middle">2.4 GHz · NimBLE</text>
+    
+  </g>
+<g>
+    <rect x="872" y="1338" width="126" height="44" rx="5" class="socblk"/>
+    <text x="935" y="1353" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">NVS</text>
+    <text x="935" y="1364" class="t t-sub" font-size="7.1" text-anchor="middle">16 KB partition</text>
+    
+  </g>
+<g>
+    <rect x="1003" y="1338" width="126" height="44" rx="5" class="socblk"/>
+    <text x="1066" y="1353" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">OTA banks</text>
+    <text x="1066" y="1364" class="t t-sub" font-size="7.1" text-anchor="middle">ota_0 / ota_1 · 3 MB</text>
+    
+  </g>
+<g>
+    <ellipse cx="411" cy="1406" rx="48" ry="13" class="isr"/>
+    <text x="411" y="1405" class="t t-isr" font-size="7.4" text-anchor="middle" font-weight="600">RMT RX done</text>
+    <text x="411" y="1414.4" class="t t-isr-sub" font-size="6.4" text-anchor="middle">IRAM_ATTR callback</text>
+  </g>
+<g>
+    <rect x="470" y="1396" width="96" height="20" rx="3" class="lad-bg"/>
+    <line x1="472" y1="1398" x2="564" y2="1398" class="lad-rail"/>
+    <line x1="472" y1="1414" x2="564" y2="1414" class="lad-rail"/>
+    <line x1="475" y1="1398" x2="475" y2="1414" class="lad-rung"/><line x1="487.2857142857143" y1="1398" x2="487.2857142857143" y2="1414" class="lad-rung"/><line x1="499.57142857142856" y1="1398" x2="499.57142857142856" y2="1414" class="lad-rung"/><line x1="511.8571428571429" y1="1398" x2="511.8571428571429" y2="1414" class="lad-rung"/><line x1="524.1428571428571" y1="1398" x2="524.1428571428571" y2="1414" class="lad-rung"/><line x1="536.4285714285714" y1="1398" x2="536.4285714285714" y2="1414" class="lad-rung"/><line x1="548.7142857142858" y1="1398" x2="548.7142857142858" y2="1414" class="lad-rung"/><line x1="561" y1="1398" x2="561" y2="1414" class="lad-rung"/>
+    <text x="518" y="1425" class="t t-mem" font-size="7.9" text-anchor="middle" font-weight="600">RxFrame q[1]</text>
+    
+  </g>
+<text x="574" y="1400" class="t t-dim2" font-size="6.6" text-anchor="start">xQueueOverwriteFromISR</text>
+<text x="574" y="1410" class="t t-dim2" font-size="6.6" text-anchor="start">driver polls with a 5 ms timeout</text>
+<rect x="40" y="1452" width="1140" height="214" rx="10" class="band extband"/>
+<text x="57" y="1560" class="t band-label" font-size="8" text-anchor="middle" transform="rotate(-90 57 1560)">EXTERNAL HARDWARE</text>
+<rect x="86" y="1462" width="204" height="190" rx="6" class="hwgroup"/>
+<text x="96" y="1476" class="t t-hw-title" font-size="8.2" text-anchor="start" font-weight="600">GY-87 module</text>
+<g>
+    <rect x="96" y="1484" width="184" height="40" rx="5" class="hw"/>
+    <text x="188" y="1499" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">MPU6050</text>
+    <text x="188" y="1510" class="t t-sub" font-size="7.1" text-anchor="middle">accel + gyro · 0x68</text>
+    
+  </g>
+<g>
+    <rect x="96" y="1530" width="184" height="40" rx="5" class="hw"/>
+    <text x="188" y="1545" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">HMC5883L</text>
+    <text x="188" y="1556" class="t t-sub" font-size="7.1" text-anchor="middle">magnetometer · 0x1E</text>
+    
+  </g>
+<g>
+    <rect x="96" y="1576" width="184" height="40" rx="5" class="hw"/>
+    <text x="188" y="1591" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">BMP180</text>
+    <text x="188" y="1602" class="t t-sub" font-size="7.1" text-anchor="middle">barometer · 0x77</text>
+    
+  </g>
+<text x="96" y="1634" class="t t-dim2" font-size="6.7" text-anchor="start">HMC sits behind the MPU6050 I2C bypass</text>
+<text x="96" y="1644" class="t t-dim2" font-size="6.7" text-anchor="start">(enable_bypass() in app_start)</text>
+<g>
+    <rect x="300" y="1462" width="100" height="64" rx="5" class="hw"/>
+    <text x="350" y="1476" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">microSD</text>
+    <text x="350" y="1486" class="t t-sub" font-size="7.1" text-anchor="middle">FATFS log</text>
+    <text x="350" y="1495" class="t t-sub" font-size="7.1" text-anchor="middle">CS 8 · det 18</text>
+  </g>
+<g>
+    <rect x="410" y="1462" width="100" height="64" rx="5" class="hw"/>
+    <text x="460" y="1476" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">FS-iA6B</text>
+    <text x="460" y="1486" class="t t-sub" font-size="7.1" text-anchor="middle">PPM 6 ch</text>
+    <text x="460" y="1495" class="t t-sub" font-size="7.1" text-anchor="middle">GPIO 5</text>
+  </g>
+<g>
+    <rect x="520" y="1462" width="100" height="64" rx="5" class="hw"/>
+    <text x="570" y="1476" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">WS2812B</text>
+    <text x="570" y="1486" class="t t-sub" font-size="7.1" text-anchor="middle">status LED</text>
+    <text x="570" y="1495" class="t t-sub" font-size="7.1" text-anchor="middle">GPIO 2</text>
+  </g>
+<g>
+    <rect x="630" y="1462" width="160" height="64" rx="5" class="hw"/>
+    <text x="710" y="1476" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">4× ESC → BLDC</text>
+    <text x="710" y="1486" class="t t-sub" font-size="7.1" text-anchor="middle">1000–2000 µs</text>
+    <text x="710" y="1495" class="t t-sub" font-size="7.1" text-anchor="middle">250 Hz · GPIO 4/3/40/1</text>
+  </g>
+<g>
+    <rect x="800" y="1462" width="100" height="64" rx="5" class="hw"/>
+    <text x="850" y="1476" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">3S LiPo</text>
+    <text x="850" y="1486" class="t t-sub" font-size="7.1" text-anchor="middle">+ Matek PDB</text>
+    <text x="850" y="1495" class="t t-sub" font-size="7.1" text-anchor="middle">no telemetry</text>
+  </g>
+<g>
+    <rect x="910" y="1462" width="140" height="64" rx="5" class="host"/>
+    <text x="980" y="1476" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">FCDatMon</text>
+    <text x="980" y="1486" class="t t-sub" font-size="7.1" text-anchor="middle">PC · BLE GATT client</text>
+    <text x="980" y="1495" class="t t-sub" font-size="7.1" text-anchor="middle">plots · CSV logs</text>
+  </g>
+<g>
+    <rect x="300" y="1538" width="100" height="62" rx="5" class="hw"/>
+    <text x="350" y="1552" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">USER button</text>
+    <text x="350" y="1562" class="t t-sub" font-size="7.1" text-anchor="middle">GPIO 38</text>
+    <text x="350" y="1571" class="t t-sub" font-size="7.1" text-anchor="middle">3 s hold</text>
+  </g>
+<g>
+    <rect x="410" y="1538" width="210" height="62" rx="5" class="reserved"/>
+    <text x="515" y="1552" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">LoRa footprint — reserved</text>
+    <text x="515" y="1562" class="t t-sub" font-size="7.1" text-anchor="middle">CS 39 · RST 41 · no driver</text>
+    <text x="515" y="1571" class="t t-sub" font-size="7.1" text-anchor="middle">not part of the current build</text>
+  </g>
+<g>
+    <rect x="630" y="1538" width="160" height="62" rx="5" class="reserved"/>
+    <text x="710" y="1552" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">Power sense — removed</text>
+    <text x="710" y="1562" class="t t-sub" font-size="7.1" text-anchor="middle">INA226 + power DAQ deleted</text>
+    <text x="710" y="1571" class="t t-sub" font-size="7.1" text-anchor="middle">I2C1 reserved, no device</text>
+  </g>
+<g>
+    <rect x="800" y="1538" width="250" height="62" rx="5" class="reserved"/>
+    <text x="925" y="1552" class="t t-title" font-size="8.7" text-anchor="middle" font-weight="600">GNSS / BMP280 / MS5611</text>
+    <text x="925" y="1562" class="t t-sub" font-size="7.1" text-anchor="middle">specified or planned only</text>
+    <text x="925" y="1571" class="t t-sub" font-size="7.1" text-anchor="middle">no driver in the tree</text>
+  </g>
+<rect x="1220" y="86" width="500" height="512" rx="9" class="panel"/>
+<text x="1236" y="108" class="t t-panel-title" font-size="10" text-anchor="start" font-weight="700" letter-spacing="0.06em">CONVENTIONS</text>
+<line x1="1236" y1="117" x2="1704" y2="117" class="panel-rule"/>
+<circle cx="1252" cy="135" r="7.5" class="task"/>
+<text x="1276" y="138" class="t t-panel" font-size="7.85" text-anchor="start">Green circle — RTOS task: the CPU spends its cycles here</text>
+<rect x="1242" y="154" width="20" height="14" rx="4" class="socblk"/>
+<text x="1276" y="164" class="t t-panel" font-size="7.85" text-anchor="start">Orange rounded rect — SoC / on-chip hardware peripheral</text>
+<rect x="1242" y="180" width="20" height="14" rx="1.5" class="hw"/>
+<text x="1276" y="190" class="t t-panel" font-size="7.85" text-anchor="start">Blue rectangle — external hardware (off-chip)</text>
+<ellipse cx="1252" cy="213" rx="10" ry="6" class="isr"/>
+<text x="1276" y="216" class="t t-panel" font-size="7.85" text-anchor="start">Red ellipse — interrupt service routine (ISR)</text>
+<polygon points="1244,232 1262,232 1266,246 1248,246" class="mem"/>
+<text x="1276" y="242" class="t t-panel" font-size="7.85" text-anchor="start">Orange parallelogram — shared memory / shared struct</text>
+<line x1="1242" y1="261" x2="1264" y2="261" class="lad-rail"/><line x1="1242" y1="269" x2="1264" y2="269" class="lad-rail"/>
+<line x1="1244" y1="261" x2="1244" y2="269" class="lad-rung"/><line x1="1250" y1="261" x2="1250" y2="269" class="lad-rung"/><line x1="1256" y1="261" x2="1256" y2="269" class="lad-rung"/><line x1="1262" y1="261" x2="1262" y2="269" class="lad-rung"/>
+<text x="1276" y="268" class="t t-panel" font-size="7.85" text-anchor="start">Horizontal ladder — queue or ring buffer</text>
+<g transform="translate(1245,291) scale(0.78)"><circle cx="0" cy="0" r="5" class="key-fill"/><circle cx="0" cy="0" r="1.8" class="key-hole"/><path d="M4.4 0 H16 M11.4 0 v4.2 M14.8 0 v3.1" class="key-stroke"/></g>
+<text x="1276" y="294" class="t t-panel" font-size="7.85" text-anchor="start">Key — mutex (xSemaphoreTake / xSemaphoreGive)</text>
+<g transform="translate(1247,323) scale(0.8)"><path d="M0 -9 V6" class="flag-pole"/><path d="M0 -9 H13 L9.6 -5 L13 -1 H0 Z" class="flag-fill"/></g>
+<text x="1276" y="320" class="t t-panel" font-size="7.85" text-anchor="start">Flag — boolean flag variable (volatile)</text>
+<path d="M1240,343 H1262" class="path a" marker-end="url(#ah)"/>
+<text x="1276" y="346" class="t t-panel" font-size="7.85" text-anchor="start">Solid arrow — data flow</text>
+<path d="M1240,369 H1262" class="path c dash" marker-end="url(#ah-dash)"/>
+<text x="1276" y="372" class="t t-panel" font-size="7.85" text-anchor="start">Dashed arrow — control &amp; synchronization signal</text>
+<text x="1236" y="424" class="t t-dim2" font-size="7.4" text-anchor="start">Neutral shapes (software, provenance only):</text>
+<rect x="1242" y="432" width="20" height="13" rx="3" class="mod"/>
+<text x="1276" y="443" class="t t-panel" font-size="7.85" text-anchor="start">Slate chip — software module / code unit (L1–L4)</text>
+<rect x="1242" y="456" width="20" height="13" rx="3" class="reserved"/>
+<text x="1276" y="467" class="t t-panel" font-size="7.85" text-anchor="start">Dotted chip — reserved, planned or removed</text>
+<text x="1236" y="494" class="t t-panel" font-size="7.5" text-anchor="start">Ring buffers and queues are static: head + count + data, no heap.</text>
+<text x="1236" y="506" class="t t-panel" font-size="7.5" text-anchor="start">push / front / snapshot run inside a spinlock critical section.</text>
+<text x="1236" y="518" class="t t-panel" font-size="7.5" text-anchor="start">Keys serialize I2C0, SPI, NVS and the shared EKF engine state.</text>
+<text x="1236" y="530" class="t t-dim2" font-size="7.4" text-anchor="start">Arrows follow the data or the control action, not the C++ call.</text>
+<text x="1236" y="542" class="t t-dim2" font-size="7.4" text-anchor="start">Legend proportions are schematic; bus width is not to scale.</text>
+<text x="1236" y="554" class="t t-dim2" font-size="7.4" text-anchor="start">Shapes follow the owner’s blueprint conventions exactly.</text>
+<g>
+    <rect x="1220" y="610" width="500" height="398" rx="9" class="panel"/>
+    <text x="1236" y="632" class="t t-panel-title" font-size="10" text-anchor="start" font-weight="700" letter-spacing="0.06em">EVIDENCE — VERIFIED AGAINST THE TREE</text>
+    <line x1="1236" y1="641" x2="1704" y2="641" class="panel-rule"/>
+    <text x="1236" y="658" class="t t-panel" font-size="7.7">include/config.h — 19 task IDs, rates, priorities, stacks,</text><text x="1236" y="671.7" class="t t-panel" font-size="7.7">queue depths, pin map, GY-87 addresses, RING_BUF_SIZE</text><text x="1236" y="685.4" class="t t-panel" font-size="7.7">src/app/app.cpp:85–130 — init order + 14 xTaskCreatePinnedToCore</text><text x="1236" y="699.1" class="t t-panel" font-size="7.7">src/app/app.cpp:62–83 — OTA authorisation, suspend-all, halt</text><text x="1236" y="712.8" class="t t-panel" font-size="7.7">src/app/fsm.cpp:49–191 — 12-state transition table</text><text x="1236" y="726.5" class="t t-panel" font-size="7.7">src/app/fsm.cpp:489–519 — 5-gate PREFLIGHT evaluation</text><text x="1236" y="740.2" class="t t-panel" font-size="7.7">src/app/fsm.cpp:324–477 — CALIB menu + on-demand workers</text><text x="1236" y="753.9" class="t t-panel" font-size="7.7">src/core/safety/preflight_checks.cpp — [GATE n/5], n = 1…5</text><text x="1236" y="767.6" class="t t-panel" font-size="7.7">src/core/sensor/sensor_preprocess_tasks.cpp — calib + LPF,</text><text x="1236" y="781.3" class="t t-panel" font-size="7.7">is_valid gate, unit-sphere magnetometer output</text><text x="1236" y="795" class="t t-panel" font-size="7.7">src/core/math/estimator_tasks.cpp — 500/100/100 Hz and the</text><text x="1236" y="808.7" class="t t-panel" font-size="7.7">ekf_state_mutex around the shared engine</text><text x="1236" y="822.4" class="t t-panel" font-size="7.7">src/core/actuator/motor_tasks.cpp — ARM/DISARM only, mixer</text><text x="1236" y="836.1" class="t t-panel" font-size="7.7">sketch at lines 57–93</text><text x="1236" y="849.8" class="t t-panel" font-size="7.7">src/core/control/control_tasks.cpp — 2-line DEFERRED stub</text><text x="1236" y="863.5" class="t t-panel" font-size="7.7">src/middleware/{ipc,ring_buffer,critical_section,sysview_tracing}</text><text x="1236" y="877.2" class="t t-panel" font-size="7.7">src/platforms/hal/* + targets/espressif/{i2c,spi,pulse_rmt,</text><text x="1236" y="890.9" class="t t-panel" font-size="7.7">pwm_ledc,flash,ota,simd}.cpp</text><text x="1236" y="904.6" class="t t-panel" font-size="7.7">sdkconfig.defaults — 240 MHz, APPTRACE_DEST_JTAG, 32 slots</text><text x="1236" y="918.3" class="t t-panel" font-size="7.7">sysview_tracing.cpp — one marker pair per task, compile-time</text><text x="1236" y="932" class="t t-panel" font-size="7.7">documents/Firmware Structure.md — normative 5-layer spec</text><text x="1236" y="945.7" class="t t-panel" font-size="7.7">notes 0007 (SystemView) · 0032/0037 (EKF) · 0042/0050 (OTA)</text><text x="1236" y="959.4" class="t t-panel" font-size="7.7">note 0052 — INA226 removal and the 5-gate pipeline</text><text x="1236" y="973.0999999999999" class="t t-panel" font-size="7.7"></text><text x="1236" y="986.8" class="t t-dim2" font-size="7.7">Scope: static source inspection plus the documented bench</text><text x="1236" y="1000.5" class="t t-dim2" font-size="7.7">results. This figure makes no free-flight claim.</text>
+  </g>
+<g>
+    <rect x="1220" y="1020" width="500" height="400" rx="9" class="panel"/>
+    <text x="1236" y="1042" class="t t-panel-title" font-size="10" text-anchor="start" font-weight="700" letter-spacing="0.06em">DELIBERATELY ABSENT / FUTURE WORK</text>
+    <line x1="1236" y1="1051" x2="1704" y2="1051" class="panel-rule"/>
+    <text x="1236" y="1068" class="t t-warn" font-size="7.7">Flight-control law — no PID, no INDI, no cascade.</text><text x="1236" y="1081.7" class="t t-dim2" font-size="7.7">core/control/ holds only a reservation comment, and</text><text x="1236" y="1095.4" class="t t-dim2" font-size="7.7">IndiControllerOutput is declared with no producer.</text><text x="1236" y="1109.1" class="t t-warn" font-size="7.7">Motor mixer — commented design sketch; the 250 Hz task</text><text x="1236" y="1122.8" class="t t-dim2" font-size="7.7">never writes a throttle, it only arms and disarms.</text><text x="1236" y="1136.5" class="t t-warn" font-size="7.7">Attitude setpoints / pilot control path — absent.</text><text x="1236" y="1150.2" class="t t-warn" font-size="7.7">Power telemetry — INA226 driver, power DAQ task, BLE</text><text x="1236" y="1163.9" class="t t-dim2" font-size="7.7">characteristic and SD packet deleted (note 0052); I2C1</text><text x="1236" y="1177.6" class="t t-dim2" font-size="7.7">is initialised but has no device.</text><text x="1236" y="1191.3" class="t t-warn" font-size="7.7">HMC5883L DRDY interrupt — pin defined (GPIO 42), not wired.</text><text x="1236" y="1205" class="t t-warn" font-size="7.7">GNSS (note 0051 is a module-selection study), LoRa driver,</text><text x="1236" y="1218.7" class="t t-dim2" font-size="7.7">BMP280 / MS5611 — no source in the tree.</text><text x="1236" y="1232.4" class="t t-warn" font-size="7.7">Core pinning — every task is created with tskNO_AFFINITY;</text><text x="1236" y="1246.1" class="t t-dim2" font-size="7.7">the code claims no dual-core partitioning.</text><text x="1236" y="1259.8" class="t t-warn" font-size="7.7">Free flight — bench and static-thrust validation only.</text><text x="1236" y="1273.5" class="t t-warn" font-size="7.7">Full-system and RF-load timing — the SystemView figures in</text><text x="1236" y="1287.2" class="t t-dim2" font-size="7.7">note 0007 come from an early DAQ-only phase.</text><text x="1236" y="1300.9" class="t t-panel" font-size="7.7"></text><text x="1236" y="1314.6" class="t t-panel" font-size="7.7">Reading the layers: L5 may call L4; L4 may call L3, L2, L1;</text><text x="1236" y="1328.3" class="t t-panel" font-size="7.7">never the reverse. Registered exceptions exist (C15);</text><text x="1236" y="1342" class="t t-panel" font-size="7.7">none of them adds or removes a node or edge in this figure.</text><text x="1236" y="1355.7" class="t t-panel" font-size="7.7"></text><text x="1236" y="1369.4" class="t t-dim2" font-size="7.7">Poster/paper use: every number here is a nominal constant</text><text x="1236" y="1383.1" class="t t-dim2" font-size="7.7">from config.h — measured determinism must be quoted from a</text><text x="1236" y="1396.8" class="t t-dim2" font-size="7.7">full-system SystemView capture, not from this drawing.</text>
+  </g>
+<text x="40" y="1692" class="t t-dim" font-size="8" text-anchor="start">Figure 1 — FC_v01 firmware architecture, rev 2 (2026-11-20). 14 resident + 5 on-demand tasks; the control law is future work.</text>
+      <path d="M167,205 L281,205" class="path c dash" marker-end="url(#ah-dash)"/><g><rect x="171" y="185.2" width="106" height="12.6" rx="3" class="lbl-bg"/><text x="224" y="194.4" class="t t-lbl" font-size="6.8" text-anchor="middle">xTaskCreatePinnedToCore</text></g>
+<path d="M320,242 L305,242 L305,256 L70,256 L70,450 L92,450" class="path c dash" marker-end="url(#ah-dash)"/>
+<g><rect x="84" y="249.2" width="212" height="12.6" rx="3" class="lbl-bg"/><text x="190" y="258.4" class="t t-lbl" font-size="6.8" text-anchor="middle">motor_cmd_queue  ARM / DISARM / EMERGENCY_STOP</text></g>
+<path d="M335,242 L335,261 L700,261 L700,700 L690,700" class="path c dash" marker-end="url(#ah-dash)"/><g><rect x="669" y="669.2" width="62" height="12.6" rx="3" class="lbl-bg"/><text x="700" y="678.4" class="t t-lbl" font-size="6.8" text-anchor="middle">spawn CALIB_*</text></g>
+<path d="M130,618 L130,812" class="path d" marker-end="url(#ah)"/><g><rect x="112" y="627.2" width="36" height="12.6" rx="3" class="lbl-bg"/><text x="130" y="636.4" class="t t-lbl" font-size="6.8" text-anchor="middle">500 Hz</text></g>
+<path d="M304,618 L304,812" class="path d" marker-end="url(#ah)"/><g><rect x="285" y="627.2" width="38" height="12.6" rx="3" class="lbl-bg"/><text x="304" y="636.4" class="t t-lbl" font-size="6.8" text-anchor="middle">100 Hz</text></g>
+<path d="M478,618 L478,812" class="path d" marker-end="url(#ah)"/><g><rect x="462" y="627.2" width="32" height="12.6" rx="3" class="lbl-bg"/><text x="478" y="636.4" class="t t-lbl" font-size="6.8" text-anchor="middle">50 Hz</text></g>
+<path d="M652,618 L652,812" class="path d" marker-end="url(#ah)"/><g><rect x="636" y="627.2" width="32" height="12.6" rx="3" class="lbl-bg"/><text x="652" y="636.4" class="t t-lbl" font-size="6.8" text-anchor="middle">50 Hz</text></g>
+<path d="M172,810 L172,344 L217,344" class="path d" marker-end="url(#ah)"/><g><rect x="157" y="633.2" width="30" height="12.6" rx="3" class="lbl-bg"/><text x="172" y="642.4" class="t t-lbl" font-size="6.8" text-anchor="middle">read</text></g>
+<path d="M350,810 L350,344 L391,344" class="path d" marker-end="url(#ah)"/>
+<path d="M225,352 L219,362 L219,884 L212,884" class="path d" marker-end="url(#ah)"/><g><rect x="156" y="405.2" width="60" height="12.6" rx="3" class="lbl-bg"/><text x="186" y="414.4" class="t t-lbl" font-size="6.8" text-anchor="middle">calib + LPF</text></g>
+<path d="M399,352 L372,352 L372,884 L367,884" class="path d" marker-end="url(#ah)"/>
+<path d="M200,884 L200,874 L520,874 L520,344 L566,344" class="path d" marker-end="url(#ah)"/><g><rect x="278" y="859.2" width="44" height="12.6" rx="3" class="lbl-bg"/><text x="300" y="868.4" class="t t-lbl" font-size="6.8" text-anchor="middle">filt IMU</text></g>
+<path d="M366,884 L366,862 L720,862 L720,344 L740,344" class="path d" marker-end="url(#ah)"/><g><rect x="594" y="847.2" width="44" height="12.6" rx="3" class="lbl-bg"/><text x="616" y="856.4" class="t t-lbl" font-size="6.8" text-anchor="middle">filt mag</text></g>
+<path d="M594,358 L594,884 L541,884" class="path d" marker-end="url(#ah)"/><g><rect x="568" y="765.2" width="52" height="12.6" rx="3" class="lbl-bg"/><text x="594" y="774.4" class="t t-lbl" font-size="6.8" text-anchor="middle">quat + euler</text></g>
+<path d="M700,470 L700,884" class="path d" marker-end="url(#ah)"/><g><rect x="679" y="765.2" width="42" height="12.6" rx="3" class="lbl-bg"/><text x="700" y="774.4" class="t t-lbl" font-size="6.8" text-anchor="middle">alt_state</text></g>
+<path d="M614,480 L541,812" class="path d" marker-end="url(#ah)"/><g><rect x="571" y="623.2" width="58" height="12.6" rx="3" class="lbl-bg"/><text x="600" y="632.4" class="t t-lbl" font-size="6.8" text-anchor="middle">att + |a| + P</text></g>
+<path d="M632,320 L730,320" class="path c dash" marker-end="url(#ah-dash)"/><g><rect x="648" y="301.2" width="66" height="12.6" rx="3" class="lbl-bg"/><text x="681" y="310.4" class="t t-lbl" font-size="6.8" text-anchor="middle">ekf_state_mutex</text></g>
+<path d="M342,470 L350,492 L350,810" class="path s" marker-end="url(#ah)"/><g><rect x="319" y="553.2" width="62" height="12.6" rx="3" class="lbl-bg"/><text x="350" y="562.4" class="t t-lbl" font-size="6.8" text-anchor="middle">get_snapshot()</text></g>
+<path d="M478,492 L556,492 L556,848 L600,848 L600,884" class="path s" marker-end="url(#ah)"/>
+<g><rect x="525" y="553.2" width="62" height="12.6" rx="3" class="lbl-bg"/><text x="556" y="562.4" class="t t-lbl" font-size="6.8" text-anchor="middle">get_snapshot()</text></g>
+<path d="M142,1244 L149,1336" class="path d" marker-end="url(#ah)"/>
+<path d="M261,1244 L280,1336" class="path d" marker-end="url(#ah)"/>
+<path d="M380,1244 L411,1336" class="path d" marker-end="url(#ah)"/>
+<path d="M499,1244 L542,1336" class="path d" marker-end="url(#ah)"/>
+<path d="M618,1244 L673,1336" class="path d" marker-end="url(#ah)"/>
+<path d="M737,1244 L935,1336" class="path d" marker-end="url(#ah)"/>
+<path d="M856,1244 L1066,1336" class="path d" marker-end="url(#ah)"/>
+<path d="M149,1382 L188,1458" class="path d" marker-end="url(#ah)"/><g><rect x="153" y="1413.2" width="30" height="12.6" rx="3" class="lbl-bg"/><text x="168" y="1422.4" class="t t-lbl" font-size="6.8" text-anchor="middle">I2C0</text></g>
+<path d="M280,1382 L350,1458" class="path d" marker-end="url(#ah)"/><g><rect x="303" y="1413.2" width="26" height="12.6" rx="3" class="lbl-bg"/><text x="316" y="1422.4" class="t t-lbl" font-size="6.8" text-anchor="middle">SPI</text></g>
+<path d="M411,1382 L411,1392" class="path d" marker-end="url(#ah)"/>
+<path d="M411,1420 L411,1446 L460,1446 L460,1458" class="path d" marker-end="url(#ah)"/>
+<path d="M459,1406 L466,1406" class="path c dash" marker-end="url(#ah-dash)"/>
+<path d="M542,1382 L570,1458" class="path d" marker-end="url(#ah)"/><g><rect x="536" y="1413.2" width="40" height="12.6" rx="3" class="lbl-bg"/><text x="556" y="1422.4" class="t t-lbl" font-size="6.8" text-anchor="middle">RMT TX</text></g>
+<path d="M673,1382 L710,1458" class="path d" marker-end="url(#ah)"/><g><rect x="677" y="1413.2" width="30" height="12.6" rx="3" class="lbl-bg"/><text x="692" y="1422.4" class="t t-lbl" font-size="6.8" text-anchor="middle">LEDC</text></g>
+<path d="M804,1382 L980,1456" class="path c dash" marker-end="url(#ah-dash)"/><g><rect x="864" y="1413.2" width="56" height="12.6" rx="3" class="lbl-bg"/><text x="892" y="1422.4" class="t t-lbl" font-size="6.8" text-anchor="middle">2.4 GHz BLE</text></g>
+    </svg>
+  </div>
+
+  <div class="notes">
+    <div><h3>What the numbers mean</h3><p><b>Hz</b> is the nominal loop rate (vTaskDelayUntil), <b>pN</b> the FreeRTOS priority
+      (4 = highest). Rates, priorities and stack sizes are read from <b>include/config.h</b>; they are nominal constants, not measurements.</p></div>
+    <div><h3>What is missing on purpose</h3><p>No mixer, no PID, no INDI, no attitude setpoint and no power telemetry exist in the tree.
+      The 500 Hz chain terminates at state estimation; the 250 Hz motor task only arms and disarms the ESCs.</p></div>
+    <div><h3>Provenance</h3><p>Every node is traceable to the files listed in the evidence panel. Details that could not be confirmed in
+      source were omitted rather than inferred; open points are listed under “deliberately absent”.</p></div>
+  </div>
+
+  <footer>
+    Static snapshot of <b>firmware/FC_v01</b> at 2026-11-20 · normative spec: documents/Firmware Structure.md ·
+    decision records: documents/notes/0000–0052 · standalone file: no external fonts, scripts or images.
+  </footer>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('theme');
+  function apply(t){
+    root.setAttribute('data-theme',t);
+    btn.textContent = t==='dark' ? 'Light theme' : 'Dark theme';
+    try{localStorage.setItem('fcv01-theme',t);}catch(e){}
+  }
+  var saved=null; try{saved=localStorage.getItem('fcv01-theme');}catch(e){}
+  var urlTheme=null; try{var usp=new URLSearchParams(location.search); if(usp.get('theme')==='light'||usp.get('theme')==='dark')urlTheme=usp.get('theme');}catch(e){}
+  var initial=urlTheme || saved || 'dark';
+  apply(initial);
+  btn.addEventListener('click',function(){ apply(root.getAttribute('data-theme')==='dark'?'light':'dark'); });
+
+  function serialize(){
+    var svg=document.getElementById('diagram').cloneNode(true);
+    svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    var cs=getComputedStyle(document.documentElement);
+    var vars=['--bg','--text','--muted','--dim','--task-f','--task-s','--soc-f','--soc-s','--hw-f','--hw-s',
+      '--isr-f','--isr-s','--mem-f','--mem-s','--mod-f','--mod-s','--res-f','--res-s','--key','--flag',
+      '--arrow','--arrow-em','--arrow-ctl','--band','--band-line','--lbl-bg','--panel','--panel-line',
+      '--warn','--emph','--grid'];
+    var declarations=vars.map(function(v){return v+':'+cs.getPropertyValue(v)+';';}).join('');
+    var style=document.createElementNS('http://www.w3.org/2000/svg','style');
+    style.textContent='svg{'+declarations+'font-family:ui-monospace,Consolas,monospace;background:'+cs.getPropertyValue('--bg')+';}'+
+      Array.prototype.map.call(document.styleSheets[0].cssRules,function(r){return r.cssText;}).join('\n');
+    svg.insertBefore(style,svg.firstChild);
+    return '<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(svg);
+  }
+  function download(name,blob){
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+    document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);
+  }
+  document.getElementById('svg').addEventListener('click',function(){
+    download('FC_v01-general-architecture-v2.svg',new Blob([serialize()],{type:'image/svg+xml'}));
+  });
+  document.getElementById('print').addEventListener('click',function(){window.print();});
+  document.getElementById('png').addEventListener('click',function(){
+    var scale=2, xml=serialize(), img=new Image();
+    img.onload=function(){
+      var c=document.createElement('canvas');
+      c.width=1760*scale; c.height=1700*scale;
+      var ctx=c.getContext('2d');
+      ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--bg');
+      ctx.fillRect(0,0,c.width,c.height);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      c.toBlob(function(b){download('FC_v01-general-architecture-v2.png',b);},'image/png');
+    };
+    img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(xml)));
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-preset="classic">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FC_v01 Flight Controller — General Architecture Diagram</title>
+<style>
+/* ==========================================================
+   V1 palette (Archify "classic") — verbatim values
+   ========================================================== */
+:root,
+[data-theme="dark"]{
+  --bg:#020617;
+  --grid:#1e293b;
+  --canvas-dot:rgba(148,163,184,.16);
+  --canvas-bg:#0a1120;
+  --text:#ffffff;
+  --text-muted:#94a3b8;
+  --text-dim:#475569;
+  --panel:rgba(15,23,42,.5);
+  --panel-border:#1e293b;
+  --lane-fill:rgba(15,23,42,.22);
+  --lane-stroke:#334155;
+  --arrow:#94a3b8;
+  --arrow-emphasis:#34d399;
+  --mask:#0f172a;
+  --frontend-stroke:#22d3ee;
+  --backend-fill:rgba(6,78,59,.4);
+  --backend-stroke:#34d399;
+  --database-fill:rgba(76,29,149,.4);
+  --database-stroke:#a78bfa;
+  --cloud-fill:rgba(120,53,15,.3);
+  --cloud-stroke:#fbbf24;
+  --security-fill:rgba(136,19,55,.4);
+  --security-stroke:#fb7185;
+  --messagebus-fill:rgba(251,146,60,.3);
+  --messagebus-stroke:#fb923c;
+  --external-fill:rgba(30,41,59,.5);
+  --external-stroke:#94a3b8;
+  --ghost:#64748b;
+
+  /* dark nodes composite the semantic stroke over the mask, exactly as V1 */
+  --node-backend-fill:color-mix(in srgb, #34d399 13%, #0f172a);
+  --node-backend-stroke:color-mix(in srgb, #34d399 72%, #0f172a);
+  --node-security-fill:color-mix(in srgb, #fb7185 13%, #0f172a);
+  --node-security-stroke:color-mix(in srgb, #fb7185 72%, #0f172a);
+  --node-messagebus-fill:color-mix(in srgb, #fb923c 13%, #0f172a);
+  --node-messagebus-stroke:color-mix(in srgb, #fb923c 72%, #0f172a);
+  --node-external-fill:color-mix(in srgb, #94a3b8 13%, #0f172a);
+  --node-external-stroke:color-mix(in srgb, #94a3b8 72%, #0f172a);
+}
+[data-theme="light"]{
+  --bg:#f4f5f7;
+  --grid:#e9edf2;
+  --canvas-dot:#e2e7ec;
+  --canvas-bg:#ffffff;
+  --text:#111827;
+  --text-muted:#5b6474;
+  --text-dim:#9aa3b2;
+  --panel:#ffffff;
+  --panel-border:#e5e7eb;
+  --lane-fill:rgba(248,250,252,.65);
+  --lane-stroke:#cbd5e1;
+  --arrow:#64748b;
+  --arrow-emphasis:#059669;
+  --mask:#ffffff;
+  --frontend-stroke:#0891b2;
+  --backend-fill:rgba(52,211,153,.18);
+  --backend-stroke:#059669;
+  --database-fill:rgba(167,139,250,.2);
+  --database-stroke:#7c3aed;
+  --cloud-fill:rgba(251,191,36,.18);
+  --cloud-stroke:#d97706;
+  --security-fill:rgba(251,113,133,.15);
+  --security-stroke:#e11d48;
+  --messagebus-fill:rgba(251,146,60,.15);
+  --messagebus-stroke:#ea580c;
+  --external-fill:rgba(148,163,184,.18);
+  --external-stroke:#64748b;
+  --ghost:#94a3b8;
+
+  --node-backend-fill:rgba(52,211,153,.18);
+  --node-backend-stroke:#059669;
+  --node-security-fill:rgba(251,113,133,.15);
+  --node-security-stroke:#e11d48;
+  --node-messagebus-fill:rgba(251,146,60,.15);
+  --node-messagebus-stroke:#ea580c;
+  --node-external-fill:rgba(148,163,184,.18);
+  --node-external-stroke:#64748b;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  -webkit-font-smoothing:antialiased;
+  background:var(--bg);
+  color:var(--text);
+  padding:2rem 2rem 3rem;
+}
+
+/* ---- V1 header ---- */
+.container{width:100%;max-width:1280px;margin:0 auto}
+.header{margin-bottom:1.25rem;padding-right:19rem}
+.header-row{display:flex;align-items:center;gap:.75rem;min-height:2.75rem}
+.pulse-dot{flex:none;width:10px;height:10px;background:var(--frontend-stroke);border-radius:50%;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--frontend-stroke) 16%,transparent)}
+h1{font-size:1.5rem;font-weight:650;line-height:1.25;letter-spacing:-.015em;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'DejaVu Sans Mono',monospace}
+
+/* ---- V1 diagram card ---- */
+.diagram-container{
+  background:var(--canvas-bg);
+  border-radius:1rem;
+  border:1px solid var(--panel-border);
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 16px 40px -20px rgba(15,23,42,.18);
+  padding:1.5rem;
+  overflow:hidden;
+}
+svg{
+  font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'DejaVu Sans Mono',monospace;
+  width:100%;height:auto;display:block;
+}
+
+/* ---- SVG semantic classes (V1) ---- */
+.c-grid{stroke:var(--grid);fill:none}
+.c-mask{fill:var(--mask);stroke:none}
+.c-backend{fill:var(--backend-fill);stroke:var(--backend-stroke)}
+.c-security{fill:var(--security-fill);stroke:var(--security-stroke)}
+.c-messagebus{fill:var(--messagebus-fill);stroke:var(--messagebus-stroke)}
+.c-external{fill:var(--external-fill);stroke:var(--external-stroke)}
+[data-node-id] > rect.c-backend{fill:var(--node-backend-fill);stroke:var(--node-backend-stroke)}
+[data-node-id] > rect.c-security{fill:var(--node-security-fill);stroke:var(--node-security-stroke)}
+[data-node-id] > rect.c-messagebus{fill:var(--node-messagebus-fill);stroke:var(--node-messagebus-stroke)}
+[data-node-id] > rect.c-external{fill:var(--node-external-fill);stroke:var(--node-external-stroke)}
+[data-node-id] > rect:not(.c-mask){filter:drop-shadow(0 6px 12px rgba(0,0,0,.28))}
+[data-theme="light"] [data-node-id] > rect:not(.c-mask),
+svg[data-theme="light"] [data-node-id] > rect:not(.c-mask){filter:drop-shadow(0 1px 1px rgba(17,24,39,.05)) drop-shadow(0 6px 12px rgba(17,24,39,.06))}
+
+.c-ghost{fill:color-mix(in srgb,var(--ghost) 8%,transparent);stroke:var(--ghost);stroke-width:1.3;stroke-dasharray:5 4}
+.t-ghost{fill:var(--ghost)}
+
+.t-primary{fill:var(--text)}
+.t-muted{fill:var(--text-muted)}
+.t-dim{fill:var(--text-dim)}
+.t-backend{fill:var(--backend-stroke)}
+.t-security{fill:var(--security-stroke)}
+.t-messagebus{fill:var(--messagebus-stroke)}
+.t-external{fill:var(--external-stroke)}
+.t-edge-default{fill:var(--arrow)}
+.t-edge-emphasis{fill:var(--arrow-emphasis)}
+.t-edge-security{fill:var(--security-stroke)}
+.t-edge-dashed{fill:var(--database-stroke)}
+
+.semantic-sigil{fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round;opacity:.76;pointer-events:none}
+.semantic-sigil > *{vector-effect:non-scaling-stroke}
+.semantic-sigil .sigil-fill{fill:currentColor;stroke:none}
+.s-backend{color:var(--backend-stroke)}
+.s-security{color:var(--security-stroke)}
+.s-messagebus{color:var(--messagebus-stroke)}
+.s-external{color:var(--external-stroke)}
+
+.a-default{stroke:var(--arrow);fill:none}
+.a-emphasis{stroke:var(--arrow-emphasis);fill:none}
+.a-security{stroke:var(--security-stroke);fill:none;stroke-dasharray:5,5}
+.a-dashed{stroke:var(--database-stroke);fill:none;stroke-dasharray:4,4}
+.m-default{fill:var(--arrow)}
+.m-emphasis{fill:var(--arrow-emphasis)}
+.m-security{fill:var(--security-stroke)}
+.m-dashed{fill:var(--database-stroke)}
+
+/* ---- toolbar (V1-style quiet capsule) ---- */
+.toolbar{
+  position:fixed;top:1.35rem;right:1.5rem;z-index:100;
+  display:flex;align-items:center;gap:.125rem;
+  padding:.25rem;
+  border:1px solid color-mix(in srgb,var(--panel-border) 85%,transparent);
+  border-radius:.75rem;
+  background:color-mix(in srgb,var(--panel) 84%,transparent);
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 20px -14px rgba(15,23,42,.22);
+  backdrop-filter:blur(12px);
+}
+.toolbar button{
+  background:transparent;border:0;border-radius:.5rem;
+  color:var(--text-muted);font:inherit;font-size:.78rem;font-weight:500;
+  padding:.5rem .7rem;cursor:pointer;white-space:nowrap;transition:color .15s,background .15s;
+}
+.toolbar button:hover{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent)}
+.toolbar button.primary{color:var(--bg);background:var(--text);font-weight:600}
+.toolbar button.primary:hover{background:color-mix(in srgb,var(--text) 88%,var(--bg));color:var(--bg)}
+.toolbar button:focus-visible{outline:2px solid var(--frontend-stroke);outline-offset:-3px}
+
+@media (max-width:900px){
+  body{padding:1.25rem 1rem 2rem}
+  .header{padding-right:0;margin-bottom:4.5rem}
+  .toolbar{left:1rem;right:auto;top:auto;bottom:1rem;flex-wrap:wrap}
+  .diagram-container{padding:1rem}
+}
+@media print{
+  body{padding:0;background:#fff}
+  .toolbar{display:none!important}
+  .diagram-container{border:0;box-shadow:none;padding:0;background:#fff}
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar" role="group" aria-label="Diagram actions">
+  <button id="theme" type="button" title="Toggle dark / light theme">Light theme</button>
+  <button id="svg" type="button" title="Download the diagram as a standalone SVG">SVG</button>
+  <button id="png" type="button" class="primary" title="Render the whole page (title + diagram + legend) as one PNG">PNG · full page</button>
+</div>
+
+<div class="container">
+  <div class="header">
+    <div class="header-row">
+      <div class="pulse-dot"></div>
+      <h1>FC_v01 Flight Controller — General Architecture</h1>
+    </div>
+  </div>
+
+  <div class="diagram-container">
+    <svg id="diagram" viewBox="0 0 1200 944" role="img" xmlns="http://www.w3.org/2000/svg"
+         aria-labelledby="archify-diagram-title archify-diagram-description">
+      <title id="archify-diagram-title">FC_v01 Flight Controller — General Architecture</title>
+      <desc id="archify-diagram-description">Five-layer ESP32-S3 firmware: app_start and FSM_MAIN, preprocessing, EKF estimators, motor task, safety gates, the Layer-3 shared IPC band, sensor DAQ, RC receiver, telemetry, sensor and I/O drivers, the Layer-1 platform HAL, and external hardware. 14 resident and 5 on-demand tasks; the control law is a future, unimplemented node.</desc>
+
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" class="m-default"/>
+        </marker>
+        <marker id="arrowhead-emphasis" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" class="m-emphasis"/>
+        </marker>
+        <marker id="arrowhead-security" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" class="m-security"/>
+        </marker>
+        <marker id="arrowhead-dashed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" class="m-dashed"/>
+        </marker>
+        <pattern id="dotgrid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r="1" fill="var(--canvas-dot)"/>
+        </pattern>
+      </defs>
+
+      <rect x="0" y="0" width="1200" height="944" fill="var(--canvas-bg)"/>
+      <rect x="0" y="0" width="1200" height="944" fill="url(#dotgrid)"/>
+
+      <!-- ================= connection paths ================= -->
+      <path d="M 210 71 L 280 71" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round"/>
+      <path data-edge-from="app" data-edge-to="fsm" d="M 210 71 L 280 71" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+      <path data-edge-from="fsm" data-edge-to="safety" d="M 380 102 L 380 140 Q 380 148 388 148 L 992 148 Q 1000 148 1000 156 L 1000 180" class="a-security" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+
+      <path d="M 120 820 L 120 764" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round"/>
+      <path data-edge-from="hw_imu" data-edge-to="hal" d="M 120 820 L 120 764" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+      <path data-edge-from="hw_mag" data-edge-to="hal" d="M 295 820 L 295 764" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+      <path data-edge-from="hw_baro" data-edge-to="hal" d="M 490 820 L 490 764" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+      <path data-edge-from="hw_rc" data-edge-to="hal" d="M 635 820 L 635 764" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+      <path data-edge-from="hw_esc" data-edge-to="hal" d="M 805 820 L 805 764" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+      <path data-edge-from="hw_store" data-edge-to="hal" d="M 985 820 L 985 756 Q 985 748 977 748 L 940 748" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+      <path data-edge-from="hal" data-edge-to="drvsense" d="M 474.95 710 L 474.95 619 Q 474.95 611 466.95 611 L 260 611" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+      <path data-edge-from="hal" data-edge-to="drvio" d="M 490 710 L 490 619 Q 490 611 498 611 L 560 611" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+      <path data-edge-from="drvsense" data-edge-to="daq" d="M 150 580 L 150 502" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+      <path data-edge-from="drvio" data-edge-to="rcrx" d="M 676 580 L 676 564 Q 676 556 668 556 L 363 556 Q 355 556 355 548 L 355 502" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+      <path data-edge-from="daq" data-edge-to="ipc" d="M 140 440 L 140 364" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+      <path data-edge-from="rcrx" data-edge-to="ipc" d="M 400 440 L 400 364" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+      <path data-edge-from="ipc" data-edge-to="support" d="M 496 364 L 496 440" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+
+      <path data-edge-from="ipc" data-edge-to="pre" d="M 204 310 L 204 242" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+      <path data-edge-from="pre" data-edge-to="ipc" d="M 130 242 L 130 310" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+      <path data-edge-from="ipc" data-edge-to="ekf" d="M 409.1 310 L 409.1 284 Q 409.1 276 401.1 276 L 362.1 276 Q 354.1 276 354.1 268 L 354.1 242" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+      <path data-edge-from="ekf" data-edge-to="ipc" d="M 338 242 L 338 310" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+
+      <path data-edge-from="ipc" data-edge-to="motor" d="M 706 310 L 706 242" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+      <path data-edge-from="motor" data-edge-to="drvio" d="M 854 242 L 854 588 Q 854 596 846 596 L 820 596" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+      <path data-edge-from="support" data-edge-to="drvio" d="M 690 502 L 690 580" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+      <path data-edge-from="drvio" data-edge-to="gcs" d="M 820 611 L 968 611 Q 976 611 976 603 L 976 502" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+
+      <!-- ================= nodes ================= -->
+      <g id="node-app" data-node-id="app">
+        <rect x="40" y="40" width="170" height="62" rx="8" class="c-mask"/>
+        <rect x="40" y="40" width="170" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(46 46) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="125" y="69" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">app_start</text>
+        <text x="125" y="85" class="t-muted" font-size="9" text-anchor="middle">14 resident + 5 on-demand</text>
+      </g>
+
+      <g id="node-fsm" data-node-id="fsm">
+        <rect x="280" y="40" width="200" height="62" rx="8" class="c-mask"/>
+        <rect x="280" y="40" width="200" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(286 46) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="380" y="69" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">FSM_MAIN · 100 Hz</text>
+        <text x="380" y="85" class="t-muted" font-size="9" text-anchor="middle">12 flight states · event masks</text>
+      </g>
+
+      <g id="node-pre" data-node-id="pre">
+        <rect x="40" y="180" width="180" height="62" rx="8" class="c-mask"/>
+        <rect x="40" y="180" width="180" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(46 186) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="130" y="209" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Preprocess · 500 Hz</text>
+        <text x="130" y="225" class="t-muted" font-size="9" text-anchor="middle">calib + LPF · 500 / 100 Hz</text>
+      </g>
+
+      <g id="node-ekf" data-node-id="ekf">
+        <rect x="250" y="180" width="190" height="62" rx="8" class="c-mask"/>
+        <rect x="250" y="180" width="190" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(256 186) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="345" y="209" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">EKF estimators</text>
+        <text x="345" y="225" class="t-muted" font-size="9" text-anchor="middle">attitude 500 · yaw/alt 100 Hz</text>
+      </g>
+
+      <!-- future work only: grey, dashed, no edges -->
+      <g id="node-ctrl" data-node-id="ctrl">
+        <rect x="470" y="180" width="190" height="62" rx="8" class="c-mask"/>
+        <rect x="470" y="180" width="190" height="62" rx="8" class="c-ghost"/>
+        <text x="565" y="209" class="t-muted" font-size="11" font-weight="600" text-anchor="middle">Control law · future</text>
+        <text x="565" y="225" class="t-ghost" font-size="9" text-anchor="middle">not implemented · reserved</text>
+      </g>
+
+      <g id="node-motor" data-node-id="motor">
+        <rect x="690" y="180" width="180" height="62" rx="8" class="c-mask"/>
+        <rect x="690" y="180" width="180" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(696 186) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="780" y="209" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Motor task · 250 Hz</text>
+        <text x="780" y="225" class="t-muted" font-size="9" text-anchor="middle">arm / disarm only · mixer TODO</text>
+      </g>
+
+      <g id="node-safety" data-node-id="safety">
+        <rect x="900" y="180" width="200" height="62" rx="8" class="c-mask"/>
+        <rect x="900" y="180" width="200" height="62" rx="8" class="c-security" stroke-width="1.5"/>
+        <g class="semantic-sigil s-security" transform="translate(906 186) scale(0.6875)" aria-hidden="true">
+          <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+          <path d="m5.8 8 1.5 1.5 3-3"/>
+        </g>
+        <text x="1000" y="209" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Pre-flight safety gates</text>
+        <text x="1000" y="225" class="t-muted" font-size="9" text-anchor="middle">run before READY</text>
+      </g>
+
+      <g id="node-ipc" data-node-id="ipc">
+        <rect x="40" y="310" width="720" height="54" rx="8" class="c-mask"/>
+        <rect x="40" y="310" width="720" height="54" rx="8" class="c-messagebus" stroke-width="1.5"/>
+        <g class="semantic-sigil s-messagebus" transform="translate(46 316) scale(0.6875)" aria-hidden="true">
+          <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
+          <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
+          <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
+          <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
+        </g>
+        <text x="400" y="335" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Layer 3 — shared IPC</text>
+        <text x="400" y="351" class="t-muted" font-size="9" text-anchor="middle">static ring buffers · queues · mutexes · critical sections</text>
+      </g>
+
+      <g id="node-daq" data-node-id="daq">
+        <rect x="40" y="440" width="200" height="62" rx="8" class="c-mask"/>
+        <rect x="40" y="440" width="200" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(46 446) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="140" y="469" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Sensor DAQ</text>
+        <text x="140" y="485" class="t-muted" font-size="9" text-anchor="middle">IMU 500 · mag 100 · baro 50 Hz</text>
+      </g>
+
+      <g id="node-rcrx" data-node-id="rcrx">
+        <rect x="260" y="440" width="190" height="62" rx="8" class="c-mask"/>
+        <rect x="260" y="440" width="190" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(266 446) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="355" y="469" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">RC receiver · 50 Hz</text>
+        <text x="355" y="485" class="t-muted" font-size="9" text-anchor="middle">RMT PPM decode → rc_data</text>
+      </g>
+
+      <g id="node-support" data-node-id="support">
+        <rect x="480" y="440" width="230" height="62" rx="8" class="c-mask"/>
+        <rect x="480" y="440" width="230" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(486 446) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="595" y="469" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Telemetry &amp; blackbox</text>
+        <text x="595" y="485" class="t-muted" font-size="9" text-anchor="middle">BLE 100 Hz · SD log 100 Hz · OTA</text>
+      </g>
+
+      <g id="node-gcs" data-node-id="gcs">
+        <rect x="960" y="440" width="200" height="62" rx="8" class="c-mask"/>
+        <rect x="960" y="440" width="200" height="62" rx="8" class="c-external" stroke-width="1.5"/>
+        <g class="semantic-sigil s-external" transform="translate(966 446) scale(0.6875)" aria-hidden="true">
+          <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+          <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+        </g>
+        <text x="1060" y="469" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">FCDatMon</text>
+        <text x="1060" y="485" class="t-muted" font-size="9" text-anchor="middle">PC GATT client · plots/logs</text>
+      </g>
+
+      <g id="node-drvsense" data-node-id="drvsense">
+        <rect x="40" y="580" width="220" height="62" rx="8" class="c-mask"/>
+        <rect x="40" y="580" width="220" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(46 586) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="150" y="609" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Sensor drivers</text>
+        <text x="150" y="625" class="t-muted" font-size="9" text-anchor="middle">MPU6050 · HMC5883L · BMP180</text>
+      </g>
+
+      <g id="node-drvio" data-node-id="drvio">
+        <rect x="560" y="580" width="260" height="62" rx="8" class="c-mask"/>
+        <rect x="560" y="580" width="260" height="62" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(566 586) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="690" y="609" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">I/O drivers</text>
+        <text x="690" y="625" class="t-muted" font-size="9" text-anchor="middle">Motor · SD · NVS · NimBLE · WS2812</text>
+      </g>
+
+      <g id="node-hal" data-node-id="hal">
+        <rect x="40" y="710" width="900" height="54" rx="8" class="c-mask"/>
+        <rect x="40" y="710" width="900" height="54" rx="8" class="c-backend" stroke-width="1.5"/>
+        <g class="semantic-sigil s-backend" transform="translate(46 716) scale(0.6875)" aria-hidden="true">
+          <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+        </g>
+        <text x="490" y="735" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Layer 1 — Platform HAL</text>
+        <text x="490" y="751" class="t-muted" font-size="9" text-anchor="middle">HAL_I2C · HAL_SPI · HAL_Flash · HAL_PWM · HAL_PulseRX/TX · hal_simd · hal_ota · hal_matrix</text>
+      </g>
+
+      <!-- ================= external hardware ================= -->
+      <g id="node-hw_imu" data-node-id="hw_imu">
+        <rect x="40" y="820" width="160" height="56" rx="8" class="c-mask"/>
+        <rect x="40" y="820" width="160" height="56" rx="8" class="c-external" stroke-width="1.5"/>
+        <g class="semantic-sigil s-external" transform="translate(46 826) scale(0.6875)" aria-hidden="true">
+          <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+          <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+        </g>
+        <text x="120" y="846" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">MPU6050</text>
+        <text x="120" y="862" class="t-muted" font-size="9" text-anchor="middle">6-DOF · I2C0</text>
+      </g>
+
+      <g id="node-hw_mag" data-node-id="hw_mag">
+        <rect x="220" y="820" width="150" height="56" rx="8" class="c-mask"/>
+        <rect x="220" y="820" width="150" height="56" rx="8" class="c-external" stroke-width="1.5"/>
+        <g class="semantic-sigil s-external" transform="translate(226 826) scale(0.6875)" aria-hidden="true">
+          <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+          <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+        </g>
+        <text x="295" y="846" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">HMC5883L</text>
+        <text x="295" y="862" class="t-muted" font-size="9" text-anchor="middle">mag · I2C0 bypass</text>
+      </g>
+
+      <g id="node-hw_baro" data-node-id="hw_baro">
+        <rect x="390" y="820" width="150" height="56" rx="8" class="c-mask"/>
+        <rect x="390" y="820" width="150" height="56" rx="8" class="c-external" stroke-width="1.5"/>
+        <g class="semantic-sigil s-external" transform="translate(396 826) scale(0.6875)" aria-hidden="true">
+          <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+          <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+        </g>
+        <text x="465" y="846" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">BMP180</text>
+        <text x="465" y="862" class="t-muted" font-size="9" text-anchor="middle">baro · I2C0</text>
+      </g>
+
+      <g id="node-hw_rc" data-node-id="hw_rc">
+        <rect x="560" y="820" width="150" height="56" rx="8" class="c-mask"/>
+        <rect x="560" y="820" width="150" height="56" rx="8" class="c-external" stroke-width="1.5"/>
+        <g class="semantic-sigil s-external" transform="translate(566 826) scale(0.6875)" aria-hidden="true">
+          <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+          <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+        </g>
+        <text x="635" y="846" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">FS-iA6B</text>
+        <text x="635" y="862" class="t-muted" font-size="9" text-anchor="middle">PPM receiver</text>
+      </g>
+
+      <g id="node-hw_esc" data-node-id="hw_esc">
+        <rect x="730" y="820" width="150" height="56" rx="8" class="c-mask"/>
+        <rect x="730" y="820" width="150" height="56" rx="8" class="c-external" stroke-width="1.5"/>
+        <g class="semantic-sigil s-external" transform="translate(736 826) scale(0.6875)" aria-hidden="true">
+          <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+          <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+        </g>
+        <text x="805" y="846" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">4× ESC</text>
+        <text x="805" y="862" class="t-muted" font-size="9" text-anchor="middle">BLDC motors</text>
+      </g>
+
+      <g id="node-hw_store" data-node-id="hw_store">
+        <rect x="900" y="820" width="170" height="56" rx="8" class="c-mask"/>
+        <rect x="900" y="820" width="170" height="56" rx="8" class="c-external" stroke-width="1.5"/>
+        <g class="semantic-sigil s-external" transform="translate(906 826) scale(0.6875)" aria-hidden="true">
+          <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
+          <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
+        </g>
+        <text x="985" y="846" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">microSD + NVS</text>
+        <text x="985" y="862" class="t-muted" font-size="9" text-anchor="middle">SPI · internal flash</text>
+      </g>
+
+      <!-- ================= edge labels ================= -->
+      <g>
+        <rect x="225.6" y="51" width="38.8" height="14" rx="3" class="c-mask"/>
+        <text x="245" y="61" class="t-edge-default" font-size="8" text-anchor="middle">spawns</text>
+      </g>
+      <g>
+        <rect x="660" y="128" width="60" height="14" rx="3" class="c-mask"/>
+        <text x="690" y="138" class="t-edge-security" font-size="8" text-anchor="middle">runs gates</text>
+      </g>
+      <g><rect x="105" y="800" width="30" height="14" rx="3" class="c-mask"/><text x="120" y="810" class="t-edge-emphasis" font-size="8" text-anchor="middle">I2C0</text></g>
+      <g><rect x="280" y="800" width="30" height="14" rx="3" class="c-mask"/><text x="295" y="810" class="t-edge-default" font-size="8" text-anchor="middle">I2C0</text></g>
+      <g><rect x="475" y="800" width="30" height="14" rx="3" class="c-mask"/><text x="490" y="810" class="t-edge-default" font-size="8" text-anchor="middle">I2C0</text></g>
+      <g><rect x="620" y="800" width="30" height="14" rx="3" class="c-mask"/><text x="635" y="810" class="t-edge-default" font-size="8" text-anchor="middle">PPM</text></g>
+      <g><rect x="790" y="800" width="30" height="14" rx="3" class="c-mask"/><text x="805" y="810" class="t-edge-default" font-size="8" text-anchor="middle">PWM</text></g>
+      <g><rect x="947.5" y="728" width="30" height="14" rx="3" class="c-mask"/><text x="962.5" y="738" class="t-edge-default" font-size="8" text-anchor="middle">SPI</text></g>
+      <g><rect x="345.675" y="591" width="43.6" height="14" rx="3" class="c-mask"/><text x="367.475" y="601" class="t-edge-emphasis" font-size="8" text-anchor="middle">bus ops</text></g>
+      <g><rect x="503.2" y="591" width="43.6" height="14" rx="3" class="c-mask"/><text x="525" y="601" class="t-edge-default" font-size="8" text-anchor="middle">bus ops</text></g>
+      <g><rect x="128.2" y="560" width="43.6" height="14" rx="3" class="c-mask"/><text x="150" y="570" class="t-edge-emphasis" font-size="8" text-anchor="middle">samples</text></g>
+      <g><rect x="486.5" y="536" width="58" height="14" rx="3" class="c-mask"/><text x="515.5" y="546" class="t-edge-default" font-size="8" text-anchor="middle">PPM frames</text></g>
+      <g><rect x="125" y="420" width="30" height="14" rx="3" class="c-mask"/><text x="140" y="430" class="t-edge-emphasis" font-size="8" text-anchor="middle">raw</text></g>
+      <g><rect x="385" y="420" width="30" height="14" rx="3" class="c-mask"/><text x="400" y="430" class="t-edge-default" font-size="8" text-anchor="middle">rc</text></g>
+      <g><rect x="446.4" y="395" width="43.6" height="14" rx="3" class="c-mask"/><text x="468.2" y="405" class="t-edge-dashed" font-size="8" text-anchor="middle">streams</text></g>
+      <g><rect x="189" y="290" width="30" height="14" rx="3" class="c-mask"/><text x="204" y="300" class="t-edge-emphasis" font-size="8" text-anchor="middle">raw</text></g>
+      <g><rect x="75.6" y="269" width="48.4" height="14" rx="3" class="c-mask"/><text x="99.8" y="279" class="t-edge-emphasis" font-size="8" text-anchor="middle">filtered</text></g>
+      <g><rect x="357.4" y="256" width="48.4" height="14" rx="3" class="c-mask"/><text x="381.6" y="266" class="t-edge-emphasis" font-size="8" text-anchor="middle">filtered</text></g>
+      <g><rect x="274" y="269" width="58" height="14" rx="3" class="c-mask"/><text x="303" y="279" class="t-edge-emphasis" font-size="8" text-anchor="middle">quat + alt</text></g>
+      <g><rect x="691" y="290" width="30" height="14" rx="3" class="c-mask"/><text x="706" y="300" class="t-edge-default" font-size="8" text-anchor="middle">cmd</text></g>
+      <g><rect x="794.8" y="412" width="53.2" height="14" rx="3" class="c-mask"/><text x="821.4" y="422" class="t-edge-default" font-size="8" text-anchor="middle">motor cmd</text></g>
+      <g><rect x="602" y="534" width="82" height="14" rx="3" class="c-mask"/><text x="643" y="544" class="t-edge-dashed" font-size="8" text-anchor="middle">SD · BLE writes</text></g>
+      <g><rect x="947" y="536.5" width="58" height="14" rx="3" class="c-mask"/><text x="976" y="546.5" class="t-edge-dashed" font-size="8" text-anchor="middle">BLE notify</text></g>
+
+      <!-- ================= legend (V1 style) ================= -->
+      <g data-legend="">
+        <text x="40" y="908" class="t-primary" font-size="12" font-weight="650">Legend</text>
+        <g>
+          <rect x="40" y="919" width="16" height="10" rx="2.5" class="c-backend" stroke-width="1"/>
+          <text x="62" y="928" class="t-muted" font-size="10" font-weight="500">Backend</text>
+        </g>
+        <g>
+          <rect x="149" y="919" width="16" height="10" rx="2.5" class="c-security" stroke-width="1"/>
+          <text x="171" y="928" class="t-muted" font-size="10" font-weight="500">Security</text>
+        </g>
+        <g>
+          <rect x="264" y="919" width="16" height="10" rx="2.5" class="c-messagebus" stroke-width="1"/>
+          <text x="286" y="928" class="t-muted" font-size="10" font-weight="500">Message bus</text>
+        </g>
+        <g>
+          <rect x="398" y="919" width="16" height="10" rx="2.5" class="c-external" stroke-width="1"/>
+          <text x="420" y="928" class="t-muted" font-size="10" font-weight="500">External</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('theme');
+  function apply(t){
+    root.setAttribute('data-theme',t);
+    btn.textContent = t==='dark' ? 'Light theme' : 'Dark theme';
+    try{localStorage.setItem('fcv01-v1-theme',t);}catch(e){}
+  }
+  var saved=null; try{saved=localStorage.getItem('fcv01-v1-theme');}catch(e){}
+  var fromUrl=null; try{var q=new URLSearchParams(location.search), v=q.get('theme'); if(v==='light'||v==='dark') fromUrl=v;}catch(e){}
+  apply(fromUrl || saved || 'dark');
+  btn.addEventListener('click',function(){ apply(root.getAttribute('data-theme')==='dark'?'light':'dark'); });
+
+  function collectCss(){
+    var out='';
+    Array.prototype.forEach.call(document.styleSheets,function(s){
+      try{ Array.prototype.forEach.call(s.cssRules,function(r){ out+=r.cssText+'\n'; }); }catch(e){}
+    });
+    return out;
+  }
+
+  function serialize(){
+    var svg=document.getElementById('diagram').cloneNode(true);
+    svg.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    svg.setAttribute('width','1200');
+    svg.setAttribute('height','944');
+    svg.setAttribute('data-theme',root.getAttribute('data-theme'));
+    /* exports are clean: drop the decorative dot-grid canvas */
+    Array.prototype.forEach.call(svg.querySelectorAll('rect[fill="url(#dotgrid)"], #dotgrid, .grid, .c-grid'),function(el){ el.parentNode && el.parentNode.removeChild(el); });
+    var cs=getComputedStyle(root);
+    var vars=['--bg','--canvas-bg','--canvas-dot','--text','--text-muted','--text-dim',
+      '--panel','--panel-border','--arrow','--arrow-emphasis','--mask',
+      '--backend-fill','--backend-stroke','--security-fill','--security-stroke',
+      '--messagebus-fill','--messagebus-stroke','--external-fill','--external-stroke',
+      '--database-stroke','--ghost','--frontend-stroke',
+      '--node-backend-fill','--node-backend-stroke','--node-security-fill','--node-security-stroke',
+      '--node-messagebus-fill','--node-messagebus-stroke','--node-external-fill','--node-external-stroke'];
+    var declarations=vars.map(function(v){return v+':'+cs.getPropertyValue(v)+';';}).join('');
+    var style=document.createElementNS('http://www.w3.org/2000/svg','style');
+    style.textContent='svg{'+declarations+'background:'+cs.getPropertyValue('--bg').trim()+';font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}\n'+collectCss();
+    svg.insertBefore(style,svg.firstChild);
+    return '<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(svg);
+  }
+
+  function download(name,blob){
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=name;
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);
+  }
+
+  document.getElementById('svg').addEventListener('click',function(){
+    download('FC_v01-general-architecture-poster.svg',new Blob([serialize()],{type:'image/svg+xml'}));
+  });
+
+  /* full-page PNG: header + diagram + legend as one poster canvas */
+  function pageXml(w,h,pad){
+    var shell=document.querySelector('.container').cloneNode(true);
+    /* exports are clean: drop the decorative dot-grid canvas */
+    Array.prototype.forEach.call(shell.querySelectorAll('rect[fill="url(#dotgrid)"], #dotgrid, .grid, .c-grid'),function(el){ el.parentNode && el.parentNode.removeChild(el); });
+    var theme=root.getAttribute('data-theme');
+    var bg=getComputedStyle(root).getPropertyValue('--bg').trim();
+    var fg=getComputedStyle(root).getPropertyValue('--text').trim();
+    return '<?xml version="1.0" encoding="UTF-8"?>'+
+      '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'+
+      '<foreignObject width="100%" height="100%">'+
+      '<div xmlns="http://www.w3.org/1999/xhtml" data-theme="'+theme+'" data-preset="classic" '+
+      'style="width:'+w+'px;height:'+h+'px;padding:'+pad+'px;box-sizing:border-box;'+
+      'background:'+bg+';color:'+fg+';'+
+      'font-family:\'JetBrains Mono\',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;'+
+      'margin:0">'+
+      '<style>'+collectCss()+'</style>'+shell.outerHTML+
+      '</div></foreignObject></svg>';
+  }
+
+  function renderPage(scale,cb){
+    var sh=document.querySelector('.container');
+    var pad=28;
+    var w=Math.round(sh.getBoundingClientRect().width)+pad*2;
+    var h=Math.round(sh.scrollHeight)+pad*2;
+    var c=document.createElement('canvas');
+    c.width=Math.min(w*scale,16000);
+    c.height=Math.min(h*scale,16000);
+    var ctx=c.getContext('2d');
+    ctx.fillStyle=getComputedStyle(root).getPropertyValue('--bg');
+    ctx.fillRect(0,0,c.width,c.height);
+    var img=new Image();
+    img.onload=function(){ ctx.drawImage(img,0,0,c.width,c.height); cb(c); };
+    img.onerror=function(){ alert('Full-page PNG export failed to render. Try the SVG export instead.'); };
+    img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(pageXml(w,h,pad))));
+  }
+
+  document.getElementById('png').addEventListener('click',function(){
+    renderPage(2,function(c){
+      c.toBlob(function(b){ download('FC_v01-general-architecture-poster-page.png',b); },'image/png');
+    });
+  });
+})();
+</script>
+
+
+<!-- ==== end injected export toolbar ==== -->
+</body>
+</html>

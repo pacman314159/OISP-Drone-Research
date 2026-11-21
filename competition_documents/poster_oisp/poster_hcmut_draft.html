@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HCMUT 2026 Poster — Structural Draft</title>
+<style>
+  * { box-sizing: border-box; }
+  html { background: #ffffff; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    color: #111111;
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    line-height: 1.34;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* A0 portrait at 1:4 — 841 x 1189 mm -> 1194 x 1688 px */
+  .page {
+    width: 1194px;
+    height: 1688px;
+    margin: 0 auto;
+    padding: 16px 22px 12px;
+    background: #ffffff;
+    border: 1px solid #bbbbbb;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .row2 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; align-items: stretch; flex: 1 1 auto; min-height: 0; }
+  .row2.even { grid-template-columns: 1.15fr 1fr; }
+
+  .block { border: 1px solid #999999; padding: 9px 12px 9px; min-height: 0; }
+  .block > h2 {
+    font-size: 14px; font-weight: 700; line-height: 1.2;
+    margin: 0 0 6px; padding-bottom: 5px;
+    border-bottom: 1px solid #999999;
+    letter-spacing: 0.02em;
+  }
+  h3 {
+    font-size: 12px; font-weight: 700; margin: 7px 0 4px;
+    line-height: 1.25;
+  }
+  h3:first-of-type { margin-top: 0; }
+  p { margin: 0 0 5px; }
+  ul { margin: 0 0 5px; padding-left: 17px; }
+  li { margin: 0 0 2px; }
+  b, strong { font-weight: 700; }
+  .lead { font-weight: 600; }
+
+  /* ---------- title block ---------- */
+  .head { border: 1px solid #999999; padding: 8px 12px 8px; }
+  .head-top { display: flex; gap: 12px; align-items: flex-start; }
+  .logo {
+    width: 88px; height: 88px; flex: 0 0 88px;
+    border: 1px dashed #888888;
+    color: #777777;
+    font-size: 8.5px; line-height: 1.25; text-align: center;
+    display: flex; align-items: center; justify-content: center;
+    letter-spacing: 0.04em;
+  }
+  .conf {
+    flex: 1 1 auto;
+    font-size: 14px; font-weight: 700; line-height: 1.3;
+    letter-spacing: 0.01em;
+    padding-top: 2px;
+  }
+  .conf small { display: block; font-weight: 400; font-size: 10px; color: #555555; margin-top: 4px; letter-spacing: 0; }
+  h1 {
+    font-size: 22px; line-height: 1.2; font-weight: 700;
+    margin: 9px 0 6px; letter-spacing: -0.005em;
+  }
+  .authors { margin: 0; font-size: 12.5px; line-height: 1.35; }
+  .authors sup { font-size: 8px; }
+  .affil { margin: 6px 0 0; font-size: 10px; line-height: 1.3; color: #444444; }
+  .affil .corr { color: #333333; }
+
+  /* ---------- figure placeholders ---------- */
+  .fig {
+    display: block; margin: 4px 0 4px;
+    border: 1px dashed #888888;
+    text-decoration: none; color: #111111;
+  }
+  .fig .ph {
+    display: flex; align-items: center; justify-content: center;
+    color: #777777; font-size: 10.5px; letter-spacing: 0.03em;
+    text-align: center; padding: 4px;
+  }
+  .fig .cap {
+    border-top: 1px dashed #888888;
+    padding: 4px 8px 5px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 10.5px; color: #333333;
+  }
+  a.fig .cap { text-decoration: underline; }
+  .h110 { height: 120px; }
+  .h96  { height: 100px; }
+  .h84  { height: 90px; }
+  .h150 { height: 200px; }
+
+  /* ---------- tables ---------- */
+  table { border-collapse: collapse; width: 100%; margin: 3px 0 6px; }
+  th, td {
+    border: 1px solid #bbbbbb;
+    padding: 2px 6px;
+    text-align: left;
+    font-size: 11px; line-height: 1.28;
+  }
+  th { font-weight: 700; background: #ffffff; border-bottom: 1px solid #888888; }
+  td.n, th.n { text-align: right; font-family: Consolas, "Courier New", monospace; font-size: 10.5px; }
+  td:nth-child(3), th:nth-child(3) { border-left: 2px solid #888888; }
+
+  .num { color: #444444; font-family: Consolas, "Courier New", monospace; font-size: 11px; }
+  .note { font-size: 10.5px; color: #444444; margin: 4px 0 0; }
+  .honesty {
+    border: 1px solid #666666;
+    padding: 6px 10px; margin: 6px 0 0;
+    font-weight: 700; font-size: 12.5px;
+  }
+  ol { margin: 0 0 5px; padding-left: 18px; }
+  ol li { margin-bottom: 4px; }
+
+  .code { font-family: Consolas, "Courier New", monospace; font-size: 11px; }
+
+  .foot {
+    margin-top: auto;
+    border-top: 1px solid #999999;
+    padding-top: 5px;
+    font-size: 8.5px; color: #444444;
+    display: flex; justify-content: space-between; gap: 12px;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .page { border: 0; margin: 0; }
+    @page { size: A0 portrait; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ ROW 1 — TITLE (full width) ============ -->
+  <header class="head">
+    <div class="head-top">
+      <div class="logo">HCMUT<br>LOGO<br>PLACEHOLDER</div>
+      <div class="conf">
+        STUDENT RESEARCH AND INNOVATION CONFERENCE 2026 — HO CHI MINH CITY UNIVERSITY OF TECHNOLOGY (HCMUT)
+        <small>Hội nghị Nghiên cứu Khoa học và Đổi mới Sáng tạo năm 2026 dành cho Sinh viên (official template title)</small>
+      </div>
+    </div>
+    <h1>A Measured Five-Layer RTOS Architecture for Deterministic Flight Control on ESP32-S3</h1>
+    <p class="authors">
+      Quy Hao Nhien Nguyen<sup>1,2</sup>, Gia-Huy Luu<sup>1,2</sup>, Cat Gia Han Nguyen<sup>1,2</sup>,
+      Ngo Dai Cat Truong<sup>1,2</sup>, Tuan Nguyen Lam<sup>1,2</sup>
+    </p>
+    <p class="affil">
+      <sup>1</sup> Faculty of Mechanical Engineering, Ho Chi Minh City University of Technology (HCMUT), Ho Chi Minh City, Vietnam<br>
+      <sup>2</sup> Vietnam National University Ho Chi Minh City, Ho Chi Minh City 70000, Vietnam
+    </p>
+  </header>
+
+  <!-- ============ ROW 2 — INTRODUCTION (full width) ============ -->
+  <section class="block">
+    <h2>INTRODUCTION</h2>
+    <ul>
+      <li><b>Context.</b> Hard real-time flight control requires data acquisition, preprocessing, state estimation and control to execute at exact periods; a single late step corrupts the entire chain.</li>
+      <li><b>Verified gap.</b> Within the PX4 ecosystem, the ESP32 appears solely as a Wi-Fi telemetry module, and the autopilot catalogue contains no ESP32 board; the ArduPilot ESP32-S3 port remains officially experimental; Espressif's ESP-Drone has received limited support since 12/2022. Feasibility has therefore already been demonstrated by the community.</li>
+      <li><b>Claim.</b> The remaining gap is <b>measured determinism combined with a verifiable architectural ruleset</b> — which constitutes the contribution of this work.</li>
+    </ul>
+    <p class="note">Verified gap sources: PX4 documentation (Wi-Fi telemetry module, autopilot hardware list), ArduPilot ESP32 port documentation, esp-drone README.</p>
+  </section>
+
+  <!-- ============ ROW 3 — METHODOLOGY (left, largest) · RESULT (right) ============ -->
+  <div class="row2">
+
+    <!-- Block 2 — methodology (left, largest) -->
+    <section class="block">
+      <h2>METHODOLOGY</h2>
+
+      <h3>2.1 Hardware</h3>
+      <ul>
+        <li><b>ESP32-S3</b>, dual-core, 240 MHz; <b>BLE</b> signalling / telemetry link; native 128-bit <b>PIE SIMD</b> used through the L1 compute HAL.</li>
+        <li><b>GY-87 sensor module:</b> MPU6050 (accelerometer + gyroscope), HMC5883L (magnetometer), BMP180 (barometer).</li>
+        <li><b>MicroSD</b> blackbox logging; WS2812B status LEDs; LoRa footprint; companion power-monitor board.</li>
+        <li>Carrier: self-designed <b>4-layer KiCad PCB</b> (FC_v01; FC_v02 revision in progress), gerbers and BOM released with the source repository.</li>
+      </ul>
+      <p class="note">Design intent: the cheapest available breakout sensors on a purpose-designed carrier — a cost-optimised sensor set still supporting a deterministic, verifiable stack.</p>
+      <div class="fig"><div class="ph h96">PCB render / photo placeholder</div><div class="cap">fc_v01_pcb_render.png</div></div>
+
+      <h3>2.2 Firmware</h3>
+      <p>The system is a <b>five-layer architecture</b> — L5 Application (FSM) → L4 Flight Core &amp; Algorithms → L3 Middleware &amp; IPC → L2 Drivers → L1 Platform HAL — governed by one rule: <b>dependencies point downward only</b>, so no lower layer imports a higher one and no target-specific type leaks into an L2–L4 public header; the invariants are kept checkable through recorded design decisions.</p>
+      <p>Compute-heavy kernels (EKF prediction/update, ellipsoid calibration fits, filtering) reach the S3 SIMD unit through <span class="code">hal_simd</span> / <span class="code">hal_matrix</span>, which map dot, matrix-multiply and 3×3 inverse onto ESP-DSP <span class="code">dsps_*</span> / <span class="code">dspm_*</span> routines with zero dynamic allocation.</p>
+      <a class="fig" href="FC_v01-general-architecture-poster.html">
+        <span class="ph h150">architecture diagram placeholder — click to preview the real figure</span>
+        <span class="cap">FC_v01-general-architecture (V1-corrected)</span>
+      </a>
+
+      <h3>2.3 Experimental setup</h3>
+      <p>The majority of the experiments are <b>static analyses</b>, performed prior to any flight attempt:</p>
+      <ul>
+        <li><b>Sensors:</b> time-domain histograms → per-axis standard deviation; FFT of the raw streams → noise floor and periodic interference bands.</li>
+        <li><b>Task frequency and jitter:</b> nominal periods from <span class="code">config.h</span> against true periods from SystemView (JTAG/TRAX, not SD) — median / p99 / max per task, ≥10⁴ loops, full-system load with RF active.</li>
+        <li><b>Logging robustness:</b> BLE and SD overflow / drop counters, BLE MTU validation, SD fsync latency peaks against ring-buffer depth.</li>
+        <li><b>Estimators:</b> attitude EKF (7-state quaternion + gyro bias; 500 Hz roll/pitch, 100 Hz yaw, unit-sphere mag fusion) and altitude EKF (3-state, baro + accel, 100 Hz).</li>
+        <li><b>IMU calibration:</b> gyro static offset; accelerometer 6-DOF and magnetometer 9-DOF ellipsoid fits, SIMD-accelerated, no dynamic RAM.</li>
+      </ul>
+    </section>
+
+    <!-- Block 3 — result (right) -->
+    <section class="block">
+      <h2>RESULTS</h2>
+
+      <p class="lead">System frequency table (nominal, from <span class="code">config.h</span>)</p>
+      <table>
+        <thead>
+          <tr><th>Task</th><th class="n">Nominal</th><th>Task</th><th class="n">Nominal</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>IMU DAQ</td><td class="n">500 Hz</td><td>FSM</td><td class="n">100 Hz</td></tr>
+          <tr><td>Preprocess</td><td class="n">500 Hz</td><td>Barometer</td><td class="n">50 Hz</td></tr>
+          <tr><td>EKF roll–pitch</td><td class="n">500 Hz</td><td>Magnetometer</td><td class="n">100 Hz</td></tr>
+          <tr><td>EKF yaw</td><td class="n">100 Hz</td><td>RC input</td><td class="n">50 Hz</td></tr>
+          <tr><td>EKF altitude</td><td class="n">100 Hz</td><td>Motor output</td><td class="n">250 Hz</td></tr>
+          <tr><td>SD log + BLE telem.</td><td class="n">100 Hz</td><td>DAQ loop budget</td><td class="n">2.0 ms</td></tr>
+        </tbody>
+      </table>
+      <p class="note"><span class="num">[NUM: measured period, jitter (median / p99 / max) per task and core utilisation map — full-system SystemView profile with RF active; note-0007 data is DAQ-only scope]</span></p>
+      <div class="fig"><div class="ph h84">core map placeholder</div><div class="cap">fc_v01_core_map_systemview.png</div></div>
+
+      <p class="lead">IMU noise characterisation — <span class="num">[NUM: per-axis standard deviation and noise floor from a dated log]</span></p>
+      <div class="fig"><div class="ph h110">IMU stdev (time domain) + FFT per axis placeholder</div><div class="cap">imu_stdev_fft_&lt;date&gt;.png</div></div>
+
+      <p><b>Attitude EKF:</b> dual-task asynchronous 500 / 100 Hz quaternion estimator. <span class="num">[NUM: accuracy vs reference, per-task timing]</span></p>
+
+      <p><b>Altitude EKF — performance assessment:</b> the measured performance is poor, and the limitation is attributable to the sensing hardware rather than to the estimator design: the BMP180 barometer offers low resolution, a low output rate and high noise, and the altitude estimate degrades accordingly. <span class="num">[NUM: 24.15% — OFFLINE REPLAY ONLY (note 0037); realtime re-measurement pending]</span></p>
+
+      <p class="honesty">All reported measurements were obtained on the test bench; free flight has not yet been performed.</p>
+    </section>
+  </div>
+
+  <!-- ============ ROW 4 — CONCLUSION (left) · DISCUSSION (right) ============ -->
+  <div class="row2 even">
+    <section class="block">
+      <h2>CONCLUSION AND CONTRIBUTIONS</h2>
+      <ol>
+        <li>A five-layer RTOS architecture for an ESP32-S3 flight controller with <b>measured</b> determinism (SystemView), 500 Hz acquisition and EKF.</li>
+        <li>Zero-dynamic-allocation design and zero-RAM SIMD calibration — a technique set for RAM-constrained MCUs.</li>
+        <li>An evidence-driven development process based on recorded design decisions, reusable for other embedded projects.</li>
+        <li>Self-designed flight-controller hardware: 4-layer carrier PCB (FC_v01 → FC_v02) with a companion power-monitor board; gerbers and BOM released.</li>
+      </ol>
+      <p><b>Future work:</b> INDI control law, mixer, barometer upgrade or ToF + optical flow (altitude-hold path), free flight, and full-system + RF re-profiling.</p>
+    </section>
+
+    <section class="block">
+      <h2>DISCUSSION</h2>
+
+      <p><b>Cause of the altitude-EKF performance deficit.</b> The BMP180 trades resolution, output rate and noise level for cost, and the estimator cannot recover information that the sensor does not provide. The improvement path is a <b>higher-resolution, higher-rate digital barometer</b>, or <b>time-of-flight (ToF) and optical-flow sensing</b> for direct, low-latency observation of height and vertical velocity — scheduled as FC_v02 hardware work.</p>
+
+      <p><b>System-level assessment.</b> The design is evaluated as a whole rather than through any single artefact: the layered architecture separates sensing, estimation and platform concerns so that each can be validated independently; real-time behaviour is quantified rather than assumed (SystemView jitter statistics over ≥10⁴ loops under full-system load); and the sensing chain is deliberately cost-optimised, with its limits measured and reported openly. Taken together, these results indicate that a low-cost, self-designed flight-controller stack can meet the timing discipline that flight demands — supporting the conclusion that the system is feasible for deployment on and flight with a real drone.</p>
+
+      <p><b>Positioning relative to related work.</b> No platform in the reviewed set publishes a full-system determinism trace together with an architectural ruleset; the closest work (arXiv 2607.23220) claims “jitter-free” operation without a profiler trace, and the ESP32 studies surveyed report timing benchmarks, flight without measurement, or documented failure to fly.</p>
+
+      <p class="note">Remaining gaps: realtime altitude measurement, full-system + RF re-profiling, and the first free-flight validation.</p>
+    </section>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <div class="foot">
+    <span>Structural draft — layout and content only; final styling to be applied in Affinity Designer. Dashed boxes are figure placeholders; every <span class="num">[NUM: …]</span> denotes an unfilled measurement, not data. No statement herein implies that the vehicle has flown.</span>
+    <span>2026-11-20</span>
+  </div>
+
+</div>
+
+<!-- ==== injected export toolbar: full-page PNG / PDF ==== -->
+<style id="xport-style">
+#xport{position:fixed;top:14px;right:14px;z-index:2147483000;display:flex;gap:8px;
+  font:600 12px/1 system-ui,-apple-system,"Segoe UI",sans-serif}
+#xport button{cursor:pointer;padding:8px 13px;border-radius:8px;border:1px solid #8a8a8a;
+  background:#ffffff;color:#111111;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+#xport button:hover{border-color:#333333}
+@media print{#xport{display:none}}
+</style>
+<div id="xport">
+  <button id="xport-png" type="button">Export PNG</button>
+  <button id="xport-pdf" type="button">Export PDF</button>
+</div>
+<script id="xport-script">
+(function(){
+  if (window.__xportLoaded) return; window.__xportLoaded = true;
+  function collectCss(){
+    var out='';
+    Array.prototype.forEach.call(document.styleSheets,function(s){
+      try{ Array.prototype.forEach.call(s.cssRules,function(r){ out += r.cssText + '\n'; }); }catch(e){}
+    });
+    return out;
+  }
+  function baseName(){
+    var t=(document.title||'export').trim().replace(/[^\w.\- ]+/g,'').replace(/\s+/g,'-');
+    return t || 'export';
+  }
+  function pageXml(w,h){
+    var clone=document.body.cloneNode(true);
+    var kill=clone.querySelectorAll('#xport,.toolbar,script');
+    for(var i=0;i<kill.length;i++){ kill[i].parentNode.removeChild(kill[i]); }
+    var style=document.createElement('style');
+    style.textContent=collectCss();
+    clone.insertBefore(style, clone.firstChild);
+    var bodyXml=new XMLSerializer().serializeToString(clone);
+    return '<?xml version="1.0" encoding="UTF-8"?>'+
+      '<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'+
+      '<foreignObject width="100%" height="100%">'+ bodyXml +
+      '</foreignObject></svg>';
+  }
+  function render(scale,cb){
+    var bar=document.getElementById('xport');
+    if(bar) bar.style.display='none';
+    var w=Math.max(document.documentElement.scrollWidth,document.body.scrollWidth);
+    var h=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight);
+    if(bar) bar.style.display='';
+    var c=document.createElement('canvas');
+    c.width=Math.min(w*scale,16000); c.height=Math.min(h*scale,16000);
+    var ctx=c.getContext('2d');
+    ctx.fillStyle=getComputedStyle(document.body).backgroundColor||'#ffffff';
+    ctx.fillRect(0,0,c.width,c.height);
+    var img=new Image();
+    img.onload=function(){ ctx.drawImage(img,0,0,c.width,c.height); cb(c,{w:w,h:h}); };
+    img.onerror=function(){ alert('Export failed: this page could not be rendered.'); };
+    img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(pageXml(w,h))));
+  }
+  function download(name,blob){
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500);
+  }
+  function toPdf(jpeg,iw,ih,wPt,hPt){
+    var chunks=[],len=0,off={};
+    function push(x){ var b=(typeof x==='string')?new TextEncoder().encode(x):x; chunks.push(b); len+=b.length; }
+    push('%PDF-1.4\n');
+    off[1]=len; push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+    off[2]=len; push('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+    off[3]=len; push('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+wPt.toFixed(2)+' '+hPt.toFixed(2)+'] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n');
+    off[4]=len; push('4 0 obj\n<< /Type /XObject /Subtype /Image /Width '+iw+' /Height '+ih+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpeg.length+' >>\nstream\n');
+    push(jpeg); push('\nendstream\nendobj\n');
+    var stream='q '+wPt.toFixed(2)+' 0 0 '+hPt.toFixed(2)+' 0 0 cm /Im0 Do Q';
+    off[5]=len; push('5 0 obj\n<< /Length '+stream.length+' >>\nstream\n'+stream+'\nendstream\nendobj\n');
+    var xrefPos=len, xref='xref\n0 6\n0000000000 65535 f \n';
+    for(var i=1;i<=5;i++){ var s=String(off[i]); while(s.length<10)s='0'+s; xref+=s+' 00000 n \n'; }
+    xref+='trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xrefPos+'\n%%EOF';
+    push(xref);
+    return new Blob(chunks,{type:'application/pdf'});
+  }
+  document.getElementById('xport-png').addEventListener('click',function(){
+    render(2,function(c){ c.toBlob(function(b){ download(baseName()+'.png',b); },'image/png'); });
+  });
+  document.getElementById('xport-pdf').addEventListener('click',function(){
+    render(2,function(c,dims){
+      c.toBlob(function(jb){
+        jb.arrayBuffer().then(function(ab){
+          var pt=0.75;
+          download(baseName()+'.pdf',toPdf(new Uint8Array(ab),c.width,c.height,dims.w*pt,dims.h*pt));
+        });
+      },'image/jpeg',0.95);
+    });
+  });
+})();
+</script>
+<!-- ==== end injected export toolbar ==== -->
+</body>
+</html>

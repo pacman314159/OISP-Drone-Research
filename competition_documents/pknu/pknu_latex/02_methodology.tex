@@ -1,0 +1,51 @@
+% =====================================================================
+%  2 Methodology  (largest block — keep ~1 page per half)
+%  Source: poster_draft_v2.md ②
+% =====================================================================
+\section{Methodology}
+
+% ---------------------------------------------------------------------
+%  2.1 Hardware
+%  - ESP32-S3 dual-core @ 240 MHz (R14), BLE, native SIMD (PIE via compute HAL)
+%  - GY-87: MPU6050 (accel+gyro), HMC5883L (mag), BMP180 (baro)
+%  - MicroSD blackbox, WS2812B LEDs, LoRa footprint, power-monitor board
+%  - 4-layer KiCad PCB FC_v01 (FC_v02 in progress); gerbers + BOM released (R15)
+%  - Figure: PCB render/photo; end with the design-intent sentence
+% ---------------------------------------------------------------------
+\subsection{Hardware}
+
+% ---------------------------------------------------------------------
+%  2.2 Firmware  (centre of the paper)
+%  - Five-layer general architecture L5 app -> L4 core -> L3 middleware ->
+%    L2 drivers -> L1 platform HAL; dependencies point DOWNWARD only (strict
+%    downward DAG); decision records + gated ATAM-style audits
+%    (diagram: FC_v01-general-architecture-v2.html)
+%  - RTOS task set / periods / core assignment / IPC
+%    (diagram: FC_v01-rtos-architecture.html; 14 resident tasks at boot,
+%    CALIB_* and BLE_OTA spawn on demand — R13)
+%    -> present as Table 1 (task | period | core), data from config.h (R8)
+%  - SIMD: hal_simd primitives (dot/add/sub/mul/scale/mat_mul/inv3x3) for
+%    float, packed int16, packed int8 -> ESP-DSP (dsps_*/dspm_*) -> S3 PIE
+%    SIMD; hal_matrix type-safe facade; zero dynamic allocation;
+%    beneficiaries: EKF prediction/update, calibration fits, filtering
+% ---------------------------------------------------------------------
+\subsection{Firmware}
+
+% ---------------------------------------------------------------------
+%  2.3 Experimental Setup  (static analyses — how you measured)
+%  - Sensor measurements: time-domain histogram/stdev per axis; FFT -> noise
+%    floor / interference bands  [NUM: dated log]
+%  - Task periods & jitter: nominal from config.h vs SystemView JTAG/TRAX
+%    trace (NOT SD); median/p99/max per task, >=1e4 loops, full load + RF
+%    [NUM: pending Step 0 re-profile]
+%  - Logging robustness: BLE MTU validation (currently never checked), SD
+%    fsync latency (3-30 ms) vs ring depth  [NUM: counters + histogram]
+%  - Estimation: attitude EKF 7-state quaternion + gyro bias, dual-task async
+%    500/100 Hz; altitude EKF 3-state (baro+accel) 100 Hz
+%    [NUM: altitude 24.15% is OFFLINE REPLAY ONLY — say so explicitly]
+%  - Calibration: gyro static offset; accel 6-DOF ellipsoid (6 orientations);
+%    mag 9-DOF ellipsoid; SIMD-accelerated, zero dynamic RAM (keep short)
+%  - End with the mandatory protocol note: bench validation, tethered/clamped;
+%    free flight NOT yet performed; INDI is future work
+% ---------------------------------------------------------------------
+\subsection{Experimental Setup}

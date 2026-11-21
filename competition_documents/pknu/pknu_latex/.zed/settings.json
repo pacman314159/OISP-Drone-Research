@@ -1,0 +1,8 @@
+{
+  // Long paragraphs stay on one logical line; let the editor wrap them.
+  "soft_wrap": "editor_width",
+
+  // Gutter numbers relative to the cursor (9,8,7 ... 48 ... 11,12) are
+  // confusing when reading prose. Uncomment to switch to absolute numbers:
+  // "relative_line_numbers": "disabled"
+}

@@ -1,0 +1,57 @@
+%% =====================================================================
+%%  PKNU-HCMUT Joint International Academic Symposium on Engineering
+%%  Mini paper  --  main file
+%%
+%%  Topic   : Design and Implementation of a Real-Time Flight Controller
+%%            Architecture on ESP32-S3 for Quadcopter UAVs
+%%  Derived from: 261030_PKNU-HCMUT-Abstract_Real-Time Flight Controller.docx
+%%  Content plan: ../poster_draft_v2.md  (abstract rewritten per its v3 rules)
+%%
+%%  All layout lives in style.sty; each section body lives in
+%%  01..06_*.tex (one file per chapter) and is pulled in with \input.
+%%  Paragraphs are kept on single logical lines (LaTeX treats a newline as
+%%  a space; soft wrap in the editor handles the display).
+%%
+%%  Build   : .\build.ps1   (pdflatex x2)
+%%            or Zed task "pdflatex: Build Paper (2 Passes)"
+%% =====================================================================
+\documentclass[10pt,a4paper]{article}
+
+% --- Custom Style Package --------------------------------------------
+\usepackage{style}
+
+% --- Document Information --------------------------------------------
+\symposium{PKNU-HCMUT Joint International Academic Symposium on Engineering}
+\title{Design and Implementation of a Real-Time Flight Controller Architecture on ESP32-S3 for Quadcopter UAVs}
+\author{Quy Hao Nhien Nguyen\textsuperscript{1,2}, Gia-Huy Luu\textsuperscript{1,2}, Cat Gia Han Nguyen\textsuperscript{1,2}, Ngo Dai Cat Truong\textsuperscript{1,2}, Van-Thanh Nguyen\textsuperscript{1,2,*}, Quoc-Nguyen Banh\textsuperscript{1,2}}
+\affiliation{\textsuperscript{1}Faculty of Mechanical Engineering, Ho Chi Minh City University of Technology (HCMUT), Ho Chi Minh City, Vietnam\\ \textsuperscript{2}Vietnam National University Ho Chi Minh City, Ho Chi Minh City 70000, Vietnam}
+\corresponding{nvthanh@hcmut.edu.vn}
+
+\begin{document}
+
+\maketitle
+
+% =====================================================================
+%  Abstract  (kept in the main file: it is part of the title block)
+%  Rewritten from poster_draft_v2.md: architecture-as-contribution framing,
+%  honesty protocol, only §R-cleared numbers + [NUM] slots for Step 0.
+% =====================================================================
+\paperheading{Abstract}
+
+\begin{leadblock}
+Community projects have demonstrated that ESP32-class system-on-chips can fly quadcopters; the open gap is not feasibility but evidence. In PX4 the ESP32 appears only as a WiFi telemetry module, the ArduPilot ESP32 port remains experimental, Espressif's ESP-Drone has seen limited support since 2022, and no published platform couples a system-level determinism measurement with a verifiable architecture ruleset. This paper presents FC-V01, a five-layer flight-controller architecture for a 450~mm quadcopter on a dual-core 240~MHz ESP32-S3 under FreeRTOS, whose dependencies point strictly downward from application to platform HAL and whose invariants stay checkable through decision records and gated audits (155 cross-layer includes scanned; three known upward edges, all under closure). The firmware performs no dynamic allocation in flight, decouples multi-rate tasks with lock-free ring buffers, and accelerates IMU ellipsoid calibration through PIE SIMD primitives on a self-designed four-layer carrier with a cost-optimised sensor set, sustaining a 500~Hz inertial acquisition and estimation chain. Determinism is measured rather than assumed: SystemView timing and jitter statistics [NUM: full-system profile pending Step 0], sensor-noise characterisation, and logging-robustness probes are reported from bench validation with the vehicle tethered, including the altitude estimate reported as limited by the low-grade BMP180 barometer. Free flight has not yet been performed; an INDI control law is future work.
+\end{leadblock}
+
+\keywordline{ESP32-S3; FreeRTOS; real-time determinism; layered software architecture; Extended Kalman Filter; low-cost UAV.}
+
+% =====================================================================
+%  Sections (one file per section, in reading order)
+% =====================================================================
+\input{01_introduction}
+\input{02_methodology}
+\input{03_results}
+\input{04_discussion}
+\input{05_conclusion}
+\input{06_references}
+
+\end{document}

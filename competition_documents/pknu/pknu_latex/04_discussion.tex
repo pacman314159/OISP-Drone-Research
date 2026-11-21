@@ -1,0 +1,18 @@
+% =====================================================================
+%  4 Discussion
+%  Source: poster_draft_v2.md ④
+%  - Why the altitude EKF underperforms: BMP180 trades resolution / rate /
+%    noise for cost; the estimator cannot recover information the sensor
+%    never delivered. Improvement path: higher-resolution higher-rate digital
+%    baro OR ToF + optical flow -> FC_v02 hardware work
+%  - Architecture robustness -> flyability: five-layer downward-only DAG held
+%    through two gated audits (155 cross-layer includes scanned; only 3 known
+%    upward edges, all with closure plans; C3 cycle caught and closed — R9).
+%    Determinism is measured, not assumed (SystemView + jitter over >=1e4
+%    loops) -> the architecture is a verifiable invariant, not a drawing
+%  - Position vs related work: no platform publishes a full-system determinism
+%    trace; closest (arXiv 2607.23220) claims "jitter-free" without a profiler
+%    trace. -> condense the §RW table here (arXiv 2607.23220, IEEE iSES 2021,
+%    IJPEDS 2024, UFABC/CBA, esp-drone) with a "how we differ" column
+% =====================================================================
+\section{Discussion}

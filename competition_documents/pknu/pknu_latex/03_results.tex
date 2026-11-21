@@ -1,0 +1,21 @@
+% =====================================================================
+%  3 Results  (one number per item + source)
+%  Source: poster_draft_v2.md ③
+%  - System frequency table + core map from SystemView (replaces the
+%    theoretical ~20-22% load claim; note-0007 data = early DAQ-only phase,
+%    use only with stated scope — R10, R16)
+%    Static table usable now: IMU DAQ 500 Hz / preprocess 500 Hz / EKF
+%    roll-pitch 500 Hz / EKF yaw 100 Hz / EKF altitude 100 Hz / FSM 100 Hz /
+%    baro 50 Hz / mag 100 Hz / RC 50 Hz / motor 250 Hz / SD+BLE 100 Hz;
+%    DAQ budget = 2.0 ms
+%  - IMU charts: stdev histogram + FFT per axis  [NUM: dated log]
+%  - Attitude EKF capability  [NUM: accuracy vs reference + per-task timing]
+%  - Altitude EKF — told truthfully: performance is POOR; cause = BMP180
+%    (low-grade, old-gen I2C baro), presented as a designed-in hardware
+%    limitation with the improvement path in Discussion
+%    [NUM: 24.15% = OFFLINE REPLAY ONLY (note 0037)]
+%  - SIMD calibration: residuals + fit time, zero dynamic RAM  [NUM]
+%  - End-to-end logging: SD blackbox 100 Hz + BLE telemetry + BLE OTA
+%  - Honesty box (mandatory): "Measured on bench; free flight not yet performed."
+% =====================================================================
+\section{Results}
