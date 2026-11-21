@@ -48,8 +48,7 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 +-------------------------------------------------------------+
 | Layer 1: Platform HAL & Targets                             |
 |          (`src/platforms/hal/`,                             |
-|           `src/platforms/targets/espressif/`,               |
-|           `src/platforms/targets/stm/`)                     |
+|           `src/platforms/targets/espressif/`)               |
 +-------------------------------------------------------------+
 ```
 
@@ -89,7 +88,7 @@ To guarantee high-performance real-time processing (500 Hz IMU flight loop), str
 - **Directory**: `src/platforms/`
   - `src/platforms/hal/`: Abstract virtual interface declarations (`hal_i2c.h`, `hal_i2c_async.h`).
   - `src/platforms/targets/espressif/`: Active target under development (ESP32-S3 hardware I2C/SPI drivers).
-  - `src/platforms/targets/stm/`: Dummy placeholder for future STM32 target development.
+  - *(Amended 2026-11-21: a `src/platforms/targets/stm/` placeholder was listed here as "future STM32 target development". The project is **ESP32-S3-only** by decision of 2026-11-21 — see `[[0055-esp32OnlyTargetStrategyAndStm32PortRetirement]]`. No STM32 directory exists; a future port would create `src/platforms/targets/<target>/` from scratch.)*
 
 ---
 

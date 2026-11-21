@@ -58,13 +58,13 @@ constexpr size_t   MOTOR_CMD_QUEUE_SIZE         = 4;    // Command queue depth f
 constexpr int SPI_MOSI_PIN      = 11;
 constexpr int SPI_SCK_PIN       = 12;
 constexpr int SPI_MISO_PIN      = 13;
-constexpr int SPI_CS_LORA_PIN   = 39;
+constexpr int SPI_CS_LORA_PIN   = 39;  // RESERVED: LoRa radio, not fitted (note 0051)
 constexpr int SPI_CS_PERIP_PIN  = 47;
 constexpr int SPI_CS_SD_PIN     = 8;
 
 // Serial UART Pins
-constexpr int UART_TX_PIN       = 9;
-constexpr int UART_RX_PIN       = 10;
+constexpr int UART_TX_PIN       = 9;   // RESERVED: GNSS/GPS, not fitted (note 0051)
+constexpr int UART_RX_PIN       = 10;  // RESERVED: GNSS/GPS, not fitted (note 0051)
 
 // RC Receiver Input Pins
 constexpr int RX_PWM1_PIN       = 5; // PPM
@@ -78,7 +78,7 @@ constexpr int RX_PWM6_PIN       = 17;
 constexpr int USER_BTN_PIN      = 38;
 constexpr int LORA_RST_PIN      = 41;
 constexpr int SD_CARD_DET_PIN   = 18;
-constexpr int IMU_MAG_DRDY_PIN  = 42;
+constexpr int IMU_MAG_DRDY_PIN  = 42;  // RESERVED: mag data-ready interrupt, not routed yet
 constexpr int RGB_LED_PIN       = 2;  // WS2812 Single RGB Status LED on PCB v02 (GPIO2)
 
 // =============================================================================
@@ -207,9 +207,7 @@ enum TaskFrequenciesHz : uint32_t {
   TASK_MAG_PREPROCESS_FREQ_HZ        = 100,
   TASK_BLE_TELEM_FREQ_HZ             = 100,
   TASK_SD_LOGGER_FREQ_HZ             = 100,
-  TASK_BLE_OTA_FREQ_HZ               = 0,   // Event-driven
   TASK_FSM_FREQ_HZ                   = 100,
-  TASK_STATUS_LED_FREQ_HZ            = 0,   // Event-driven pattern worker
   TASK_CALIB_GYRO_FREQ_HZ            = 200, // 200 Hz singular sampling
   TASK_CALIB_ACCEL_FREQ_HZ           = 200, // 200 Hz interactive sampling
   TASK_CALIB_MAG_FREQ_HZ             = 100, // 100 Hz interactive sampling

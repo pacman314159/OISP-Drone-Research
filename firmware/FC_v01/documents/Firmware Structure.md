@@ -27,6 +27,7 @@ references:
   - "[[0052-ina226RemovalMatekPdbAndFiveGatePreflightPipeline]]"
   - "[[0053-layer3IpcAccessorSplitTaskRegistrySerializationAndHalOtaBoundary]]"
   - "[[0054-baselineCommitWorktreeRetirementAndOnedriveGitHazard]]"
+  - "[[0055-esp32OnlyTargetStrategyAndStm32PortRetirement]]"
 ---
 
 # FC_v01 Firmware Architecture & Structure Specification
@@ -70,8 +71,7 @@ The codebase is organized into **5 decoupled structural layers**:
 +-------------------------------------------------------------+
 | Layer 1: Platform HAL & Hardware Target Drivers             |
 |          (`src/platforms/hal/`,                             |
-|           `src/platforms/targets/espressif/`,               |
-|           `src/platforms/targets/stm/`)                     |
+|           `src/platforms/targets/espressif/`)               |
 +-------------------------------------------------------------+
 ```
 
@@ -90,7 +90,7 @@ The codebase is organized into **5 decoupled structural layers**:
   - `src/core/safety/`: Pre-flight gate evaluation and safety-status aggregation ([`preflight_checks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/safety/preflight_checks.cpp), [`safety_types.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/safety/safety_types.h)).
   - `src/core/telemetry/`: Telemetry streaming protocols and wireless OTA update management ([`ble_telem_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_telem_tasks.cpp), [`ble_ota_tasks.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/telemetry/ble_ota_tasks.cpp)).
   - `src/core/blackbox/`: High-frequency flight data storage and SD card snapshot logger ([`sd_logger_task.cpp`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.cpp), [`sd_logger_task.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/core/blackbox/sd_logger_task.h)).
-  - `src/core/interface/`: Human-machine and status indication abstractions (reserved for user buttons and status LEDs).
+  - `src/core/interface/`: Human-machine and status indication — the status-LED pattern worker (`interface_tasks.cpp`, 100 Hz pattern service fed by `led_cmd_queue`) and user-button debounce/ISR wiring.
 
 #### Layer 3: Middleware & Centralized Inter-Task IPC Layer
 - **Directory**: [`src/middleware/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/middleware)
@@ -107,8 +107,7 @@ The codebase is organized into **5 decoupled structural layers**:
 #### Layer 1: Platform HAL & Hardware Target Drivers Layer
 - **Directory**: [`src/platforms/`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms)
   - `src/platforms/hal/`: Target-agnostic C++ pure abstract interfaces ([`hal_i2c.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_i2c.h), [`hal_i2c_async.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_i2c_async.h), [`hal_simd.h`](file:///d:/OneDrive_MSFT/Work/Drone_Research/firmware/FC_v01/src/platforms/hal/hal_simd.h)).
-  - `src/platforms/targets/espressif/`: Physical ESP32-S3 implementations (I2C driver, RMT transmitter/receiver, ESP-DSP vector SIMD routines).
-  - `src/platforms/targets/stm/`: Placeholder for target STM32 porting.
+  - `src/platforms/targets/espressif/`: Physical ESP32-S3 implementations (I2C driver, RMT transmitter/receiver, ESP-DSP vector SIMD routines, OTA partition access). **This is the only maintained target** — the firmware is ESP32-S3-only by the 2026-11-21 development-strategy decision in `[0055]`; no STM32 port exists, is scaffolded, or is planned. Adding another target is a future project that starts by creating `src/platforms/targets/<target>/`, not by reserving a directory now.
 
 ---
 
@@ -295,6 +294,7 @@ To maintain high readability and clean git diffs across developers, all C++ code
 | `[0052]` | Complete INA226 Decommissioning, Matek PDB XT60 Transition & Five-Gate Pre-Flight Safety Pipeline | Section 2 (5-Layer Pruning), Section 4 (5-Gate Preflight FSM) |
 | `[0053]` | Layer 3 IPC Accessor Split, Task-Registry Serialization & HAL_OTA Boundary | Section 2 (Layer 3 Middleware), Section 4 (IPC & Contracts), Section 5 (HAL Boundaries) |
 | `[0054]` | Single Baseline Commit, Worktree Retirement & OneDrive-Resident Git Hazard | Not architectural — repository history, branch/worktree lifecycle and `.git` residency |
+| `[0055]` | ESP32-S3-Only Target Strategy & Retirement of the STM32 Port Placeholder | Section 2 (Layer 1 Target Directories), Section 1 (Target Hardware Isolation) |
 
 
 
