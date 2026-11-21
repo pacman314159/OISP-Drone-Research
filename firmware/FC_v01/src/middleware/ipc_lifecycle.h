@@ -7,7 +7,7 @@
 // =============================================================================
 // LAYER 3 — LIFECYCLE API (owner: ipc.cpp)
 // =============================================================================
-// Split out of ipc.h by C15. Layer 5 and object owners use these; the objects
+// Layer 5 and object owners use these; the objects
 // themselves are still created/destroyed only in middleware/ipc.cpp.
 
 // Centralized Inter-Task Communication (IPC) Initialization Routine
@@ -19,7 +19,7 @@ bool ipc_create_ota_queue(size_t chunk_size);   // chunk_size: bytes per queue e
 void ipc_destroy_ota_queue();
 
 // -----------------------------------------------------------------------------
-// Task registry accessors (C4)
+// Task registry accessors
 //
 // The registry feeds Layer 5's suspension authority (app_suspend_all_tasks).
 // It is written from two layers today, so every mutation goes through here and

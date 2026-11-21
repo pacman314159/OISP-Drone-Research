@@ -46,7 +46,7 @@ IndiControllerOutput indi_output = {};
 QueueHandle_t motor_cmd_queue = nullptr;
 
 // ---------------------------------------------------------------------------
-// BLE OTA transport sink (audit item C3)
+// BLE OTA transport sink
 //
 // Layer 2 (src/drivers/telemetry/ble_driver.cpp) reports what happened on the
 // BLE link. Layer 3 owns the queue, the abort flag and the wake-up, so the
@@ -68,7 +68,7 @@ static bool on_ble_ota_event(uint8_t evt, const uint8_t* data, uint16_t len){
 
   if(ota_data_queue == nullptr) return false;
 
-  TickType_t timeout = pdMS_TO_TICKS(500); // matches the previous driver-side wait
+  TickType_t timeout = pdMS_TO_TICKS(500);
 
   if(evt == BLE_OTA_EVT_EOF){
     chunk.length = OTA_CHUNK_EOF_MARKER;
@@ -171,7 +171,7 @@ bool init_ipc(){
     );
   }
 
-  // [C3] BLE transport port: Layer 2 reports, Layer 3 queues and wakes the OTA task.
+  // BLE transport port: Layer 2 reports, Layer 3 queues and wakes the OTA task.
   ble_ota_set_sink(on_ble_ota_event);
 
   return (i2c0_mutex != nullptr &&
@@ -197,7 +197,7 @@ void ipc_destroy_ota_queue(){
   ota_data_queue = nullptr;
 }
 
-// [C4] Task registry accessors — the registry is written from more than one
+// Task registry accessors — the registry is written from more than one
 // layer, so every mutation is serialised here and direct array writes are gone.
 void ipc_register_task(uint32_t task_id, TaskHandle_t handle){
   if(task_id >= TASK_COUNT) return;

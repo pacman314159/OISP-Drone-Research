@@ -6,11 +6,10 @@
 // =============================================================================
 // LAYER 3 MIDDLEWARE & CENTRALIZED INTER-TASK IPC — UMBRELLA HEADER
 // =============================================================================
-// C15 split this file into three headers while keeping one owner (ipc.cpp):
+// One owner (ipc.cpp), three declaration headers:
 //   include/ipc_types.h          — POD contracts that cross IPC boundaries
 //   middleware/ipc_handles.h     — extern handles, queues, ring buffers
 //   middleware/ipc_lifecycle.h   — init, on-demand creation, task registry API
-// This umbrella includes all three so existing call sites keep compiling.
 // New code should include the narrowest header it needs.
 
 // Hardware Button Event Flags & Middleware ISR Handler ([Note 0001])

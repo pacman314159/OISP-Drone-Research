@@ -10,7 +10,7 @@
 // =============================================================================
 // LAYER 3 — SHARED HANDLES (declarations only; ipc.cpp is the single owner)
 // =============================================================================
-// Split out of ipc.h by C15. Include this header when you need a handle.
+// Include this header when you need a handle.
 // Ownership and lifetime still live in middleware/ipc.cpp.
 
 // System Mutex Handles (I2C Bus, SPI Bus, Flash & Estimator Locks)
@@ -21,7 +21,7 @@ extern SemaphoreHandle_t flash_mutex;
 extern SemaphoreHandle_t ekf_state_mutex;
 
 // System Task Notification Registry (Indexed by TaskIDs enum)
-// Mutate through ipc_register_task() only — never write this array directly (C4).
+// Mutate through ipc_register_task() only — never write this array directly.
 extern TaskHandle_t app_task_handles[TASK_COUNT];
 
 // Inter-Task Communication Queues
@@ -33,7 +33,7 @@ extern QueueHandle_t motor_cmd_queue;
 // -----------------------------------------------------------------------------
 // Thread-Safe Inter-Task Ring Buffers
 //
-// SPSC DISCIPLINE (C15 rule 3): every ring buffer below is single-producer /
+// SPSC DISCIPLINE: every ring buffer below is single-producer /
 // single-consumer and lock-free on the 500 Hz / 2 ms flight path. Direct
 // access is sanctioned ONLY because push()/pop() use a short critical section
 // (ring_buffer.h:18-25). Do NOT wrap these in a mutex-bearing API — added
