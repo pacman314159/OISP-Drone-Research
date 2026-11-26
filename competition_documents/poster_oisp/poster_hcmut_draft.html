@@ -234,7 +234,7 @@
 
       <p><b>Attitude EKF:</b> dual-task asynchronous 500 / 100 Hz quaternion estimator. Measured timing: roll/pitch EKF WCET 764 µs (38% of the 2 ms budget, exact 500.0 Hz); yaw EKF WCET 463 µs at 99.5 Hz measured. On the static bench there is no external attitude reference, so accuracy is assessed qualitatively: bounded tracking of hand motion up to ±55° roll/pitch with full yaw rotation (session LOG_0037).</p>
 
-      <p><b>Altitude EKF — performance assessment:</b> the measured performance is poor, and the limitation is attributable to the sensing hardware rather than to the estimator design: the BMP180 barometer offers low resolution, a low output rate and high noise, and the altitude estimate degrades accordingly. <span class="num">[NUM: 24.15% — OFFLINE REPLAY ONLY (note 0037); realtime re-measurement pending]</span></p>
+      <p><b>Altitude EKF — performance assessment:</b> the measured performance is poor, and the limitation is attributable to the sensing hardware rather than to the estimator design: the BMP180 barometer offers low resolution, a low output rate and high noise, and the altitude estimate degrades accordingly. <span>Altitude error 24.15% of reference over the 27.5 s window — OFFLINE REPLAY ONLY (note 0037); realtime re-measurement pending.</span></p>
 
       <p class="honesty">All reported measurements were obtained on the test bench; free flight has not yet been performed.</p>
     </section>
@@ -268,7 +268,7 @@
 
   <!-- ============ FOOTER ============ -->
   <div class="foot">
-    <span>Structural draft — layout and content only; final styling to be applied in Affinity Designer. Dashed boxes are figure placeholders; the remaining <span class="num">[NUM: …]</span> denotes one measurement still pending realtime re-measurement (offline-replay value only). No statement herein implies that the vehicle has flown.</span>
+    <span>Structural draft — layout and content only; final styling to be applied in Affinity Designer. Dashed boxes are figure placeholders; figures must be exported before submission. No statement herein implies that the vehicle has flown.</span>
     <span>2026-11-20</span>
   </div>
 
