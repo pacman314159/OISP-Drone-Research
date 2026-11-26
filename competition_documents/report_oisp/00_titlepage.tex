@@ -1,0 +1,85 @@
+% =========================================================================
+% titlepage.tex -- Cover / title page
+% Style migrated from the Machine Elements report (TikZ double border,
+% centered HCMUT header + logo), fields per BM23/KHCN-08 cover template.
+% =========================================================================
+% Report metadata -- edit these once, the cover uses them
+\newcommand{\ReportTitleA}{THUẬT TOÁN ĐIỀU KHIỂN MÁY BAY BỐN CÁNH}
+\newcommand{\ReportTitleB}{SỬ DỤNG PID VÀ BỘ LỌC KALMAN}
+\newcommand{\ProjectCode}{SVOISP-2025-CK-57}
+\newcommand{\ProjectLeader}{Lưu Gia Huy}
+
+\begin{titlepage}
+  % Draw traditional double-line decorative border using TikZ
+  \begin{tikzpicture}[remember picture, overlay]
+    % Outer thick border
+    \draw[line width=1.5pt]
+      ($(current page.north west) + (20mm, -20mm)$)
+      rectangle
+      ($(current page.south east) + (-20mm, 20mm)$);
+    % Inner thin border
+    \draw[line width=0.6pt]
+      ($(current page.north west) + (21.5mm, -21.5mm)$)
+      rectangle
+      ($(current page.south east) + (-21.5mm, 21.5mm)$);
+  \end{tikzpicture}
+
+  \centering
+
+  {\large\textbf{ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH}\par}
+  \vspace{0.25cm}
+  {\large\textbf{TRƯỜNG ĐẠI HỌC BÁCH KHOA}\par}
+
+  \vspace{0.8cm}
+
+  % University Logo
+  \includegraphics[width=3.2cm]{imgs/hcmut_logo.png}\par
+
+  \vspace{0.4cm}
+
+  % Report type
+  {\large\textbf{BÁO CÁO TỔNG KẾT}\par}
+  \vspace{0.3cm}
+  {\large\textbf{ĐỀ TÀI NGHIÊN CỨU KHOA HỌC}\par}
+
+  \vspace{0.4cm}
+
+  % Topic / Title
+  {\large\textbf{\ReportTitleA}\par}
+  \vspace{0.2cm}
+  {\large\textbf{\ReportTitleB}\par}
+
+  % Project information box (per BM23/KHCN-08 cover)
+  \begin{flushleft}
+  \hspace*{1.5cm}%
+  \begin{minipage}{13.5cm}
+    \begingroup
+    \setlength{\tabcolsep}{0pt}% bỏ padding cột để nhãn thẳng hàng với dòng Thành viên
+    \begin{tabular}{p{6.1cm}p{7.4cm}}
+      \textbf{Mã số đề tài:}     & \ProjectCode \\[0.25cm]
+      \textbf{Thời gian thực hiện:} & 11/2025 -- 11/2026 \\[0.25cm]
+      \textbf{Chủ nhiệm đề tài:} & \ProjectLeader \\[0.25cm]
+    \end{tabular}
+    \endgroup
+
+    \vspace{0.4cm}
+
+    \textbf{Thành viên thực hiện đề tài:}
+    \begin{enumerate}[label=\arabic*., leftmargin=1.5cm, itemsep=0.05cm, topsep=0.15cm]
+      \item Lưu Gia Huy (Chủ nhiệm)
+      \item Trương Ngô Đại Cát
+      \item Nguyễn Cát Gia Hân
+      \item Lâm Tuấn Nguyên
+      \item Nguyễn Quý Hạo Nhiên
+    \end{enumerate}
+  \end{minipage}
+  \end{flushleft}
+
+  \vfill
+
+  % Location and Date
+  {\normalsize\textbf{THÀNH PHỐ HỒ CHÍ MINH -- THÁNG 11 NĂM 2026}\par}
+
+  \vspace{1.5cm}
+
+\end{titlepage}

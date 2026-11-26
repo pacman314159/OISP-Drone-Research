@@ -1,0 +1,84 @@
+[
+  {
+    "label": "Build Report",
+    "command": "pwsh",
+    "args": [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      "$ZED_WORKTREE_ROOT/build.ps1"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "on_success",
+    "save": "all"
+  },
+  {
+    "label": "Toggle Watch Report",
+    "command": "latexmk",
+    "args": [
+      "-pdf",
+      "-interaction=nonstopmode",
+      "-jobname=report_oisp",
+      "-pvc",
+      "main.tex"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "never",
+    "save": "all"
+  },
+  {
+    "label": "Compile Report",
+    "command": "pdflatex",
+    "args": [
+      "-synctex=1",
+      "-interaction=nonstopmode",
+      "-file-line-error",
+      "-jobname=report_oisp",
+      "main.tex"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "on_success",
+    "save": "all"
+  },
+  {
+    "label": "Clean Build Artifacts",
+    "command": "pwsh",
+    "args": [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      "$ZED_WORKTREE_ROOT/build.ps1",
+      "-Clean"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "hide": "on_success"
+  },
+  {
+    "label": "Open Report PDF",
+    "command": "pwsh",
+    "args": [
+      "-NoProfile",
+      "-Command",
+      "Start-Process report_oisp.pdf"
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success"
+  }
+]

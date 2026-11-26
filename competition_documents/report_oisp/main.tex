@@ -1,0 +1,56 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage{report_style}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc}
+
+% =========================================================================
+% main.tex -- entry point. Only assembles the document, like app.cpp.
+% Content lives in the individual .tex files.
+% =========================================================================
+\begin{document}
+
+% Cover / title page (metadata + cover layout live in 00_titlepage.tex)
+\input{00_titlepage}
+
+% =========================================================================
+% FRONT MATTER
+% =========================================================================
+\pagenumbering{roman}
+\setcounter{page}{1}
+
+% Table of Contents (depth 1: chapters + sections, per 30-page limit)
+\setcounter{tocdepth}{1}
+\tableofcontents
+\clearpage
+
+% =========================================================================
+% MAIN MATTER
+% =========================================================================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\input{01_chapter1}
+% Chapter 2 (theory) omitted for page limit; its content depends on chapters 3-5.
+% File renamed to 90_theory_omitted.tex (khong build).
+%\input{90_theory_omitted}
+\input{02_chapter2}
+\input{03_chapter3}
+\input{04_chapter4}
+\input{05_chapter5}
+\input{06_chapter6}
+
+% =========================================================================
+% REFERENCES
+% =========================================================================
+\clearpage
+\input{07_references}
+
+% =========================================================================
+% APPROVAL PAGES: member signatures + GVHD confirmation (BM23/KHCN-08, item 3d)
+% -- moved to the END of the report per 2026-11-25 user request.
+% =========================================================================
+\clearpage
+\input{08_confirmation_pages}
+
+\end{document}

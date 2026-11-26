@@ -1,0 +1,38 @@
+% Chapter 6: Kết luận và hướng phát triển
+\chapter{Kết luận và hướng phát triển}
+
+Đề tài đã xây dựng và kiểm chứng bằng dữ liệu đo thật toàn bộ nền tảng của bộ điều khiển bay tự phát triển: phần cứng (hai phiên bản PCB, bản v2 đang dùng), firmware \textbf{FC-v01} với kiến trúc RTOS, khối EKF bảy trạng thái cùng hệ công cụ hiệu chuẩn, ghi dữ liệu và trạm mặt đất. Phần thuật toán điều khiển chưa được hiện thực: sau khi đánh giá, PID bộc lộ nhiều hạn chế trên nền tảng hiện tại nên nhóm quyết định chuyển hướng nghiên cứu INDI (Incremental Nonlinear Dynamic Inversion) cho giai đoạn tiếp theo; việc tích hợp toàn bộ mô-đun thành stack bay thống nhất và bay thực nghiệm (flight test) ngoài trời cũng thuộc lộ trình sau. Chương này đối chiếu kết quả với mục tiêu đăng ký, phân tích nguyên nhân khoảng cách và đề xuất kế hoạch tiếp theo.
+
+\section{Kết quả đạt được}\label{sec:kl-dat}
+
+So với ba mục tiêu đăng ký ở chương~1, phần nền tảng của bộ điều khiển bay hoàn thành đầy đủ và được kiểm chứng bằng dữ liệu đo thật trên phần cứng.
+
+Về phần cứng (chương~3): hai phiên bản bản mạch in bốn lớp kích thước $50\times50$~mm đã được chế tạo; bản v2 hoạt động ổn định trên bệ thử với hai đường nguồn 3,3~V tách biệt, giữ khối cảm biến khỏi nhiễu điện của phần còn lại.
+
+Về firmware (chương~2): phần mềm gồm năm tầng kiến trúc và 19 tác vụ. Kiểm chứng định thời bằng bộ ghi trace (chương~5) cho thấy toàn bộ 12 tác vụ định kỳ chạy đúng tần số thiết kế trong cửa sổ đo 20~giây; chuỗi xử lý 500~Hz đo được đúng 500,0~Hz với độ lệch chu kỳ 6--8\% chu kỳ, và thời gian chạy dài nhất của tác vụ nặng nhất (EKF tư thế) chỉ chiếm 38\% ngân sách thời gian của nó.
+
+Về khối ước lượng trạng thái (chương~4, chương~5): bộ lọc Kalman mở rộng bảy trạng thái hoạt động thực tế ở 500~Hz; bộ lọc thông thấp giảm nhiễu con quay 1,2--2,6 lần và gia tốc kế 1,5--2,5 lần; bộ lọc tư thế bám trọn động thái xoay và lật tay với biên độ trọn vòng; bộ lọc độ cao làm mượt nhiễu áp suất với hiệp phương sai đo lường chọn từ nhiễu đo thực tế ($0{,}34$~m). Hệ công cụ hỗ trợ hoàn chỉnh: quy trình hiệu chuẩn bằng bộ tối ưu Adam, bộ ghi blackbox lưu sáu luồng cảm biến lên thẻ microSD, và trạm mặt đất giám sát qua Bluetooth. Mọi số liệu kết luận đều đến từ dữ liệu đo thật, không từ mô phỏng.
+
+\section{Kết quả chưa đạt được và nguyên nhân}\label{sec:kl-chuadat}
+
+Thứ nhất, thuật toán điều khiển chưa được hiện thực -- khoảng cách lớn nhất so với mục tiêu đăng ký. Về mặt kỹ thuật, điều khiển tư thế quadcopter đòi hỏi mô hình động lực chính xác của từng khung máy, mà mô hình đó chỉ có thể tham số hoá tin cậy sau khi có dữ liệu bay thật -- điều kiện chưa có ở giai đoạn này. Về mặt phương pháp, PID là bộ điều khiển tuyến tính, khó đáp ứng đặc tính phi tuyến của quadcopter khi biên độ thao tác lớn~\cite{ogata}; việc tinh chỉnh từng thông số trên nền tảng tự phát triển sẽ tiêu tốn phần lớn thời gian còn lại với rủi ro kết quả kém hơn kỳ vọng. Nhóm chọn dừng ở mức đánh giá và định hướng thay vì hiện thực nửa vời.
+
+Thứ hai, hệ thống chưa bay thực nghiệm ngoài trời: mọi kiểm chứng dừng ở bệ tĩnh, chưa có rung động động cơ và nhiễu gió. Nguyên nhân là trình tự phát triển theo mô-đun -- nhóm ưu tiên làm chắc nền tảng (cảm biến, ước lượng, định thời) trước khi ghép vào khung bay, vừa giảm rủi ro thiết bị vừa dễ phân tích sự cố.
+
+Thứ ba, một số hạn chế kỹ thuật còn mở: BMP180 có nhiễu $0{,}34$~m và thỉnh thoảng bỏ sót chu kỳ đo; trạng thái độ cao $z$ trôi nền tới vùng 6--10~m và không hồi về 0 trong phiên đo (mục~\ref{sec:kq-ekf}); hiện tượng EKF\_YAW thiếu 9 vòng lặp trong cửa sổ đo đang được theo dõi. Các hiện tượng này đã được lượng hoá rõ ràng và là đầu vào trực tiếp cho kế hoạch nâng cấp dưới đây.
+
+\section{Hướng phát triển}\label{sec:kl-huong}
+
+\subsection*{Nâng cấp phần cứng cảm biến và động lực}
+
+Phiên bản phần cứng kế tiếp nâng cấp bốn thành phần chính. Cảm biến áp suất BMP180 được thay bằng BMP388 chuyên dụng~\cite{bmp388}, khắc phục biên độ nhiễu lớn -- nguyên nhân khiến độ cao và vận tốc đứng ước lượng sai lệch. Bổ sung cảm biến quang học MTF-01P (optical flow) nhằm cải thiện khả năng giữ độ cao ở gần mặt đất, nơi tín hiệu áp suất không đáng tin cậy; cảm biến này trực tiếp khắc phục hạn chế trôi độ cao đã đo ở mục~\ref{sec:kq-ekf}. Bộ cấp nguồn độc lập dạng PDB (power distribution board) Matek cung cấp nguồn ổn định, tách bộ điều khiển khỏi nhiễu của hệ thống động cơ. Hệ ESC mới có thể nạp firmware BLHeli\_32 hoặc AM32, giao tiếp qua giao thức số DShot tốc độ cao với kênh phản hồi hai chiều trả về tốc độ quay động cơ, điện áp và nhiệt độ -- dữ liệu phục vụ phân tích mà cấu hình PWM truyền thống hiện tại không thu thập được.
+
+\subsection*{Chuyển hướng thuật toán điều khiển sang INDI}
+
+Phương pháp định hướng cho giai đoạn tiếp theo là INDI -- họ bộ điều khiển dùng trực tiếp mô hình động lực phi tuyến nhưng chỉ dự báo ``bước tăng'' của trạng thái trong mỗi chu kỳ điều khiển, nhờ đó ít phụ thuộc độ chính xác tuyệt đối của mô hình và hợp với chuỗi 500~Hz sẵn có; độ tin cậy đã được kiểm chứng trên nền tảng phần cứng tương đương trong các nghiên cứu công bố~\cite{smeur}. Bước đầu của kế hoạch là tích hợp INDI tư thế (roll/pitch) trên chính phần cứng v2, kiểm chứng trên bệ thử gắn động cơ có vận hành, trước khi ghép vào khung bay.
+
+\subsection*{Tích hợp stack bay và kiểm chứng bay thực nghiệm}
+
+Giai đoạn cuối của lộ trình là ghép toàn bộ mô-đun thành một bộ điều khiển bay hoàn chỉnh trên khung quadcopter thật: gắn động cơ và ESC, cấp nguồn qua PDB, cấu hình máy phát tín hiệu điều khiển, rồi bay kiểm chứng từng bước. Hai công cụ ghi dữ liệu sẵn có phát huy tác dụng: blackbox ghi toàn bộ luồng trong khi bay, trace giám sát việc giữ chu kỳ của các tác vụ dưới rung động thật -- cho phép so sánh phổ nhiễu giữa chế độ bay và bệ tĩnh.
+
+Tóm lại, đề tài đã xây dựng và kiểm chứng bằng dữ liệu đo thật toàn bộ nền tảng của một bộ điều khiển bay tự phát triển.

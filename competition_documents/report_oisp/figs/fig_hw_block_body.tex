@@ -1,0 +1,40 @@
+% Body cua Hinh 3.3 (fig:hw-block) -- chi chua tikzpicture, khong co preamble.
+% \input tu 04_chapter4.tex (report chinh) va tu fig_preview/main.tex (render nhanh).
+\begin{tikzpicture}[
+  blk/.style={draw, thick, rounded corners=2pt, minimum height=0.8cm, inner sep=6pt, font=\footnotesize},
+  pwr/.style={blk, fill=green!8, inner sep=5pt, align=center},
+  mcu/.style={blk, fill=blue!10, text width=2.4cm, align=center, minimum height=1.6cm},
+  per/.style={blk, fill=orange!12, text width=1.95cm, inner sep=4pt, align=center, minimum height=1.0cm},
+  grp/.style={draw, thick, rounded corners=4pt, fill=gray!4},
+  arr/.style={-{Stealth}, thick}
+]
+% ---------- Nu'a tren: cay nguon + MCU ----------
+% Cot nguon vao (ben trai)
+\node[pwr, text width=1.8cm] (bec) at (0.85,1.15) {BEC 5V (ESC)};
+\node[pwr, text width=1.8cm] (lipo) at (0.85,0) {LiPo 1S};
+\node[pwr, text width=1.8cm] (usb) at (0.85,-1.15) {USB-C 5V};
+% Diode OR o giua: nguon tren vao tu bac, giu tu tay, nguoi tu nam
+\node[pwr] (sel) at (3.5,0) {Diode OR 5V};
+\draw[arr] (bec.east) -| (sel.north);
+\draw[arr] (lipo.east) -- (sel.west);
+\draw[arr] (usb.east) -| (sel.south);
+% Duong chinh (AP2112K) o tren -> MCU; duong cam bien (ME6211) o duoi -> GY-87
+\node[pwr, text width=2.0cm] (ap21) at (7.35,1.35) {AP2112K-3.3\\ +3V3 (chính)};
+\node[pwr, text width=2.0cm] (me61) at (7.35,-1.35) {ME6211C33\\ +3V3\_SENS};
+\coordinate (tk) at (5.05,0);
+\draw[thick] (sel.east) -- (tk);
+\draw[arr] (tk) |- (ap21.west);
+\draw[arr] (tk) |- (me61.west);
+\node[mcu] (mcu) at (10.7,0) {ESP32-S3\\WROOM-1\\2 $\times$ LX7\\240 MHz};
+\draw[arr] (ap21.east) -| (mcu.north);
+% ---------- Nu'a duoi: nhom ngoai vi ----------
+\node[grp, minimum width=13.98cm, minimum height=2.0cm] (grpbox) at (8.49,-4.2) {};
+\node[per, text width=1.85cm] (p1) at (2.81,-4.2) {microSD\\(SPI)};
+\node[per, text width=1.85cm] (p2) at (5.08,-4.2) {4 $\times$ ESC\\(PWM\\250~Hz)};
+\node[per, text width=1.85cm] (gy) at (7.35,-4.2) {GY-87\\(I\textsuperscript{2}C)};
+\node[per, text width=1.85cm] (p4) at (9.62,-4.2) {FS-iA6B\\(PPM/RMT)};
+\node[per, text width=1.85cm] (p5) at (11.89,-4.2) {RA-02 LoRa\\(SPI, dự trữ)};
+\node[per, text width=1.85cm] (p6) at (14.16,-4.2) {WS2812\\USB-C\\nút bấm};
+\draw[arr] (mcu.south) -- (grpbox.north -| mcu.south);
+\draw[arr] (me61.south) -- (gy.north);
+\end{tikzpicture}

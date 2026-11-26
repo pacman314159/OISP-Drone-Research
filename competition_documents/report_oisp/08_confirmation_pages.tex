@@ -1,0 +1,78 @@
+% =========================================================================
+% confirmation_pages.tex -- Single approval page, before the TOC.
+% Member table with large signature column (for printing and hand-signing),
+% plus GVHD confirmation and project leader signature, all on one page
+% per BM23/KHCN-08 item 3d.
+% Signature images: drop files into imgs/ and uncomment the \includegraphics
+% lines marked with % TODO-SIGNATURE.
+% =========================================================================
+
+\thispagestyle{empty}
+\pagenumbering{gobble}
+
+\begin{center}
+  {\normalsize\textbf{TRƯỜNG ĐẠI HỌC BÁCH KHOA}\par}
+  {\normalsize\textbf{KHOA KHOA HỌC ỨNG DỤNG}\par}
+\end{center}
+
+\vspace{0.2cm}
+
+\begin{center}
+  {\normalsize\textbf{BÁO CÁO TỔNG KẾT ĐỀ TÀI}\par}
+  \vspace{0.15cm}
+  {\normalsize\textbf{NGHIÊN CỨU KHOA HỌC SINH VIÊN}\par}
+
+  \vspace{0.25cm}
+  {\normalsize\textbf{Mã số đề tài: \ProjectCode}\par}
+  \vspace{0.15cm}
+  {\normalsize\textbf{\ReportTitleA\ \ReportTitleB}\par}
+\end{center}
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{tabular}{|c|c|p{7.5cm}|p{5.2cm}|}
+  \hline
+  \textbf{STT} & \textbf{MSSV} & \textbf{Họ và tên} & \centering\textbf{Ký tên} \tabularnewline
+  \hline
+  1 & 2452389 & Lưu Gia Huy & % TODO-SIGNATURE \raisebox{-0.9\height}{\includegraphics[height=1cm]{imgs/sign_huy.png}}
+  \tabularnewline[0.85cm]
+  \hline
+  2 & 2452160 & Trương Ngô Đại Cát & \tabularnewline[0.85cm]
+  \hline
+  3 & 2452318 & Nguyễn Cát Gia Hân & \tabularnewline[0.85cm]
+  \hline
+  4 & 2452846 & Lâm Tuấn Nguyên & \tabularnewline[0.85cm]
+  \hline
+  5 & 2452911 & Nguyễn Quý Hạo Nhiên & \tabularnewline[0.85cm]
+  \hline
+\end{tabular}
+\end{center}
+
+\vfill
+
+\begin{center}
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  {\normalsize\textbf{XÁC NHẬN CỦA GIẢNG VIÊN HƯỚNG DẪN}\par}
+  \vspace{0.15cm}
+  {\small\itshape (Ký, ghi rõ họ tên)\par}
+  \vspace{1.25cm}
+  % TODO-SIGNATURE \raisebox{-0.9\height}{\includegraphics[height=1.4cm]{imgs/sign_gvhd.png}}
+  \vspace{3.0cm}
+  {\normalsize\textbf{TS. Bành Quốc Nguyên}\par}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+  \centering
+  {\normalsize\textbf{CHỦ NHIỆM ĐỀ TÀI}\par}
+  \vspace{0.15cm}
+  {\small\itshape (Ký, ghi rõ họ tên)\par}
+  \vspace{1.85cm}
+  % TODO-SIGNATURE \raisebox{-0.9\height}{\includegraphics[height=1.4cm]{imgs/sign_chunhiem.png}}
+  \vspace{3.0cm}
+  {\normalsize\textbf{Lưu Gia Huy}\par}
+\end{minipage}
+\end{center}
+
+\clearpage

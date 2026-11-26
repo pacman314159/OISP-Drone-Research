@@ -1,0 +1,15 @@
+% Render nhanh tung hinh TikZ cua report OISP, khoi phai build ca cuon report.
+% Usage:  .\build.ps1            (build moi file fig_*.tex trong folder nay)
+% Output: fig_<ten>.pdf va fig_<ten>.png ben canh de xem nhanh.
+\documentclass[border=10pt]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage{lmodern}
+\usepackage{vntex}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc}
+
+\begin{document}
+% Them moi hinh: \input{../figs/fig_<ten>_body.tex} va build.ps1 se tu dong build.
+\input{../figs/fig_hw_block_body.tex}
+\end{document}

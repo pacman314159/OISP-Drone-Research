@@ -1,0 +1,138 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{report_style}[2026/11/24 OISP/KHCN Report Style (migrated from machine element report_style.sty)]
+
+% --- Core Typography & Encoding ---
+\RequirePackage{iftex}
+\ifPDFTeX
+  \RequirePackage[utf8]{inputenc}
+  \RequirePackage[T5]{fontenc}   % Vietnamese (vntex)
+\fi
+\RequirePackage{lmodern}
+\RequirePackage{vntex}           % Vietnamese text support
+
+% --- Page Geometry ---
+\RequirePackage[a4paper, left=3cm, right=2cm, top=2cm, bottom=2cm, headheight=14pt]{geometry}
+
+% --- Mathematics & Units ---
+\RequirePackage{amsmath, amssymb}
+\RequirePackage{siunitx}
+
+% --- Tables & Arrays ---
+\RequirePackage{booktabs}
+\RequirePackage{multirow}
+\RequirePackage{array}
+\RequirePackage{tabularx}
+\RequirePackage{longtable}
+\RequirePackage{caption}
+
+% Caption styling: captions below floats, center-aligned
+\captionsetup[table]{
+  position=bottom,
+  justification=centering,
+  width=0.7\textwidth,
+  skip=8pt
+}
+\captionsetup[figure]{
+  position=bottom,
+  justification=centering,
+  width=0.85\textwidth,
+  skip=8pt
+}
+
+% --- Graphics & Floats ---
+\RequirePackage{graphicx}
+\RequirePackage{float}
+
+% --- Lists & Formatting ---
+\RequirePackage{enumitem}
+\RequirePackage{microtype}
+
+% --- Colors & Framing ---
+\RequirePackage{xcolor}
+\RequirePackage{tikz}
+\usetikzlibrary{calc}
+
+% --- Section & Chapter Headings Styling ---
+\RequirePackage{titlesec}
+
+% Clean chapter header: "CHAPTER X. TITLE" / "CHƯƠNG X. TITLE"
+\titleformat{\chapter}[block]
+  {\normalfont\Large\bfseries}
+  {\MakeUppercase{\chaptertitlename}\ \thechapter.\ }
+  {0.5em}
+  {\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{-1.5ex plus -0.5ex}{0.8em}
+
+\titleformat{\section}[hang]
+  {\normalfont\large\bfseries}
+  {\thesection.\ }
+  {0.5em}
+  {}
+\titlespacing*{\section}{0pt}{1.2em plus 0.3em minus 0.2em}{0.6em}
+
+\titleformat{\subsection}[hang]
+  {\normalfont\normalsize\bfseries}
+  {\thesubsection.\ }
+  {0.5em}
+  {}
+\titlespacing*{\subsection}{0pt}{1.0em plus 0.2em minus 0.2em}{0.4em}
+
+% --- Table of Contents (dotted leaders on chapter entries) ---
+\RequirePackage{tocloft}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftchapfont}{\bfseries}
+\renewcommand{\cftchappagefont}{\bfseries}
+\setlength{\cftbeforechapskip}{0.8em}
+% ToC title giong he tieu de chuong (titlesec): \Large, in hoa, spacing bu gach
+\renewcommand{\cfttoctitlefont}{\normalfont\Large\bfseries}
+% vntex dat lai \contentsname trong hook AtBeginDocument -> phai dat lai sau do
+\AtBeginDocument{\renewcommand{\contentsname}{MỤC LỤC}}
+\setlength{\cftbeforetoctitleskip}{4pt}
+\setlength{\cftaftertoctitleskip}{0.8em}
+
+% --- Header / Footer ---
+\RequirePackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\nouppercase{Flight Controller \& Kalman Filter}}
+\fancyhead[R]{\small\nouppercase{Báo cáo tổng kết}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+% Match plain style for chapter starting pages
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[L]{\small\nouppercase{Flight Controller \& Kalman Filter}}%
+  \fancyhead[R]{\small\nouppercase{Báo cáo tổng kết}}%
+  \fancyfoot[C]{\thepage}%
+  \renewcommand{\headrulewidth}{0.5pt}%
+  \renewcommand{\footrulewidth}{0.5pt}%
+}
+
+% --- Hyperlinks ---
+\RequirePackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=black,
+  citecolor=black,
+  plainpages=false,
+  pdfpagelabels=true
+}
+
+% --- Line Spacing ---
+\RequirePackage{setspace}
+\setstretch{1.14}
+\setlength{\lineskip}{1.5pt}
+\setlength{\lineskiplimit}{0.5pt}
+
+% --- Paragraph Spacing ---
+\RequirePackage{indentfirst}     % thụt cả đoạn đầu tiên sau tiêu đề (chuẩn nộp trường)
+\setlength{\parindent}{0.635cm}   % thụt đầu dòng vừa (½ của 1.27cm)
+\setlength{\parskip}{4pt}
+
+% --- Table line spacing ---
+\renewcommand{\arraystretch}{1.2}
+
+\endinput

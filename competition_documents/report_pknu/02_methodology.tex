@@ -4,6 +4,7 @@
 % =====================================================================
 \section{Methodology}
 
+The methodology is organised into three parts. Section~\ref{sec:hardware} first presents the ESP32-S3-based flight-controller PCB, which provides the hardware foundation on which the firmware operates. Section~\ref{sec:firmware}, which constitutes the core of this work, then details the five-layer firmware architecture. Finally, Section~\ref{sec:setup} describes the experimental setup: static and frequency-domain analyses are performed on the sensor measurements and the estimation algorithms --- the essential components of a flight-control system --- to validate the performance of the overall system. This part also presents the measurement and verification of the real-time determinism of the RTOS task architecture.
 % ---------------------------------------------------------------------
 %  2.1 Hardware
 %  - ESP32-S3 dual-core @ 240 MHz (R14), BLE, native SIMD (PIE via compute HAL)
@@ -13,13 +14,16 @@
 %  - Figure: PCB render/photo; end with the design-intent sentence
 % ---------------------------------------------------------------------
 \subsection{Hardware}
+\label{sec:hardware}
 
 % ---------------------------------------------------------------------
 %  2.2 Firmware  (centre of the paper)
 %  - Five-layer general architecture L5 app -> L4 core -> L3 middleware ->
 %    L2 drivers -> L1 platform HAL; dependencies point DOWNWARD only (strict
-%    downward DAG); decision records + gated ATAM-style audits
+%    downward DAG); no target-specific type leaks into any L2-L4 public header
 %    (diagram: FC_v01-general-architecture-v2.html)
+%    NOTE: internal engineering audits / decision records are deliberately
+%    NOT part of the paper - present the rule itself, not the process.
 %  - RTOS task set / periods / core assignment / IPC
 %    (diagram: FC_v01-rtos-architecture.html; 14 resident tasks at boot,
 %    CALIB_* and BLE_OTA spawn on demand — R13)
@@ -30,6 +34,7 @@
 %    beneficiaries: EKF prediction/update, calibration fits, filtering
 % ---------------------------------------------------------------------
 \subsection{Firmware}
+\label{sec:firmware}
 
 % ---------------------------------------------------------------------
 %  2.3 Experimental Setup  (static analyses — how you measured)
@@ -49,3 +54,4 @@
 %    free flight NOT yet performed; INDI is future work
 % ---------------------------------------------------------------------
 \subsection{Experimental Setup}
+\label{sec:setup}

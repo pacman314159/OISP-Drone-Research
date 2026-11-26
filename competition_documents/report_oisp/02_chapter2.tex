@@ -1,0 +1,130 @@
+% Chapter 2: Thiết kế hệ thống RTOS
+\chapter{Thiết kế hệ thống RTOS}
+
+Chương này trình bày phần mềm của \textbf{FC-v01}. Phần mềm chạy trên ESP32-S3, một vi điều khiển hai nhân hoạt động ở 240~MHz, với hệ điều hành thời gian thực FreeRTOS được tích hợp sẵn trong bộ công cụ ESP-IDF của Espressif~\cite{idf-freertos}. Trọng tâm của chương là bốn ý: kiến trúc phân tầng, phân công mười chín tác vụ, giao tiếp giữa các tác vụ, và máy trạng thái hữu hạn điều phối vòng đời hệ thống.
+
+\section{Kiến trúc phân lớp (Layered Architecture)}
+
+Phần mềm \textbf{FC-v01} được chia thành năm tầng (bảng~\ref{tab:layers}). Nguyên tắc cốt lõi của cách chia này là phụ thuộc một chiều: tầng trên được phép gọi tầng dưới, còn tầng dưới không bao giờ biết sự tồn tại của tầng trên~\cite{rico2022}.
+
+\begin{table}[h]
+\centering
+\caption{Năm tầng kiến trúc phần mềm của \textbf{FC-v01}}
+\label{tab:layers}
+\small
+\begin{tabular}{p{1.1cm}p{4.6cm}p{8.4cm}}
+\toprule
+Tầng & Vai trò & Nội dung chính \\
+\midrule
+5 & Ứng dụng & Khởi tạo hệ thống, máy trạng thái hữu hạn (FSM), phân bổ vòng đời tác vụ \\
+4 & Lõi bay & Thu nhận cảm biến, tiền xử lý, ước lượng trạng thái, tác tử, an toàn, truyền dữ liệu, ghi dữ liệu bay \\
+3 & Trung gian & Tập trung toàn bộ IPC: ring buffer, hàng đợi, mutex, sự kiện liên tác vụ \\
+2 & Driver & Trình điều khiển MPU6050, HMC5883L, BMP180, BLE, thẻ SD, động cơ, LED \\
+1 & Nền tảng & Lớp trừu tượng hóa phần cứng (HAL): I\textsuperscript{2}C, SPI, flash, PWM, SIMD \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Các quy tắc phân lớp được áp dụng nhất quán trong toàn bộ mã nguồn: phụ thuộc chỉ đi xuống, không tầng dưới gọi tầng trên; toàn bộ đối tượng chia sẻ (mutex, hàng đợi, ring buffer) khai báo tập trung ở tầng trung gian và được cấp phát một lần khi khởi động, không cấp phát bộ nhớ động trong vòng điều khiển; tác vụ FreeRTOS chỉ được tạo ở tầng~4 và tầng~5; toàn bộ tham số tác vụ (tên, tần số, độ ưu tiên, kích thước ngăn xếp) tập trung trong một tệp cấu hình duy nhất.
+
+Trong giai đoạn này, kiến trúc đã hiện thực đầy đủ trên chuỗi cảm biến -- tiền xử lý -- ước lượng trạng thái -- truyền và ghi dữ liệu~\cite{cheng2018}; khối điều khiển mới chỉ được thiết kế sẵn vị trí, việc cài đặt thuộc giai đoạn tiếp theo.
+
+\begin{figure}[h]
+\centering
+\resizebox{0.85\textwidth}{!}{%
+\begin{tikzpicture}[
+  layer/.style={draw, thick, rounded corners=2pt, text width=10.2cm, minimum height=0.95cm, align=left, inner xsep=12pt, font=\small},
+  flow/.style={draw, thick, rounded corners=2pt, minimum height=0.9cm, inner sep=6pt, font=\footnotesize},
+  arr/.style={-{Stealth}, thick}
+]
+\node[layer, fill=blue!10]  (l5) {\textbf{Tầng 5 -- Ứng dụng:} FSM, khởi tạo hệ thống};
+\node[layer, fill=blue!6, below=9pt of l5]  (l4) {\textbf{Tầng 4 -- Lõi bay:} thu nhận cảm biến, tiền xử lý, EKF, an toàn, BLE/SD};
+\node[layer, fill=blue!4, below=9pt of l4]  (l3) {\textbf{Tầng 3 -- Trung gian:} IPC -- ring buffer, hàng đợi, mutex, sự kiện};
+\node[layer, fill=blue!2, below=9pt of l3]  (l2) {\textbf{Tầng 2 -- Driver:} MPU6050, HMC5883L, BMP180, BLE, SD, motor};
+\node[layer, fill=blue!1, below=9pt of l2]  (l1) {\textbf{Tầng 1 -- Nền tảng:} HAL I\textsuperscript{2}C/SPI/flash/PWM/SIMD trên ESP32-S3};
+\foreach \a/\b in {l5/l4, l4/l3, l3/l2, l2/l1} \draw[arr] ($(\a.south west)+(0.7cm,0)$) -- ($(\b.north west)+(0.7cm,0)$);
+
+\node[flow, fill=orange!12, below=16pt of l1, anchor=north west] (f1) at ($(l1.south west)+(0,0)$) {\shortstack{Cảm biến\\ GY-87}};
+\node[flow, fill=orange!12, right=14pt of f1] (f2) {DAQ};
+\node[flow, fill=orange!12, right=14pt of f2] (f3) {Tiền xử lý};
+\node[flow, fill=orange!12, right=14pt of f3] (f4) {EKF};
+\node[flow, fill=orange!12, dashed, right=14pt of f4] (f5) {Điều khiển};
+\node[flow, fill=orange!12, right=14pt of f5] (f6) {Motor};
+\foreach \a/\b in {f1/f2, f2/f3, f3/f4, f4/f5, f5/f6} \draw[arr] (\a) -- (\b);
+\end{tikzpicture}}
+\caption{Kiến trúc phân lớp năm tầng (trên) và luồng dữ liệu điều khiển chính (dưới) của \textbf{FC-v01}.}
+\label{fig:rtos-arch}
+\end{figure}
+
+\section{Các tác vụ FreeRTOS}
+
+Hệ thống gồm 19 tác vụ, trong đó 14 tác vụ thường trú được tạo khi khởi động, 4 tác vụ hiệu chuẩn được tạo và giải phóng khi máy trạng thái hữu hạn (FSM) yêu cầu, còn tác vụ cập nhật firmware \texttt{BLE\_OTA} chỉ được tạo theo yêu cầu (bảng~\ref{tab:tasks}). Độ ưu tiên dùng thang bốn mức (1 -- Low đến 4 -- Real Time).
+
+\begin{table}[h]
+\centering
+\caption{Danh mục 19 tác vụ FreeRTOS của \textbf{FC-v01}}
+\label{tab:tasks}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{3.9cm}p{2.8cm}ccp{3.9cm}}
+\toprule
+Tác vụ & Phạm vi & Tần số (Hz) & Độ ưu tiên & IPC chính \\
+\midrule
+STATUS\_LED & Trạng thái & theo sự kiện & 1 & hàng đợi lệnh LED \\
+ACCEL\_GYRO\_DAQ & Cảm biến & 500 & 3 & mutex I\textsuperscript{2}C, ring buffer \\
+ACCEL\_\allowbreak GYRO\_\allowbreak PREPROCESS & Cảm biến & 500 & 3 & ring buffer, NVS \\
+MAG\_DAQ & Cảm biến & 100 & 2 & mutex I\textsuperscript{2}C, ring buffer \\
+MAG\_PREPROCESS & Cảm biến & 100 & 2 & ring buffer \\
+BARO\_DAQ & Cảm biến & 50 & 2 & mutex I\textsuperscript{2}C, ring buffer \\
+RC\_RECEIVER & Điều khiển từ xa & 50 & 2 & ring buffer, sự kiện \\
+EKF\_ROLL\_PITCH & Ước lượng & 500 & 3 & mutex EKF \\
+EKF\_YAW & Ước lượng & 100 & 2 & mutex EKF \\
+EKF\_ALTITUDE & Ước lượng & 100 & 2 & ring buffer \\
+MOTOR & Tác tử & 250 & 4 & hàng đợi lệnh, thông báo \\
+BLE\_TELEM & Truyền dữ liệu & 100 & 1 & snapshot các luồng \\
+SD\_LOGGER & Ghi dữ liệu & 100 & 1 & mutex SPI, ring buffer \\
+FSM\_MAIN & Điều phối & 100 & 3 & thông báo trực tiếp, hàng đợi \\
+BLE\_OTA & Cập nhật firmware & theo yêu cầu & 2 & hàng đợi (cấp phát khi cần) \\
+CALIB\_GYRO & Hiệu chuẩn & 200 & 1 & hàng đợi báo cáo \\
+CALIB\_ACCEL & Hiệu chuẩn & 200 & 1 & hàng đợi báo cáo \\
+CALIB\_MAG & Hiệu chuẩn & 100 & 1 & hàng đợi báo cáo \\
+CALIB\_BARO & Hiệu chuẩn & 50 & 1 & hàng đợi báo cáo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Thứ tự khởi động tuân theo nguyên tắc ``người giám sát khởi động cuối cùng'': phần cứng khởi tạo trước, rồi các tác vụ thu nhận -- xử lý dữ liệu, sau đó các tác vụ truyền và ghi, và tác vụ FSM sau cùng -- nhờ đó ngay từ lúc sinh ra, FSM đã giám sát được toàn bộ hệ thống. Các tác vụ hiệu chuẩn do FSM tạo và giải phóng khi xong; riêng tác vụ cập nhật firmware qua BLE chỉ được tạo khi cần, tiết kiệm bộ nhớ tĩnh.
+
+Mười chín tác vụ chạy trên bộ định thời (scheduler) hai nhân của FreeRTOS nhưng không bị ghim cố định vào một nhân nào; tải được phân tách theo tần suất -- chuỗi quán tính 500~Hz, từ kế và độ cao 100~Hz, động cơ 250~Hz -- và hệ điều hành tự quyết định tác vụ nào chạy trên nhân nào tại từng thời điểm~\cite{cervin2003,zhang2021}.
+
+\section{Giao tiếp liên tiến trình (Inter-Process Communication)}
+
+\textbf{FC-v01} dùng bốn cơ chế IPC -- giao tiếp liên tiến trình, tức là các cách các tác vụ trao đổi dữ liệu với nhau. Tất cả được cấp phát bộ nhớ một lần khi khởi động (ring buffer ở vùng nhớ tĩnh .bss, hàng đợi tạo ngay lúc boot) và khai báo tập trung ở một nơi duy nhất (bảng~\ref{tab:ipc}).
+
+\begin{table}[h]
+\centering
+\caption{Tóm tắt các cơ chế IPC của \textbf{FC-v01}}
+\label{tab:ipc}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{3.4cm}cp{8.6cm}}
+\toprule
+Cơ chế & Số lượng & Đặc điểm \\
+\midrule
+Ring buffer & 19 & SPSC một ghi -- một đọc, khóa học, không chờ đợi; băng thông 500 Hz \\
+Hàng đợi (queue) & 4 & lệnh LED (16), báo hiệu chuẩn (16), lệnh motor (4), dữ liệu OTA (32) \\
+Mutex & 5 & I\textsuperscript{2}C0, I\textsuperscript{2}C1, SPI, flash, trạng thái EKF; có kế thừa ưu tiên \\
+Thông báo trực tiếp & 5 & nút bấm $\rightarrow$ FSM; FSM $\rightarrow$ motor, hiệu chuẩn, ghi SD; OTA $\rightarrow$ FSM \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Trục dữ liệu chính của hệ thống là các ring buffer -- vùng nhớ dạng vòng, một tác vụ ghi một đầu và đúng một tác vụ đọc đầu kia, không cần khóa chờ (kiểu SPSC: single-producer, single-consumer); kích thước được hợp nhất về một hằng số duy nhất cho toàn hệ thống. Ring buffer không được bọc khóa (mutex), vì thêm khóa chỉ bổ sung độ trễ bất định vào vòng lặp 500~Hz mà không tăng độ tin cậy.
+
+Ba đường dữ liệu không phù hợp mô hình luồng một chiều -- luồng sự kiện, lệnh điều khiển và dữ liệu cập nhật firmware -- đi qua hàng đợi hoặc thông báo trực tiếp (direct task notification, kênh tín hiệu mà hệ điều hành cấp riêng cho từng tác vụ). Đường dừng khẩn của motor có hai nhánh -- thông báo trực tiếp và hàng đợi lệnh motor -- với cơ chế kiểm tra hai tầng ở đầu nhận bảo đảm lệnh khẩn được xử lý trước các lệnh thường. Quyền treo hoặc xóa tác vụ thuộc riêng tầng ứng dụng; các tác vụ khi cần dừng chỉ gửi yêu cầu rồi tự chuyển sang trạng thái chờ, nhờ đó vòng đời tác vụ được điều phối từ một nơi duy nhất.
+
+\section{Máy trạng thái hữu hạn (Finite State Machine)}
+
+Vòng đời hệ thống do một tác vụ FSM điều phối, chạy ở 100~Hz. FSM khai báo 12 trạng thái, trong đó 9 trạng thái đạt được khi vận hành: \texttt{UNINIT}, \texttt{PREFLIGHT}, \texttt{CALIB}, \texttt{READY}, \texttt{TAKEOFF}, \texttt{FLIGHT}, \texttt{POSTFLIGHT}, \texttt{DEVELOPMENT} và \texttt{CRASHED} (tên ghi theo mã nguồn). Việc chuyển trạng thái do một bảng gồm 11 quy tắc quyết định. Mỗi quy tắc ghép một cặp trạng thái đầu -- cuối với các sự kiện kích hoạt hoặc chặn chuyển. Bảng được duyệt tuần tự, quy tắc khớp đầu tiên thắng; nếu không có sự kiện mới, cả lần quét bị bỏ qua trong dưới 1~µs -- nhờ đó FSM không tham gia vào độ trễ của vòng lặp 500~Hz.
+
+Trước khi vào chế độ bay, FSM đánh giá năm cửa kiểm tra trước bay (preflight gate) với chu kỳ 10~ms; chỉ khi cả năm cửa đều đạt, hệ thống mới chuyển sang \texttt{READY}. Tiêu chí từng cửa được trình bày ở bảng~\ref{tab:kq-gates} (chương~5).

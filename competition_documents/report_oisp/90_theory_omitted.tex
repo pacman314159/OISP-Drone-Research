@@ -1,0 +1,43 @@
+% Chapter 2: Cơ sở lý thuyết
+\chapter{Cơ sở lý thuyết}
+
+Chương này không nhằm trình bày toàn bộ nền tảng lý thuyết của quadcopter, mà chỉ đề cập những nội dung được các chương sau sử dụng trực tiếp. Do phần điều khiển chưa được hiện thực trong phạm vi đề tài, các lý thuyết động lực học bay toàn diện (dùng cho mô phỏng và thiết kế bộ điều khiển) không được đưa vào; thay vào đó, mỗi mục lý thuyết dưới đây gắn với đúng một khối trong thiết kế đã cài đặt. Chương kết thúc bằng bảng tóm tắt ánh xạ giữa nội dung lý thuyết và chương sử dụng nó.
+
+\section{Biểu diễn tư thế bằng quaternion}
+
+Tư thế (attitude) của quadcopter được biểu diễn bằng quaternion thay cho ma trận quay hay góc Euler, nhằm tránh hiện tượng khóa gimbal (gimbal lock) và giảm chi phí tính toán khi hợp nhất dữ liệu cảm biến. Vectơ trạng thái bảy phần tử được sử dụng trong chương~5 gồm quaternion tư thế và độ lệch con quay hồi tiếp (gyroscope bias); độ lệch này mô tả sai số biên độ của con quay hồi tiếp (gyroscope) thay đổi theo nhiệt độ và thời gian, và được bộ lọc ước lượng song song với tư thế.
+
+\section{Bộ lọc Kalman mở rộng}
+
+Bộ lọc Kalman mở rộng (Extended Kalman Filter, EKF) tuyến tính hóa hàm quan sát quanh trạng thái hiện tại để cập nhật ước lượng, là khối trung tâm của chương~5. Vì mỗi giá trị đo từ cảm biến chỉ phụ thuộc một vài thành phần của vectơ trạng thái, ma trận quan sát có thể tách thành các khối nhỏ và cập nhật theo từng khối (sequential measurement update); kỹ thuật này giảm trực tiếp chi phí tính toán trên vi điều khiển nhúng (embedded microcontroller) ESP32-S3 và được khai thác trong cả chương~5 lẫn chương~6.
+
+\section{Hệ điều hành thời gian thực}
+
+Hệ điều hành thời gian thực (real-time operating system, RTOS) cung cấp cơ chế lập lịch (scheduling) quyết định tác vụ nào chiếm xử lý tại từng thời điểm, cùng các cơ chế giao tiếp giữa các tiến trình (inter-process communication, IPC) như mutex, hàng đợi và thông báo trực tiếp giữa các tác vụ. Phân bổ bộ nhớ tĩnh (static memory allocation) loại trừ phân mảnh bộ nhớ và đảm bảo hành vi xác định tại thời điểm chạy. Đây là nền tảng của thiết kế kiến trúc phần mềm \textbf{FC-v01} trong chương~3.
+
+\section{Điều khiển PID và giới hạn}
+
+Bộ điều khiển PID (proportional--integral--derivative) là phương pháp điều khiển phổ biến nhất cho quadcopter, thường tổ chức thành hai vòng lồng nhau (vòng tư thế -- vòng tốc độ góc). Trên nền tảng vi điều khiển tài nguyên hạn chế như \textbf{FC-v01}, PID hiện diện những hạn chế: hiệu năng phụ thuộc mạnh vào hiệu chuẩn tham số tay, không tính đến động lực học phi tuyến của máy bay, và nhạy với sai số cảm biến. Những hạn chế này, cùng nguyên lý INDI (Incremental Nonlinear Dynamic Inversion) -- phương pháp điều khiển gia tăng không phụ thuộc mô hình chính xác -- được phân tích như định hướng nghiên cứu cho giai đoạn tiếp theo trong chương~7.
+
+\section{Ánh xạ lý thuyết -- chương sử dụng}
+
+\begin{table}[h]
+\centering
+\caption{Ánh xạ giữa nội dung lý thuyết và chương sử dụng}
+\label{tab:theory-mapping}
+\begin{tabular}{ll}
+\toprule
+Nội dung lý thuyết & Chương sử dụng \\
+\midrule
+Quaternion tư thế, gyroscope bias & Chương~5 \\
+EKF, sequential measurement update & Chương~5, 6 \\
+Lý thuyết RTOS, IPC, static allocation & Chương~3 \\
+FFT, hiệu chuẩn elipsoid sáu điểm & Chương~6 \\
+PID (lý thuyết + hạn chế), INDI & Chương~7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Phân tích tín hiệu cảm biến}
+
+Phép biến đổi Fourier nhanh (fast Fourier transform, FFT) cho phép nhận diện nhiễu và các đỉnh tần số trong tín hiệu cảm biến, dùng để đánh giá chất lượng tín hiệu gia tốc kế và áp suất (barometer) trong chương~6. Mô hình hiệu chuẩn elipsoid (ellipsoid calibration) mô tả sai số độ lệch và độ nhạy ba trục của từ kế và gia tốc kế, là cơ sở của quy trình hiệu chuẩn sáu điểm (six-point calibration) được kiểm chứng trong chương~6.

@@ -1,0 +1,4 @@
+{
+  // Long paragraphs stay on one logical line; let the editor wrap them.
+  "soft_wrap": "editor_width"
+}
