@@ -226,13 +226,13 @@
           <tr><td>SD log + BLE telem.</td><td class="n">100 Hz</td><td>DAQ loop budget</td><td class="n">2.0 ms</td></tr>
         </tbody>
       </table>
-      <p class="note"><span class="num">[NUM: measured period, jitter (median / p99 / max) per task and core utilisation map — full-system SystemView profile with RF active; note-0007 data is DAQ-only scope]</span></p>
+      <p class="note">Measured full-schedule trace (SD trace, session TRC_0008, 20 s, 47,216 records, zero dropped): all periodic tasks hit their nominal periods exactly (500.0 / 250.0 / 100.0 / 50.0 Hz). Period jitter σ = 12–164 µs per task (2–8% of period); worst observed run of the heaviest task (attitude EKF) = 764 µs, 38% of its 2 ms budget; every other periodic task stayed under 30% of its budget. Only the RC receiver migrated between cores (915 migrations / 20 s).</p>
       <div class="fig"><div class="ph h84">core map placeholder</div><div class="cap">fc_v01_core_map_systemview.png</div></div>
 
-      <p class="lead">IMU noise characterisation — <span class="num">[NUM: per-axis standard deviation and noise floor from a dated log]</span></p>
+      <p class="lead">IMU noise characterisation — static-bench σ from LOG_0032 (35 s): accelerometer 0.0049–0.0056 g raw → 0.0022–0.0036 g filtered (1.5–2.5×); gyroscope 0.131–0.220 °/s raw → 0.051–0.180 °/s filtered (1.2–2.6×); magnetometer 0.0016–0.0030 Gauss raw; barometer σ = 4.0 Pa (≈0.34 m altitude noise floor — the design input of the altitude filter)</p>
       <div class="fig"><div class="ph h110">IMU stdev (time domain) + FFT per axis placeholder</div><div class="cap">imu_stdev_fft_&lt;date&gt;.png</div></div>
 
-      <p><b>Attitude EKF:</b> dual-task asynchronous 500 / 100 Hz quaternion estimator. <span class="num">[NUM: accuracy vs reference, per-task timing]</span></p>
+      <p><b>Attitude EKF:</b> dual-task asynchronous 500 / 100 Hz quaternion estimator. Measured timing: roll/pitch EKF WCET 764 µs (38% of the 2 ms budget, exact 500.0 Hz); yaw EKF WCET 463 µs at 99.5 Hz measured. On the static bench there is no external attitude reference, so accuracy is assessed qualitatively: bounded tracking of hand motion up to ±55° roll/pitch with full yaw rotation (session LOG_0037).</p>
 
       <p><b>Altitude EKF — performance assessment:</b> the measured performance is poor, and the limitation is attributable to the sensing hardware rather than to the estimator design: the BMP180 barometer offers low resolution, a low output rate and high noise, and the altitude estimate degrades accordingly. <span class="num">[NUM: 24.15% — OFFLINE REPLAY ONLY (note 0037); realtime re-measurement pending]</span></p>
 
